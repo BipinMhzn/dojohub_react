@@ -1,0 +1,22 @@
+<?php
+
+namespace App\{moduleContainer}\{{module}}\Filters;
+
+use BaseSystem\Filters\BaseFilter;
+
+/**
+ * Class {{module}}Controller
+ * @package App\{moduleContainer}\{{module}}\Filters
+ */
+final class {{module}}Filter extends BaseFilter
+{
+    /**
+     * To do filter here
+     * @param string $keyword
+     */
+    public function keyword(string $keyword = ''): void
+    {
+       $this->title($keyword);
+    }
+
+}

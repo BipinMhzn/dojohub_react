@@ -1,0 +1,13 @@
+<?php
+namespace App\{moduleContainer}\{{module}}\Requests;
+
+use BaseSystem\Requests\BaseRequest;
+
+/**
+ * Class {module}CreateRequest
+ * @package App\{moduleContainer}\{{module}}\Requests
+ */
+final class {module}CreateRequest extends BaseRequest
+{
+
+}

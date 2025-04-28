@@ -1,0 +1,10 @@
+<?php
+
+namespace App\{system}\{module}\Database\Models;
+
+use BaseSystem\Foundation\Database\BaseModel;
+
+class {module} extends BaseModel
+{
+
+}

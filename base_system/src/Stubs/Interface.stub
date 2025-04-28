@@ -1,0 +1,14 @@
+<?php
+
+namespace App\{moduleContainer}\{{module}}\Interfaces;
+
+use BaseSystem\Interfaces\BaseInterface;
+
+/**
+ * Interface {module}Interface
+ * @package App\{moduleContainer}\{{module}}\Interfaces
+ */
+interface {module}Interface extends BaseInterface
+{
+
+}

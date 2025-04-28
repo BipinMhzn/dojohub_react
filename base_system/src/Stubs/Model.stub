@@ -1,0 +1,13 @@
+<?php
+namespace App\{moduleContainer}\{{module}}\Database\Models;
+
+use App\{system}\{module}\Database\Models\{module} as BaseModel;
+
+/**
+ * Class {module}
+ * @package App\{moduleContainer}\{{module}}\Database\Models
+ */
+final class {module} extends BaseModel
+{
+
+}

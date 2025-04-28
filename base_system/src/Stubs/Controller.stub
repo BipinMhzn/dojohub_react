@@ -1,0 +1,74 @@
+<?php
+
+namespace App\{moduleContainer}\{{module}}\Controllers;
+
+use App\{moduleContainer}\{{module}}\Interfaces\{module}Interface;
+use App\{moduleContainer}\{{module}}\Requests\{module}CreateRequest;
+use App\{moduleContainer}\{{module}}\Requests\{module}UpdateRequest;
+use BaseSystem\Requests\BaseListRequest;
+use BaseSystem\Requests\BaseRequest;
+use Illuminate\Http\JsonResponse;
+use BaseSystem\Controllers\BaseController;
+
+/**
+ * Class {{module}}Controller
+ * @package App\{moduleContainer}\{{module}}\Controllers
+ */
+final class {{module}}Controller extends BaseController
+{
+    /**
+     * {{module}}Controller constructor.
+     * @param {module}Interface $repository
+     */
+    public function __construct(private readonly {module}Interface $repository)
+    {
+    }
+
+    /**
+     * @param BaseListRequest $request
+     * @return JsonResponse
+     */
+    public function index(BaseListRequest $request): JsonResponse
+    {
+        return $this->responseOk($this->repository->getList($request->validated()));
+    }
+
+    /**
+     * @param {module}CreateRequest $request
+     * @return JsonResponse
+     */
+    public function store({module}CreateRequest $request): JsonResponse
+    {
+        return $this->responseOk($this->repository->create($request->validated()));
+    }
+
+    /**
+     * @param {module}UpdateRequest $request
+     * @param int $id
+     * @return JsonResponse
+     */
+    public function update({module}UpdateRequest $request, int $id): JsonResponse
+    {
+        return $this->responseOk($this->repository->update($id, $request->validated()));
+    }
+
+    /**
+     * @param BaseRequest $request
+     * @param int $id
+     * @return JsonResponse
+     */
+    public function destroy(BaseRequest $request, int $id): JsonResponse
+    {
+        return $this->responseOk($this->repository->destroy($id));
+    }
+
+    /**
+     * @param BaseRequest $request
+     * @param int $id
+     * @return JsonResponse
+     */
+    public function show(BaseRequest $request, int $id): JsonResponse
+    {
+        return $this->responseOk($this->repository->getById($id));
+    }
+}

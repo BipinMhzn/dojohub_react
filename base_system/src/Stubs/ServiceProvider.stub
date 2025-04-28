@@ -1,0 +1,26 @@
+<?php
+namespace App\{moduleContainer}\{{module}};
+
+use \Illuminate\Support\ServiceProvider as BaseServiceProvider;
+use App\{moduleContainer}\{{module}}\Interfaces\{module}Interface;
+use App\{moduleContainer}\{{module}}\Repositories\{module}Repository;
+
+/**
+ * Class ServiceProvider
+ * @package App\{moduleContainer}\{{module}}
+ */
+class ServiceProvider extends BaseServiceProvider
+{
+    /**
+     * @type bool
+     */
+    protected bool $defer = true;
+
+    /**
+     * Register your binding
+     */
+    public function register(): void
+    {
+        $this->app->bind({module}Interface::class, {module}Repository::class);
+    }
+}

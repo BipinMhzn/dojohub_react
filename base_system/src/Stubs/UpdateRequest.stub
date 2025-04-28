@@ -1,0 +1,13 @@
+<?php
+namespace App\{moduleContainer}\{{module}}\Requests;
+
+use BaseSystem\Requests\BaseRequest;
+
+/**
+ * Class {module}UpdateRequest
+ * @package App\{moduleContainer}\{{module}}\Requests
+ */
+final class {module}UpdateRequest extends BaseRequest
+{
+
+}

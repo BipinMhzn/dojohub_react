@@ -1,0 +1,6 @@
+{
+    "name": "bipin/base-system",
+    "description": "Base system architecture",
+    "minimum-stability": "dev",
+    "require": {}
+}

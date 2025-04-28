@@ -1,0 +1,35 @@
+<?php
+
+namespace App\{moduleContainer}\{{module}}\Repositories;
+
+use App\{moduleContainer}\{{module}}\Filters\{{module}}Filter;
+use App\{moduleContainer}\{{module}}\Interfaces\{module}Interface;
+use App\{moduleContainer}\{{module}}\Database\Models\{module};
+use BaseSystem\Repositories\BaseRepository;
+use Illuminate\Database\Eloquent\Builder;
+
+/**
+ * Class {module}Repository
+ * @package App\{moduleContainer}\{{module}}\Repositories
+ */
+final class {module}Repository extends BaseRepository implements {module}Interface
+{
+    /**
+     * {module}Repository constructor.
+     * @param {module} $model
+     */
+    public function __construct({module} $model)
+    {
+        parent::__construct($model);
+    }
+
+    /**
+     * @param Builder $builder
+     * @return {{module}}Filter
+     */
+    public function getFilter(Builder $builder): {{module}}Filter
+    {
+        return new {{module}}Filter($builder);
+    }
+
+}
