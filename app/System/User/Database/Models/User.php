@@ -19,9 +19,7 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
 {
     use Authenticatable, Authorizable, CanResetPassword, MustVerifyEmail;
 
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
-
 
     /**
      * The attributes that are mass assignable.
