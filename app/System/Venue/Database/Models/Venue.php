@@ -2,9 +2,28 @@
 
 namespace App\System\Venue\Database\Models;
 
-use BaseSystem\Foundation\Database\BaseModel;
+use App\System\AppBaseModel;
+use Database\Factories\VenueFactory;
 
-class Venue extends BaseModel
+class Venue extends AppBaseModel
 {
 
+    protected $fillable = [
+        'name',
+        'address',
+        'city',
+        'state',
+        'country',
+    ];
+
+    protected array $sortableColumns = [
+        'name',
+        'created_at',
+        'updated_at',
+    ];
+
+    protected static function newFactory(): VenueFactory
+    {
+        return VenueFactory::new();
+    }
 }
