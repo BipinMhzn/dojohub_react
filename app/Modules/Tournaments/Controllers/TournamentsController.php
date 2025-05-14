@@ -5,10 +5,14 @@ namespace App\Modules\Tournaments\Controllers;
 use App\Modules\Tournaments\Interfaces\TournamentInterface;
 use App\Modules\Tournaments\Requests\TournamentCreateRequest;
 use App\Modules\Tournaments\Requests\TournamentUpdateRequest;
+use App\System\Foundation\Traits\FileUpload;
+use App\System\Tournament\Foundation\Enums\TournamentStatusEnum;
+use BaseSystem\Controllers\BaseController;
 use BaseSystem\Requests\BaseListRequest;
 use BaseSystem\Requests\BaseRequest;
-use Illuminate\Http\JsonResponse;
-use BaseSystem\Controllers\BaseController;
+use Illuminate\Http\RedirectResponse;
+use Inertia\Inertia;
+use Inertia\Response;
 
 /**
  * Class TournamentsController
@@ -16,59 +20,89 @@ use BaseSystem\Controllers\BaseController;
  */
 final class TournamentsController extends BaseController
 {
+    use FileUpload;
+
+    private string $uploadDirectory = '/images/tournaments';
+
     /**
      * TournamentsController constructor.
      * @param TournamentInterface $repository
      */
-    public function __construct(private readonly TournamentInterface $repository)
+    public function __construct(
+        private readonly TournamentInterface $repository,
+    )
     {
     }
 
     /**
      * @param BaseListRequest $request
-     * @return JsonResponse
+     * @return Response
      */
-    public function index(BaseListRequest $request): JsonResponse
+    public function index(BaseListRequest $request): Response
     {
-        return $this->responseOk($this->repository->getList($request->validated()));
+        return Inertia::render('tournaments/index', [
+            'tournaments' => $this->repository->getList($request->validated()),
+            'filters' => $request->validated(),
+        ]);
     }
 
     /**
      * @param TournamentCreateRequest $request
-     * @return JsonResponse
+     * @return RedirectResponse
      */
-    public function store(TournamentCreateRequest $request): JsonResponse
+    public function store(TournamentCreateRequest $request): RedirectResponse
     {
-        return $this->responseOk($this->repository->create($request->validated()));
+        $inputs = $request->validated();
+        if ($request->file('logo')) {
+            $profilePhoto = $this->uploadFile($request->file('logo'), $this->uploadDirectory);
+            $inputs['logo_url'] = $profilePhoto['path'];
+            unset($inputs['logo']);
+        }
+        $inputs['status'] = TournamentStatusEnum::SCHEDULED;
+        $this->repository->create($inputs);
+
+        return to_route('tournaments.index')->with('success', 'Tournament created successfully.');
     }
 
     /**
      * @param TournamentUpdateRequest $request
-     * @param int $id
-     * @return JsonResponse
+     * @param string $tournament
+     * @return RedirectResponse
      */
-    public function update(TournamentUpdateRequest $request, int $id): JsonResponse
+    public function update(TournamentUpdateRequest $request, string $tournament): RedirectResponse
     {
-        return $this->responseOk($this->repository->update($id, $request->validated()));
+        $inputs = $request->validated();
+        if ($request->file('logo')) {
+            $profilePhoto = $this->uploadFile($request->file('logo'), $this->uploadDirectory);
+            $inputs['logo_url'] = $profilePhoto['path'];
+            unset($inputs['logo']);
+        }
+        $this->repository->update($tournament, $inputs);
+
+        return to_route('tournaments.index')->with('success', 'Tournament updated successfully.');
     }
 
     /**
      * @param BaseRequest $request
-     * @param int $id
-     * @return JsonResponse
+     * @param string $tournament
+     * @return RedirectResponse
      */
-    public function destroy(BaseRequest $request, int $id): JsonResponse
+    public function destroy(BaseRequest $request, string $tournament): RedirectResponse
     {
-        return $this->responseOk($this->repository->destroy($id));
+        $this->repository->destroy($tournament);
+
+        return to_route('tournaments.index')->with('success', 'Tournament deleted successfully.');
     }
 
     /**
      * @param BaseRequest $request
-     * @param int $id
-     * @return JsonResponse
+     * @param string $tournament
+     * @return Response
      */
-    public function show(BaseRequest $request, int $id): JsonResponse
+    public function show(BaseRequest $request, string $tournament): Response
     {
-        return $this->responseOk($this->repository->getById($id));
+        return Inertia::render('tournaments/show', [
+            'tournament' => $this->repository->getById($tournament),
+        ]);
     }
 }

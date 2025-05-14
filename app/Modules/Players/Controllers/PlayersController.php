@@ -5,10 +5,13 @@ namespace App\Modules\Players\Controllers;
 use App\Modules\Players\Interfaces\PlayerInterface;
 use App\Modules\Players\Requests\PlayerCreateRequest;
 use App\Modules\Players\Requests\PlayerUpdateRequest;
+use App\System\Foundation\Traits\FileUpload;
+use BaseSystem\Controllers\BaseController;
 use BaseSystem\Requests\BaseListRequest;
 use BaseSystem\Requests\BaseRequest;
-use Illuminate\Http\JsonResponse;
-use BaseSystem\Controllers\BaseController;
+use Illuminate\Http\RedirectResponse;
+use Inertia\Inertia;
+use Inertia\Response;
 
 /**
  * Class PlayersController
@@ -16,6 +19,8 @@ use BaseSystem\Controllers\BaseController;
  */
 final class PlayersController extends BaseController
 {
+    use FileUpload;
+
     /**
      * PlayersController constructor.
      * @param PlayerInterface $repository
@@ -26,49 +31,73 @@ final class PlayersController extends BaseController
 
     /**
      * @param BaseListRequest $request
-     * @return JsonResponse
+     * @return Response
      */
-    public function index(BaseListRequest $request): JsonResponse
+    public function index(BaseListRequest $request): Response
     {
-        return $this->responseOk($this->repository->getList($request->validated()));
+        return Inertia::render('players/index', [
+            'players' => $this->repository->getList($request->validated()),
+            'filters' => $request->validated(),
+        ]);
     }
 
     /**
      * @param PlayerCreateRequest $request
-     * @return JsonResponse
+     * @return RedirectResponse
      */
-    public function store(PlayerCreateRequest $request): JsonResponse
+    public function store(PlayerCreateRequest $request): RedirectResponse
     {
-        return $this->responseOk($this->repository->create($request->validated()));
+        $inputs = $request->validated();
+        if ($request->file('profile_photo')) {
+            $profilePhoto = $this->uploadFile($request->file('profile_photo'), '/images/players');
+            $inputs['profile_photo_url'] = $profilePhoto['path'];
+            unset($inputs['profile_photo']);
+        }
+
+        $this->repository->create($inputs);
+
+        return to_route('players.index')->with('success', 'Player created successfully.');
     }
 
     /**
      * @param PlayerUpdateRequest $request
-     * @param int $id
-     * @return JsonResponse
+     * @param string $player
+     * @return RedirectResponse
      */
-    public function update(PlayerUpdateRequest $request, int $id): JsonResponse
+    public function update(PlayerUpdateRequest $request, string $player): RedirectResponse
     {
-        return $this->responseOk($this->repository->update($id, $request->validated()));
+        $inputs = $request->validated();
+        if ($request->file('profile_photo')) {
+            $profilePhoto = $this->uploadFile($request->file('profile_photo'), '/images/players');
+            $inputs['profile_photo_url'] = $profilePhoto['path'];
+            unset($inputs['profile_photo']);
+        }
+        $this->repository->update($player, $inputs);
+
+        return to_route('players.index')->with('success', 'Player updated successfully.');
     }
 
     /**
      * @param BaseRequest $request
-     * @param int $id
-     * @return JsonResponse
+     * @param string $player
+     * @return RedirectResponse
      */
-    public function destroy(BaseRequest $request, int $id): JsonResponse
+    public function destroy(BaseRequest $request, string $player): RedirectResponse
     {
-        return $this->responseOk($this->repository->destroy($id));
+        $this->repository->destroy($player);
+
+        return to_route('players.index')->with('success', 'Player deleted successfully.');
     }
 
     /**
      * @param BaseRequest $request
-     * @param int $id
-     * @return JsonResponse
+     * @param string $player
+     * @return Response
      */
-    public function show(BaseRequest $request, int $id): JsonResponse
+    public function show(BaseRequest $request, string $player): Response
     {
-        return $this->responseOk($this->repository->getById($id));
+        return Inertia::render('players/show', [
+            'player' => $this->repository->getById($player),
+        ]);
     }
 }

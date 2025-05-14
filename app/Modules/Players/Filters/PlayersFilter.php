@@ -16,7 +16,7 @@ final class PlayersFilter extends BaseFilter
      */
     public function keyword(string $keyword = ''): void
     {
-       $this->title($keyword);
+        $this->name($keyword);
     }
 
 }

@@ -5,10 +5,13 @@ namespace App\Modules\Clubs\Controllers;
 use App\Modules\Clubs\Interfaces\ClubInterface;
 use App\Modules\Clubs\Requests\ClubCreateRequest;
 use App\Modules\Clubs\Requests\ClubUpdateRequest;
+use App\System\Foundation\Traits\FileUpload;
 use BaseSystem\Requests\BaseListRequest;
 use BaseSystem\Requests\BaseRequest;
-use Illuminate\Http\JsonResponse;
 use BaseSystem\Controllers\BaseController;
+use Illuminate\Http\RedirectResponse;
+use Inertia\Inertia;
+use Inertia\Response;
 
 /**
  * Class ClubsController
@@ -16,6 +19,10 @@ use BaseSystem\Controllers\BaseController;
  */
 final class ClubsController extends BaseController
 {
+    use FileUpload;
+
+    private string $uploadDirectory = '/images/clubs';
+
     /**
      * ClubsController constructor.
      * @param ClubInterface $repository
@@ -26,49 +33,73 @@ final class ClubsController extends BaseController
 
     /**
      * @param BaseListRequest $request
-     * @return JsonResponse
+     * @return Response
      */
-    public function index(BaseListRequest $request): JsonResponse
+    public function index(BaseListRequest $request): Response
     {
-        return $this->responseOk($this->repository->getList($request->validated()));
+        return Inertia::render('clubs/index', [
+            'clubs' => $this->repository->getList($request->validated()),
+            'filters' => $request->validated(),
+        ]);
     }
 
     /**
      * @param ClubCreateRequest $request
-     * @return JsonResponse
+     * @return RedirectResponse
      */
-    public function store(ClubCreateRequest $request): JsonResponse
+    public function store(ClubCreateRequest $request): RedirectResponse
     {
-        return $this->responseOk($this->repository->create($request->validated()));
+        $inputs = $request->validated();
+        if ($request->file('logo')) {
+            $profilePhoto = $this->uploadFile($request->file('logo'), $this->uploadDirectory);
+            $inputs['logo_url'] = $profilePhoto['path'];
+            unset($inputs['logo']);
+        }
+
+        $this->repository->create($inputs);
+
+        return to_route('clubs.index')->with('success', 'Club created successfully.');
     }
 
     /**
      * @param ClubUpdateRequest $request
-     * @param int $id
-     * @return JsonResponse
+     * @param string $club
+     * @return RedirectResponse
      */
-    public function update(ClubUpdateRequest $request, int $id): JsonResponse
+    public function update(ClubUpdateRequest $request, string $club): RedirectResponse
     {
-        return $this->responseOk($this->repository->update($id, $request->validated()));
+        $inputs = $request->validated();
+        if ($request->file('logo')) {
+            $profilePhoto = $this->uploadFile($request->file('logo'), $this->uploadDirectory);
+            $inputs['logo_url'] = $profilePhoto['path'];
+            unset($inputs['logo']);
+        }
+        $this->repository->update($club, $inputs);
+
+        return to_route('clubs.index')->with('success', 'Club updated successfully.');
     }
 
     /**
      * @param BaseRequest $request
-     * @param int $id
-     * @return JsonResponse
+     * @param string $club
+     * @return RedirectResponse
      */
-    public function destroy(BaseRequest $request, int $id): JsonResponse
+    public function destroy(BaseRequest $request, string $club): RedirectResponse
     {
-        return $this->responseOk($this->repository->destroy($id));
+        $this->repository->destroy($club);
+
+        return to_route('clubs.index')->with('success', 'Club deleted successfully.');
     }
 
     /**
      * @param BaseRequest $request
-     * @param int $id
-     * @return JsonResponse
+     * @param string $club
+     * @return Response
      */
-    public function show(BaseRequest $request, int $id): JsonResponse
+    public function show(BaseRequest $request, string $club): Response
     {
-        return $this->responseOk($this->repository->getById($id));
+        return Inertia::render('clubs/show', [
+            'club' => $this->repository->getById($club),
+        ]);
     }
 }

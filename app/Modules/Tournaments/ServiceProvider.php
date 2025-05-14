@@ -1,9 +1,10 @@
 <?php
+
 namespace App\Modules\Tournaments;
 
-use \Illuminate\Support\ServiceProvider as BaseServiceProvider;
 use App\Modules\Tournaments\Interfaces\TournamentInterface;
 use App\Modules\Tournaments\Repositories\TournamentRepository;
+use Illuminate\Support\ServiceProvider as BaseServiceProvider;
 
 /**
  * Class ServiceProvider

@@ -16,7 +16,7 @@ final class VenuesFilter extends BaseFilter
      */
     public function keyword(string $keyword = ''): void
     {
-       $this->title($keyword);
+       $this->name($keyword);
     }
 
 }

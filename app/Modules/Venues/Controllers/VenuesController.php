@@ -5,10 +5,13 @@ namespace App\Modules\Venues\Controllers;
 use App\Modules\Venues\Interfaces\VenueInterface;
 use App\Modules\Venues\Requests\VenueCreateRequest;
 use App\Modules\Venues\Requests\VenueUpdateRequest;
+use BaseSystem\Controllers\BaseController;
 use BaseSystem\Requests\BaseListRequest;
 use BaseSystem\Requests\BaseRequest;
 use Illuminate\Http\JsonResponse;
-use BaseSystem\Controllers\BaseController;
+use Illuminate\Http\RedirectResponse;
+use Inertia\Inertia;
+use Inertia\Response;
 
 /**
  * Class VenuesController
@@ -26,49 +29,53 @@ final class VenuesController extends BaseController
 
     /**
      * @param BaseListRequest $request
-     * @return JsonResponse
+     * @return Response
      */
-    public function index(BaseListRequest $request): JsonResponse
+    public function index(BaseListRequest $request): Response
+    {
+        return Inertia::render('venues/index', [
+            'venues' => $this->repository->getList($request->validated()),
+            'filters' => $request->validated(),
+        ]);
+    }
+
+    public function apiIndex(BaseListRequest $request): JsonResponse
     {
         return $this->responseOk($this->repository->getList($request->validated()));
     }
 
     /**
      * @param VenueCreateRequest $request
-     * @return JsonResponse
+     * @return RedirectResponse
      */
-    public function store(VenueCreateRequest $request): JsonResponse
+    public function store(VenueCreateRequest $request): RedirectResponse
     {
-        return $this->responseOk($this->repository->create($request->validated()));
+        $this->repository->create($request->validated());
+
+        return to_route('venues.index')->with('success', 'Venue created successfully.');
     }
 
     /**
      * @param VenueUpdateRequest $request
-     * @param int $id
-     * @return JsonResponse
+     * @param string $venue
+     * @return RedirectResponse
      */
-    public function update(VenueUpdateRequest $request, int $id): JsonResponse
+    public function update(VenueUpdateRequest $request, string $venue): RedirectResponse
     {
-        return $this->responseOk($this->repository->update($id, $request->validated()));
+        $this->repository->update($venue, $request->validated());
+
+        return to_route('venues.index')->with('success', 'Venue updated successfully.');
     }
 
     /**
      * @param BaseRequest $request
-     * @param int $id
-     * @return JsonResponse
+     * @param string $venue
+     * @return RedirectResponse
      */
-    public function destroy(BaseRequest $request, int $id): JsonResponse
+    public function destroy(BaseRequest $request, string $venue): RedirectResponse
     {
-        return $this->responseOk($this->repository->destroy($id));
-    }
+        $this->repository->destroy($venue);
 
-    /**
-     * @param BaseRequest $request
-     * @param int $id
-     * @return JsonResponse
-     */
-    public function show(BaseRequest $request, int $id): JsonResponse
-    {
-        return $this->responseOk($this->repository->getById($id));
+        return to_route('venues.index')->with('success', 'Venue deleted successfully.');
     }
 }

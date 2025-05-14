@@ -1,4 +1,15 @@
 <?php
 
-// Put your web routes here
+use App\Modules\Clubs\Controllers\ClubsController;
+use Illuminate\Support\Facades\Route;
+
+Route::group([
+    'middleware' => [
+        'auth', 'verified'
+    ],
+    'prefix' => 'manage'
+], function () {
+    Route::apiResource('clubs', 'ClubsController')->except('update')->names('clubs');
+    Route::post('clubs/{club}', [ClubsController::class, 'update'])->name('clubs.update');
+});
 

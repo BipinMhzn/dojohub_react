@@ -77,6 +77,7 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                                 required
                                 autoComplete="username"
                                 placeholder="Email address"
+                                disabled
                             />
 
                             <InputError className="mt-2" message={errors.email} />
@@ -120,7 +121,6 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                     </form>
                 </div>
 
-                <DeleteUser />
             </SettingsLayout>
         </AppLayout>
     );
