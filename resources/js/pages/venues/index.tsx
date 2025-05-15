@@ -1,6 +1,9 @@
-import type { BreadcrumbItem } from '@/types';
+import Heading from '@/components/heading';
 import AppLayout from '@/layouts/app-layout';
-import { Head } from '@inertiajs/react';
+import type { BreadcrumbItem } from '@/types';
+import { Head, usePage } from '@inertiajs/react';
+import { columns, Venue } from './columns';
+import { DataTable } from './data-table';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -10,10 +13,19 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function Venues() {
+    const { props } = usePage();
+    const venues = props.venues.data as Venue[];
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Venues" />
-            <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
+
+            <div className="px-4 py-6">
+                <Heading title="Venues" description="Manage your venues" />
+
+                <div className="container mx-auto">
+                    <DataTable columns={columns} data={venues} />
+                </div>
             </div>
         </AppLayout>
     );
