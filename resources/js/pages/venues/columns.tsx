@@ -1,70 +1,54 @@
-"use client"
+'use client';
 
-import { ColumnDef } from "@tanstack/react-table"
-import { ArrowUpDown, MoreHorizontal } from 'lucide-react';
+import { ColumnDef } from '@tanstack/react-table';
+import { MoreHorizontal } from 'lucide-react';
 
-import { Button } from "@/components/ui/button"
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 export type Payment = {
-    id: string
-    amount: number
-    status: "pending" | "processing" | "success" | "failed"
-    email: string
-}
+    id: string;
+    amount: number;
+    status: 'pending' | 'processing' | 'success' | 'failed';
+    email: string;
+};
 
 export type Venue = {
-    id: string,
-    name: string,
-    address: string,
-    city: string,
-    state: string,
-    country: string,
-    created_at: string,
-    updated_at: string
-}
+    id: string;
+    name: string;
+    address: string;
+    city: string;
+    state: string;
+    country: string;
+    created_at: string;
+    updated_at: string;
+};
 
 export const columns: ColumnDef<Venue>[] = [
     {
-        accessorKey: "name",
-        header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                >
-                    Name
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            )
-        },
+        accessorKey: 'name',
+        header: 'Name',
     },
     {
-        accessorKey: "address",
-        header: "Address",
+        accessorKey: 'address',
+        header: 'Address',
     },
     {
-        accessorKey: "city",
-        header: "City",
+        accessorKey: 'city',
+        header: 'City',
     },
     {
-        accessorKey: "state",
-        header: "State",
+        accessorKey: 'state',
+        header: 'State',
     },
     {
-        accessorKey: "country",
-        header: "Country",
+        accessorKey: 'country',
+        header: 'Country',
     },
     {
-        id: "actions",
+        id: 'actions',
         cell: ({ row }) => {
-            const venue = row.original
+            const venue = row.original;
 
             return (
                 <DropdownMenu>
@@ -75,20 +59,12 @@ export const columns: ColumnDef<Venue>[] = [
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                            onClick={() => console.log(venue)}
-                        >
-                            Edit
-                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => console.log(venue)}>Edit</DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                            onClick={() => console.log(venue)}
-                        >
-                            Delete
-                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => console.log(venue)}>Delete</DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
-            )
+            );
         },
     },
-]
+];
