@@ -26,8 +26,8 @@ type PaginationProps = {
 
 const DataTablePagination: React.FC<PaginationProps> = ({
                                                             links = [],
-                                                            perPage = 50,
-                                                            perPageSelect = [50, 100, 150, 200],
+                                                            perPage = 10,
+                                                            perPageSelect = [10, 50, 100, 200],
                                                             onPageChange,
                                                             onPerPageCountUpdated
                                                         }) => {
@@ -47,27 +47,32 @@ const DataTablePagination: React.FC<PaginationProps> = ({
     };
 
     const isCompact = links.length <= 3;
+    const firstLink = links[0];
+    const lastLink = links[links.length - 1];
+    const pageLinks = links.slice(1, links.length - 1);
 
     return (
         <nav className="mt-4">
             <div className={isCompact ? 'flex flex-col items-end space-y-2' : 'flex items-center justify-between'}>
-                {/* Pagination */}
                 {!isCompact && (
                     <div className="flex h-8 items-center text-sm">
-                        {links[0]?.url && (
+                        {firstLink?.url && (
                             <Button variant="outline" className={'rounded-r-none'}
-                                    onClick={() => changePageNumber(links[0].url)}>
+                                    size={'sm'}
+                                    onClick={() => changePageNumber(firstLink.url)}>
                                 <span className="sr-only">Previous</span>
                                 <ChevronLeft />
                             </Button>
                         )}
 
-                        {links.slice(1, links.length - 1).map((pageLink, index) => (
+                        {pageLinks.map((pageLink, index) => (
                             <Button
+                                key={pageLink.label}
                                 variant={pageLink.active ? 'secondary' : 'outline'}
+                                size={'sm'}
                                 disabled={pageLink.active}
-                                className={`rounded-none ${!links[0]?.url && pageLink.url === links[1]?.url ? 'rounded-l-lg' : ''} ${
-                                    !links[links.length - 1]?.url && pageLink.url === links[links.length - 2]?.url ? 'rounded-r-lg' : ''
+                                className={`rounded-none ${!firstLink?.url && pageLink.url === links[1]?.url ? 'rounded-l-lg' : ''} ${
+                                    !lastLink?.url && pageLink.url === links[links.length - 2]?.url ? 'rounded-r-lg' : ''
                                 }`}
                                 onClick={() => changePageNumber(pageLink.url)}
                             >
@@ -75,9 +80,10 @@ const DataTablePagination: React.FC<PaginationProps> = ({
                             </Button>
                         ))}
 
-                        {links[links.length - 1]?.url && (
+                        {lastLink?.url && (
                             <Button variant="outline" className={'rounded-l-none'}
-                                    onClick={() => changePageNumber(links[links.length - 1].url)}>
+                                    size={'sm'}
+                                    onClick={() => changePageNumber(lastLink.url)}>
                                 <span className="sr-only">Next</span>
                                 <ChevronRight />
                             </Button>
@@ -85,12 +91,11 @@ const DataTablePagination: React.FC<PaginationProps> = ({
                     </div>
                 )}
 
-                {/* Per Page Selector */}
                 <div className="flex items-center space-x-2 text-sm">
                     <Label>Per page</Label>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="mr-2 ml-auto" title="Per page">
+                            <Button variant="outline" className="mr-2 ml-auto" title="Per page" size="sm">
                                 {perPage}
                                 <ChevronDown />
                             </Button>
