@@ -3,6 +3,7 @@ import SortDescendingIcon from '@/components/svg/sort-descending';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import debounce from 'lodash/debounce';
 import { ChevronDown } from 'lucide-react';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -66,26 +67,14 @@ const DataTableTopBar: React.FC<ToolbarProps> = ({
                 </DropdownMenuContent>
             </DropdownMenu>
 
-            <div className="flex items-center">
-                <Button
-                    variant="outline"
-                    size="icon"
-                    className={`rounded-r-none ${sortOrder === 'asc' ? 'bg-primary-50' : ''}`}
-                    title="Sort ascending"
-                    onClick={() => onSortOrderUpdated('asc')}
-                >
+            <ToggleGroup type="single" variant="outline">
+                <ToggleGroupItem value="asc" aria-label="Ascending order" onClick={() => onSortOrderUpdated('asc')}>
                     <SortAscendingIcon />
-                </Button>
-                <Button
-                    variant="outline"
-                    size="icon"
-                    className={`rounded-l-none ${sortOrder === 'desc' ? 'bg-primary-50' : ''}`}
-                    title="Sort descending"
-                    onClick={() => onSortOrderUpdated('desc')}
-                >
+                </ToggleGroupItem>
+                <ToggleGroupItem value="desc" aria-label="Descending order" onClick={() => onSortOrderUpdated('desc')}>
                     <SortDescendingIcon />
-                </Button>
-            </div>
+                </ToggleGroupItem>
+            </ToggleGroup>
         </div>
     );
 };

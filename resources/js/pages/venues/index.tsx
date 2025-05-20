@@ -12,6 +12,7 @@ import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { ChevronDown } from 'lucide-react';
 import React, { useState } from 'react';
 import { columns } from './columns';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -77,14 +78,14 @@ export default function Venues() {
                             </DropdownMenuContent>
                         </DropdownMenu>
 
-                        <div className="flex items-center">
-                            <Button variant={'outline'} size={'icon'} className="rounded-r-none" title="Sort ascending">
+                        <ToggleGroup type="single" variant="outline">
+                            <ToggleGroupItem value="asc" aria-label="Ascending order">
                                 <SortAscendingIcon />
-                            </Button>
-                            <Button variant={'outline'} size={'icon'} className="rounded-l-none" title="Sort descending">
+                            </ToggleGroupItem>
+                            <ToggleGroupItem value="desc" aria-label="Descending order">
                                 <SortDescendingIcon />
-                            </Button>
-                        </div>
+                            </ToggleGroupItem>
+                        </ToggleGroup>
                     </div>
 
                     <DataTable columns={columns} data={data} />
