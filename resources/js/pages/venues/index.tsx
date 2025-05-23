@@ -1,18 +1,13 @@
 import Heading from '@/components/heading';
-import SortAscendingIcon from '@/components/svg/sort-ascending';
-import SortDescendingIcon from '@/components/svg/sort-descending';
 import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
+import { DataTableControls } from '@/components/ui/data-table-controls';
 import DataTablePagination, { PaginationLink } from '@/components/ui/data-table-pagination';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/app-layout';
-import type { BreadcrumbItem, SharedData } from '@/types';
-import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { ChevronDown } from 'lucide-react';
-import React, { useState } from 'react';
+import type { BreadcrumbItem } from '@/types';
+import { Head, router } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
 import { columns } from './columns';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -21,31 +16,50 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export default function Venues() {
-    const { venues, filters } = usePage<SharedData>().props;
+export default function Venues({ venues, filters }) {
     const { data, links } = venues;
-
-    const [sortOrder, setSortOrder] = useState(null);
-
-    const handleSortOrderUpdated = (order) => {
-        setSortOrder(order);
-        // Add your logic to handle the sort change
+    const sortOptions: Record<string, string> = {
+        name: 'Name',
+        updated_at: 'Updated Date',
     };
 
-    function handlePageChange(url: string) {
-        router.get(url, filters, { only: ['venues'], replace: true, preserveState: true, preserveScroll: true });
-    }
+    const [search, setSearch] = useState(filters.keyword ?? '');
+    const [sortBy, setSortBy] = useState(filters.sort_by ?? 'name');
+    const [sortOrder, setSortOrder] = useState(filters.sort_order ?? 'asc');
+    const [pageNumber, setPageNumber] = useState(filters.page ? Number(filters.page) : 1);
+    const [perPage, setPerPage] = useState(filters.per_page ? Number(filters.per_page) : 10);
 
-    const { setData, get } = useForm({
-        keyword: filters.keyword || '',
-    });
+    useEffect(() => {
+        router.get(
+            '/manage/venues',
+            {
+                keyword: search,
+                sort_by: sortBy,
+                sort_order: sortOrder,
+                page: pageNumber,
+                per_page: perPage,
+            },
+            {
+                only: ['venues'],
+                preserveState: true,
+                replace: true,
+            },
+        );
+    }, [search, sortBy, sortOrder, pageNumber, perPage]);
 
-    function handleSearchChange(e: React.ChangeEvent<HTMLInputElement>) {
-        setData('keyword', e.target.value);
-        get(route('venues.index'), {
-            preserveState: true,
-            preserveScroll: true,
-        });
+    const handleSearchChange = (key: string) => {
+        setSearch(key);
+        setPageNumber(1);
+    };
+
+    const handleSortByChange = (key: string) => {
+        setSortBy(key);
+        setPageNumber(1);
+    };
+
+    const handlePerPageChange = (perPage: number) => {
+        setPerPage(perPage);
+        setPageNumber(1);
     }
 
     return (
@@ -61,63 +75,25 @@ export default function Venues() {
                 </div>
 
                 <div className="mx-auto">
-                    <div className="flex items-center pb-4">
-                        <Input placeholder="Search..." value={data.keyword} onChange={handleSearchChange} className="mr-2 block max-w-sm" />
-
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline" className="mr-2 ml-auto" title="Sort by">
-                                    Sort By
-                                    <ChevronDown />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuItem>Name</DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem>Updated date</DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-
-                        <ToggleGroup type="single" variant="outline">
-                            <ToggleGroupItem value="asc" aria-label="Ascending order">
-                                <SortAscendingIcon />
-                            </ToggleGroupItem>
-                            <ToggleGroupItem value="desc" aria-label="Descending order">
-                                <SortDescendingIcon />
-                            </ToggleGroupItem>
-                        </ToggleGroup>
-                    </div>
+                    <DataTableControls
+                        search={search}
+                        onSearchChange={handleSearchChange}
+                        sortBy={sortBy}
+                        sortOrder={sortOrder}
+                        onSortByChange={handleSortByChange}
+                        onSortOrderChange={setSortOrder}
+                        sortOptions={sortOptions}
+                    />
 
                     <DataTable columns={columns} data={data} />
 
                     <DataTablePagination
                         links={links as PaginationLink[]}
-                        perPage={venues.per_page || 50}
+                        perPage={perPage}
                         onPageChange={(page: number) => {
-                            const baseUrl = route('venues.index');
-                            const newParams = new URLSearchParams({ ...filters, page: String(page) });
-                            router.get(
-                                `${baseUrl}?${newParams.toString()}`,
-                                {},
-                                {
-                                    only: ['venues'],
-                                    preserveState: true,
-                                    preserveScroll: true,
-                                },
-                            );
+                            setPageNumber(page);
                         }}
-                        onPerPageCountUpdated={(perPage: number) => {
-                            const newParams = new URLSearchParams({ ...filters, perPage: String(perPage) });
-                            router.get(
-                                route('venues.index') + '?' + newParams.toString(),
-                                {},
-                                {
-                                    only: ['venues'],
-                                    preserveState: true,
-                                    preserveScroll: true,
-                                },
-                            );
-                        }}
+                        onPerPageCountUpdated={handlePerPageChange}
                     />
                 </div>
             </div>
