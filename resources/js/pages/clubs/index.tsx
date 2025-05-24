@@ -4,7 +4,7 @@ import { DataTable } from '@/components/ui/data-table';
 import { DataTableControls } from '@/components/ui/data-table-controls';
 import DataTablePagination from '@/components/ui/data-table-pagination';
 import AppLayout from '@/layouts/app-layout';
-import { Club, columns } from '@/pages/clubs/columns';
+import { columns } from '@/pages/clubs/partials/columns';
 import type { BreadcrumbItem, PageFilters, PaginationLink } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
@@ -15,6 +15,17 @@ const breadcrumbs: BreadcrumbItem[] = [
         href: '/manage/clubs',
     },
 ];
+
+export type Club = {
+    id: string;
+    name: string;
+    abbreviation: string;
+    logo_url: string;
+    address: string;
+    phone_number: string;
+    created_at: string;
+    updated_at: string;
+};
 
 type ClubsProps = {
     clubs: {

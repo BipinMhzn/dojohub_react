@@ -4,7 +4,7 @@ import { DataTable } from '@/components/ui/data-table';
 import { DataTableControls } from '@/components/ui/data-table-controls';
 import DataTablePagination from '@/components/ui/data-table-pagination';
 import AppLayout from '@/layouts/app-layout';
-import { columns, Player } from '@/pages/players/columns';
+import { columns } from '@/pages/players/partials/columns';
 import type { BreadcrumbItem, PageFilters, PaginationLink } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
@@ -15,6 +15,23 @@ const breadcrumbs: BreadcrumbItem[] = [
         href: '/manage/players',
     },
 ];
+
+export enum PlayerGender {
+    MALE = 0,
+    FEMALE = 1,
+}
+
+export type Player = {
+    id: string;
+    name: string;
+    gender: PlayerGender;
+    dob: string;
+    weight: number;
+    profile_photo_url: string;
+    phone_number: string;
+    created_at: string;
+    updated_at: string;
+};
 
 type PlayersProps = {
     players: {

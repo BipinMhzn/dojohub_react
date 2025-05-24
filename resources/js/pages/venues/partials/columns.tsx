@@ -5,19 +5,9 @@ import { MoreHorizontal } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Venue } from '@/pages/venues';
 import { formatUTCDate } from '@/utils/date';
 import { router } from '@inertiajs/react';
-
-export type Venue = {
-    id: string;
-    name: string;
-    address: string;
-    city: string;
-    state: string;
-    country: string;
-    created_at: string;
-    updated_at: string;
-};
 
 export const columns: ColumnDef<Venue>[] = [
     {

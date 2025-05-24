@@ -6,25 +6,9 @@ import { MoreHorizontal } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Player, PlayerGender } from '@/pages/players';
 import { formatUTCDate } from '@/utils/date';
 import { router } from '@inertiajs/react';
-
-export enum PlayerGender {
-    MALE = 0,
-    FEMALE = 1,
-}
-
-export type Player = {
-    id: string;
-    name: string;
-    gender: PlayerGender;
-    dob: string;
-    weight: number;
-    profile_photo_url: string;
-    phone_number: string;
-    created_at: string;
-    updated_at: string;
-};
 
 function calculateAge(dob: string): number {
     const today = new Date();

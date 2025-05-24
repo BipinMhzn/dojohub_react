@@ -7,7 +7,7 @@ import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem, PaginationLink } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
-import { columns, Venue } from './columns';
+import { columns } from './partials/columns';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -15,6 +15,17 @@ const breadcrumbs: BreadcrumbItem[] = [
         href: '/manage/venues',
     },
 ];
+
+export type Venue = {
+    id: string;
+    name: string;
+    address: string;
+    city: string;
+    state: string;
+    country: string;
+    created_at: string;
+    updated_at: string;
+};
 
 type VenuesProps = {
     venues: {

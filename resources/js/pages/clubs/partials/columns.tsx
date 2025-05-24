@@ -6,19 +6,9 @@ import { MoreHorizontal } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Club } from '@/pages/clubs';
 import { formatUTCDate } from '@/utils/date';
 import { router } from '@inertiajs/react';
-
-export type Club = {
-    id: string;
-    name: string;
-    abbreviation: string;
-    logo_url: string;
-    address: string;
-    phone_number: string;
-    created_at: string;
-    updated_at: string;
-};
 
 export const columns: ColumnDef<Club>[] = [
     {
