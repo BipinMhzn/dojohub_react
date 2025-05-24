@@ -44,7 +44,7 @@ export function DataTableControls({
 
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="mr-2 ml-auto" title="Sort by">
+                    <Button variant="outline" className="mr-2 ml-auto">
                         {sortOptions[sortBy] ?? 'Sort By'}
                         <ChevronDown className="ml-2 h-4 w-4" />
                     </Button>
