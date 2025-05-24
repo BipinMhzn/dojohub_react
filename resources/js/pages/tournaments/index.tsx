@@ -11,7 +11,7 @@ import { useEffect, useRef, useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Tournaments',
+        title: 'Tournament List',
         href: '/manage/tournaments',
     },
 ];
