@@ -3,6 +3,7 @@
 import { ColumnDef } from '@tanstack/react-table';
 import { MoreHorizontal } from 'lucide-react';
 
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { formatUTCDate } from '@/utils/date';
@@ -23,6 +24,25 @@ export const columns: ColumnDef<Club>[] = [
     {
         accessorKey: 'name',
         header: 'Name',
+        cell: ({ row }) => {
+            const club = row.original;
+            return (
+                <div className="flex items-center gap-3">
+                    <Avatar className="h-8 w-8">
+                        <AvatarImage src={club.logo_url} alt={club.name} />
+                        <AvatarFallback>
+                            {club.name
+                                .split(' ')
+                                .map((n) => n[0])
+                                .join('')
+                                .toUpperCase()
+                                .slice(0, 2)}
+                        </AvatarFallback>
+                    </Avatar>
+                    <span>{club.name}</span>
+                </div>
+            );
+        },
     },
     {
         accessorKey: 'abbreviation',
