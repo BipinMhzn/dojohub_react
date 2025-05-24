@@ -11,7 +11,7 @@ import { columns } from './partials/columns';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Venue List',
+        title: 'Venues',
         href: '/manage/venues',
     },
 ];
@@ -109,7 +109,7 @@ export default function Venues({ venues, filters }: VenuesProps) {
 
             <div className="px-4 py-6">
                 <div className="flex items-center">
-                    <Heading title="Venues" />
+                    <Heading title="Venues" description="Manage and organize venue locations for tournaments" />
                     <Button variant="default" className="ml-auto" asChild>
                         <Link href="/manage/venues/create">New Venue</Link>
                     </Button>

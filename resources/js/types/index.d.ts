@@ -55,3 +55,13 @@ export interface PageFilters {
     page?: number;
     per_page?: number;
 }
+
+export interface Country {
+    name: string;
+    states: State[];
+}
+
+export interface State {
+    name: string,
+    cities: string[];
+}

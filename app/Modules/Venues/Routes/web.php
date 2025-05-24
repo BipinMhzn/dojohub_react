@@ -8,5 +8,5 @@ Route::group([
     ],
     'prefix' => 'manage'
 ], function () {
-    Route::apiResource('venues', 'VenuesController')->names('venues')->except('show');
+    Route::resource('venues', 'VenuesController')->names('venues')->except('show');
 });

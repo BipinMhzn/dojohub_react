@@ -8,7 +8,6 @@ use App\Modules\Venues\Requests\VenueUpdateRequest;
 use BaseSystem\Controllers\BaseController;
 use BaseSystem\Requests\BaseListRequest;
 use BaseSystem\Requests\BaseRequest;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -39,9 +38,9 @@ final class VenuesController extends BaseController
         ]);
     }
 
-    public function apiIndex(BaseListRequest $request): JsonResponse
+    public function create(): Response
     {
-        return $this->responseOk($this->repository->getList($request->validated()));
+        return Inertia::render('venues/create');
     }
 
     /**
@@ -53,6 +52,13 @@ final class VenuesController extends BaseController
         $this->repository->create($request->validated());
 
         return to_route('venues.index')->with('success', 'Venue created successfully.');
+    }
+
+    public function edit(string $venue): Response
+    {
+        return Inertia::render('venues/edit', [
+            'venue' => $this->repository->getById($venue),
+        ]);
     }
 
     /**
