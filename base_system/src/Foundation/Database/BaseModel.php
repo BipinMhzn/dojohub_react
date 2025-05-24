@@ -29,7 +29,7 @@ abstract class BaseModel extends Model
     /**
      * @var int
      */
-    protected $perPage = 16;
+    protected $perPage = 10;
 
     /**
      * @return array
