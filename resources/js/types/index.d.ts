@@ -47,3 +47,11 @@ export interface PaginationLink {
     url: string | null;
     active: boolean;
 }
+
+export interface PageFilters {
+    keyword?: string;
+    sort_by?: string;
+    sort_order?: string;
+    page?: number;
+    per_page?: number;
+}
