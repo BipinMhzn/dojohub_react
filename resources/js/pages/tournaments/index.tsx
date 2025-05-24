@@ -4,7 +4,7 @@ import { DataTable } from '@/components/ui/data-table';
 import { DataTableControls } from '@/components/ui/data-table-controls';
 import DataTablePagination from '@/components/ui/data-table-pagination';
 import AppLayout from '@/layouts/app-layout';
-import { columns, Tournament } from '@/pages/tournaments/columns';
+import { columns } from '@/pages/tournaments/partials/columns';
 import type { BreadcrumbItem, PaginationLink } from '@/types';
 import { Head, router } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
@@ -15,6 +15,44 @@ const breadcrumbs: BreadcrumbItem[] = [
         href: '/manage/tournaments',
     },
 ];
+export enum TournamentStatus {
+    SCHEDULED = 0,
+    ONGOING = 1,
+    COMPLETED = 2,
+    CANCELLED = 3
+}
+
+export enum TournamentLevel {
+    LOCAL = 0,
+    REGIONAL = 1,
+    NATIONAL = 2
+}
+
+export enum TournamentGender {
+    MALE = 0,
+    FEMALE = 1,
+}
+
+export type Tournament = {
+    id: string;
+    name: string;
+    description: string;
+    logo_url: string;
+    level: TournamentLevel;
+    start_at: string;
+    end_at: string;
+    weight_category: string;
+    min_weight: number;
+    max_weight: number;
+    age_category: string;
+    min_age: number;
+    max_age: number;
+    gender: TournamentGender;
+    status: TournamentStatus;
+    venue_id: string;
+    created_at: string;
+    updated_at: string;
+};
 
 type TournamentsProps = {
     tournaments: {
