@@ -5,6 +5,8 @@ import { MoreHorizontal } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { formatUTCDate } from '@/utils/date';
+import { router } from '@inertiajs/react';
 
 export type Player = {
     id: string;
@@ -38,11 +40,20 @@ export const columns: ColumnDef<Player>[] = [
     {
         accessorKey: 'updated_at',
         header: 'Last Updated',
+        cell: ({ row }) => formatUTCDate(row.original.updated_at),
     },
     {
         id: 'actions',
         cell: ({ row }) => {
             const player = row.original;
+
+            const handleEdit = () => {
+                router.visit(`/manage/players/${player.id}/edit`);
+            };
+
+            const handleDelete = () => {
+                console.log('Delete player:', player);
+            };
 
             return (
                 <DropdownMenu>
@@ -53,9 +64,9 @@ export const columns: ColumnDef<Player>[] = [
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => console.log(player)}>Edit</DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleEdit}>Edit</DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => console.log(player)}>Delete</DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleDelete}>Delete</DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
             );
