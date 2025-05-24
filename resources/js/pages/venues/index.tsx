@@ -42,6 +42,7 @@ export default function Venues({ venues, filters }) {
             {
                 only: ['venues'],
                 preserveState: true,
+                preserveScroll: true,
                 replace: true,
             },
         );
