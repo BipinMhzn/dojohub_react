@@ -1,7 +1,7 @@
 import type { BreadcrumbItem } from '@/types';
 import AppLayout from '@/layouts/app-layout';
 import { Head, router } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { DataTableControls } from '@/components/ui/data-table-controls';
@@ -17,6 +17,8 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function Tournaments({tournaments, filters}) {
+    const hasMounted = useRef(false);
+
     const { data, links } = tournaments;
     const sortOptions: Record<string, string> = {
         name: 'Name',
@@ -29,7 +31,12 @@ export default function Tournaments({tournaments, filters}) {
     const [pageNumber, setPageNumber] = useState(filters.page ? Number(filters.page) : 1);
     const [perPage, setPerPage] = useState(filters.per_page ? Number(filters.per_page) : 10);
 
+
     useEffect(() => {
+        if (!hasMounted.current) {
+            hasMounted.current = true;
+            return;
+        }
         router.get(
             '/manage/tournaments',
             {

@@ -5,8 +5,8 @@ import { DataTableControls } from '@/components/ui/data-table-controls';
 import DataTablePagination, { PaginationLink } from '@/components/ui/data-table-pagination';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
-import { Head, router } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { Head, Link, router } from '@inertiajs/react';
+import { useEffect, useRef, useState } from 'react';
 import { columns } from './columns';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -17,6 +17,8 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function Venues({ venues, filters }) {
+    const hasMounted = useRef(false);
+
     const { data, links } = venues;
     const sortOptions: Record<string, string> = {
         name: 'Name',
@@ -30,6 +32,10 @@ export default function Venues({ venues, filters }) {
     const [perPage, setPerPage] = useState(filters.per_page ? Number(filters.per_page) : 10);
 
     useEffect(() => {
+        if (!hasMounted.current) {
+            hasMounted.current = true;
+            return;
+        }
         router.get(
             '/manage/venues',
             {
@@ -61,7 +67,7 @@ export default function Venues({ venues, filters }) {
     const handlePerPageChange = (perPage: number) => {
         setPerPage(perPage);
         setPageNumber(1);
-    }
+    };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -70,8 +76,8 @@ export default function Venues({ venues, filters }) {
             <div className="px-4 py-6">
                 <div className="flex items-center">
                     <Heading title="Venues" />
-                    <Button variant="default" className="ml-auto">
-                        New Venue
+                    <Button variant="default" className="ml-auto" asChild>
+                        <Link href="/manage/venues/create">New Venue</Link>
                     </Button>
                 </div>
 
