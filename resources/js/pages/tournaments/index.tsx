@@ -1,13 +1,13 @@
-import type { BreadcrumbItem } from '@/types';
-import AppLayout from '@/layouts/app-layout';
-import { Head, router } from '@inertiajs/react';
-import { useEffect, useRef, useState } from 'react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
-import { DataTableControls } from '@/components/ui/data-table-controls';
 import { DataTable } from '@/components/ui/data-table';
-import { columns } from '@/pages/tournaments/columns';
-import DataTablePagination, { PaginationLink } from '@/components/ui/data-table-pagination';
+import { DataTableControls } from '@/components/ui/data-table-controls';
+import DataTablePagination from '@/components/ui/data-table-pagination';
+import AppLayout from '@/layouts/app-layout';
+import { columns, Tournament } from '@/pages/tournaments/columns';
+import type { BreadcrumbItem, PaginationLink } from '@/types';
+import { Head, router } from '@inertiajs/react';
+import { useEffect, useRef, useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -16,7 +16,21 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export default function Tournaments({tournaments, filters}) {
+type TournamentsProps = {
+    tournaments: {
+        data: Tournament[];
+        links: PaginationLink[];
+    };
+    filters: {
+        keyword?: string;
+        sort_by?: string;
+        sort_order?: string;
+        page?: number;
+        per_page?: number;
+    };
+};
+
+export default function Tournaments({ tournaments, filters }: TournamentsProps) {
     const hasMounted = useRef(false);
 
     const { data, links } = tournaments;
@@ -30,7 +44,6 @@ export default function Tournaments({tournaments, filters}) {
     const [sortOrder, setSortOrder] = useState(filters.sort_order ?? 'asc');
     const [pageNumber, setPageNumber] = useState(filters.page ? Number(filters.page) : 1);
     const [perPage, setPerPage] = useState(filters.per_page ? Number(filters.per_page) : 10);
-
 
     useEffect(() => {
         if (!hasMounted.current) {
@@ -68,7 +81,7 @@ export default function Tournaments({tournaments, filters}) {
     const handlePerPageChange = (perPage: number) => {
         setPerPage(perPage);
         setPageNumber(1);
-    }
+    };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>

@@ -9,12 +9,13 @@ import {
 import { Label } from '@/components/ui/label';
 import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import React from 'react';
+import { type PaginationLink } from '@/types';
 
-export type PaginationLink = {
-    url: string | null;
-    label: string;
-    active: boolean;
-};
+// export type PaginationLink = {
+//     url: string | null;
+//     label: string;
+//     active: boolean;
+// };
 
 type PaginationProps = {
     links: PaginationLink[];
@@ -65,7 +66,7 @@ const DataTablePagination: React.FC<PaginationProps> = ({
                             </Button>
                         )}
 
-                        {pageLinks.map((pageLink, index) => (
+                        {pageLinks.map((pageLink) => (
                             <Button
                                 key={pageLink.label}
                                 variant={pageLink.active ? 'secondary' : 'outline'}

@@ -2,12 +2,12 @@ import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
 import { DataTableControls } from '@/components/ui/data-table-controls';
-import DataTablePagination, { PaginationLink } from '@/components/ui/data-table-pagination';
+import DataTablePagination from '@/components/ui/data-table-pagination';
 import AppLayout from '@/layouts/app-layout';
-import type { BreadcrumbItem } from '@/types';
+import type { BreadcrumbItem, PaginationLink } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
-import { columns } from './columns';
+import { columns, Venue } from './columns';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -16,7 +16,21 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export default function Venues({ venues, filters }) {
+type VenuesProps = {
+    venues: {
+        data: Venue[];
+        links: PaginationLink[];
+    };
+    filters: {
+        keyword?: string;
+        sort_by?: string;
+        sort_order?: string;
+        page?: number;
+        per_page?: number;
+    };
+};
+
+export default function Venues({ venues, filters }: VenuesProps) {
     const hasMounted = useRef(false);
 
     const { data, links } = venues;
