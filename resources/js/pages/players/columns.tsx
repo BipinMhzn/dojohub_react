@@ -3,11 +3,11 @@
 import { ColumnDef } from '@tanstack/react-table';
 import { MoreHorizontal } from 'lucide-react';
 
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { formatUTCDate } from '@/utils/date';
 import { router } from '@inertiajs/react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export enum PlayerGender {
     MALE = 0,
@@ -48,14 +48,11 @@ export const columns: ColumnDef<Player>[] = [
             return (
                 <div className="flex items-center gap-3">
                     <Avatar className="h-8 w-8">
-                        <AvatarImage
-                            src={player.profile_photo_url}
-                            alt={player.name}
-                        />
+                        <AvatarImage src={player.profile_photo_url} alt={player.name} />
                         <AvatarFallback>
                             {player.name
                                 .split(' ')
-                                .map(n => n[0])
+                                .map((n) => n[0])
                                 .join('')
                                 .toUpperCase()
                                 .slice(0, 2)}
@@ -65,7 +62,6 @@ export const columns: ColumnDef<Player>[] = [
                 </div>
             );
         },
-
     },
     {
         accessorKey: 'gender',
@@ -82,6 +78,10 @@ export const columns: ColumnDef<Player>[] = [
     {
         accessorKey: 'weight',
         header: 'Weight (Kg)',
+    },
+    {
+        accessorKey: 'phone_number',
+        header: 'Phone Number',
     },
     {
         accessorKey: 'updated_at',
