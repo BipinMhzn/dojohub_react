@@ -44,6 +44,15 @@ export default function Tournaments({ tournaments, filters }: TournamentsProps) 
     const [sortOrder, setSortOrder] = useState(filters.sort_order ?? 'asc');
     const [pageNumber, setPageNumber] = useState(filters.page ? Number(filters.page) : 1);
     const [perPage, setPerPage] = useState(filters.per_page ? Number(filters.per_page) : 10);
+    const [debouncedSearch, setDebouncedSearch] = useState(search);
+
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedSearch(search);
+        }, 800);
+
+        return () => clearTimeout(handler);
+    }, [search]);
 
     useEffect(() => {
         if (!hasMounted.current) {
@@ -53,7 +62,7 @@ export default function Tournaments({ tournaments, filters }: TournamentsProps) 
         router.get(
             '/manage/tournaments',
             {
-                keyword: search,
+                keyword: debouncedSearch,
                 sort_by: sortBy,
                 sort_order: sortOrder,
                 page: pageNumber,
@@ -66,7 +75,7 @@ export default function Tournaments({ tournaments, filters }: TournamentsProps) 
                 replace: true,
             },
         );
-    }, [search, sortBy, sortOrder, pageNumber, perPage]);
+    }, [debouncedSearch, sortBy, sortOrder, pageNumber, perPage]);
 
     const handleSearchChange = (key: string) => {
         setSearch(key);

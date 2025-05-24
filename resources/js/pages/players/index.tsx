@@ -38,6 +38,15 @@ export default function Players({ players, filters }: PlayersProps) {
     const [sortOrder, setSortOrder] = useState(filters.sort_order ?? 'asc');
     const [pageNumber, setPageNumber] = useState(filters.page ? Number(filters.page) : 1);
     const [perPage, setPerPage] = useState(filters.per_page ? Number(filters.per_page) : 10);
+    const [debouncedSearch, setDebouncedSearch] = useState(search);
+
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedSearch(search);
+        }, 800);
+
+        return () => clearTimeout(handler);
+    }, [search]);
 
     useEffect(() => {
         if (!hasMounted.current) {
@@ -47,7 +56,7 @@ export default function Players({ players, filters }: PlayersProps) {
         router.get(
             '/manage/players',
             {
-                keyword: search,
+                keyword: debouncedSearch,
                 sort_by: sortBy,
                 sort_order: sortOrder,
                 page: pageNumber,
@@ -60,7 +69,7 @@ export default function Players({ players, filters }: PlayersProps) {
                 replace: true,
             },
         );
-    }, [search, sortBy, sortOrder, pageNumber, perPage]);
+    }, [debouncedSearch, sortBy, sortOrder, pageNumber, perPage]);
 
     const handleSearchChange = (key: string) => {
         setSearch(key);
