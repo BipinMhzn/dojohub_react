@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
 import { Venue } from '@/pages/venues';
+import { convertLocalDateToUTCString } from '@/utils/date';
 import { Head, useForm } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
@@ -55,8 +56,6 @@ interface Props {
 
 export default function CreateTournament({ venues }: Props) {
     const [date, setDate] = useState<Date>();
-    const [venueSearch, setVenueSearch] = useState('');
-
     const { data, setData, post, processing, errors } = useForm({
         name: '',
         description: '',
@@ -117,10 +116,6 @@ export default function CreateTournament({ venues }: Props) {
         post('/manage/tournaments');
     };
 
-    const filteredVenues = venues.filter((venue) =>
-        venue.name.toLowerCase().includes(venueSearch.toLowerCase()),
-    );
-
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="New Tournament" />
@@ -157,8 +152,13 @@ export default function CreateTournament({ venues }: Props) {
                                                 selected={date}
                                                 onSelect={(newDate) => {
                                                     setDate(newDate);
-                                                    setData('start_at', newDate ? format(newDate, 'yyyy-MM-dd') : '');
+                                                    if (newDate) {
+                                                        setData('start_at', convertLocalDateToUTCString(newDate));
+                                                    } else {
+                                                        setData('start_at', '');
+                                                    }
                                                 }}
+                                                disabled={(date) => date < new Date()}
                                                 initialFocus
                                             />
                                         </PopoverContent>
@@ -172,26 +172,15 @@ export default function CreateTournament({ venues }: Props) {
                                             <SelectValue placeholder="Select a venue" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <div className="p-2">
-                                                <Input
-                                                    placeholder="Search venues..."
-                                                    value={venueSearch}
-                                                    onChange={(e) => setVenueSearch(e.target.value)}
-                                                    className="w-full"
-                                                />
-                                            </div>
-                                            {filteredVenues.length > 0 ? (
-                                                filteredVenues.map((venue) => (
+                                            {venues.length > 0 ? (
+                                                venues.map((venue) => (
                                                     <SelectItem key={venue.id} value={venue.id}>
                                                         {venue.name}
                                                     </SelectItem>
                                                 ))
                                             ) : (
-                                                <div className="p-2 text-center text-sm text-muted-foreground">
-                                                    No venues found.
-                                                </div>
+                                                <div className="text-muted-foreground p-2 text-center text-sm">No venues found.</div>
                                             )}
-
                                         </SelectContent>
                                     </Select>
                                     <InputError message={errors.venue_id} />
@@ -219,11 +208,11 @@ export default function CreateTournament({ venues }: Props) {
                                     <InputError message={errors.level} />
                                 </div>
                                 <div className="w-full md:w-1/2">
-                                    <Label >Gender of Competitors</Label>
+                                    <Label>Gender of Competitors</Label>
                                     <RadioGroup
                                         value={data.gender.toString()}
                                         onValueChange={(value) => setData('gender', parseInt(value))}
-                                        className="mt-2 flex w-full gap-4 items-center"
+                                        className="mt-2 flex w-full items-center gap-4"
                                     >
                                         <div className="flex items-center space-x-2">
                                             <RadioGroupItem value={TournamentGender.MALE.toString()} id="male" />
@@ -245,7 +234,6 @@ export default function CreateTournament({ venues }: Props) {
                             {/* Age Category Row */}
                             <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
                                 <div className="w-full md:w-2/4">
-                                    {' '}
                                     {/* Takes 2/4 (half) width on md screens */}
                                     <Label htmlFor="age_category">Age Category</Label>
                                     <Select value={data.age_category} onValueChange={handleAgeCategoryChange}>
@@ -263,7 +251,6 @@ export default function CreateTournament({ venues }: Props) {
                                     <InputError message={errors.age_category} />
                                 </div>
                                 <div className="w-full md:w-1/4">
-                                    {' '}
                                     {/* Takes 1/4 width on md screens */}
                                     <Label htmlFor="min_age">Min Age</Label>
                                     <Input
@@ -277,7 +264,6 @@ export default function CreateTournament({ venues }: Props) {
                                     <InputError message={errors.min_age} />
                                 </div>
                                 <div className="w-full md:w-1/4">
-                                    {' '}
                                     {/* Takes 1/4 width on md screens */}
                                     <Label htmlFor="max_age">Max Age</Label>
                                     <Input

@@ -114,6 +114,7 @@ export default function EditPlayer({ player }: Props) {
                                         setDate(newDate);
                                         setData('dob', newDate ? format(newDate, 'yyyy-MM-dd') : '');
                                     }}
+                                    disabled={(date) => date > new Date() || date < new Date('1900-01-01')}
                                     initialFocus
                                 />
                             </PopoverContent>
