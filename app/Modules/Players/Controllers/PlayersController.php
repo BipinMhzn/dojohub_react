@@ -83,6 +83,8 @@ final class PlayersController extends BaseController
             $profilePhoto = $this->uploadFile($request->file('profile_photo'), '/images/players');
             $inputs['profile_photo_url'] = $profilePhoto['path'];
             unset($inputs['profile_photo']);
+        } else {
+            $inputs['profile_photo_url'] = null;
         }
         $this->repository->update($player, $inputs);
 
