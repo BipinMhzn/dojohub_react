@@ -3,8 +3,9 @@ import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
 import { DataTableControls } from '@/components/ui/data-table-controls';
 import DataTablePagination from '@/components/ui/data-table-pagination';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import AppLayout from '@/layouts/app-layout';
-import { columns } from '@/pages/players/partials/columns';
+import { getPlayerColumns } from '@/pages/players/partials/columns';
 import type { BreadcrumbItem, PageFilters, PaginationLink } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
@@ -103,6 +104,18 @@ export default function Players({ players, filters }: PlayersProps) {
         setPageNumber(1);
     };
 
+    const [playerToDelete, setPlayerToDelete] = useState<Player | null>(null);
+    const columns = getPlayerColumns({
+        onDelete: (player) => setPlayerToDelete(player),
+    });
+
+    const handleConfirmDelete = () => {
+        if (playerToDelete) {
+            router.delete(`/manage/players/${playerToDelete.id}`);
+            setPlayerToDelete(null);
+        }
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Players" />
@@ -138,6 +151,23 @@ export default function Players({ players, filters }: PlayersProps) {
                     />
                 </div>
             </div>
+
+            <Dialog open={!!playerToDelete} onOpenChange={(open) => !open && setPlayerToDelete(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Delete Player</DialogTitle>
+                        <DialogDescription>Are you sure you want to delete {playerToDelete?.name}? This action cannot be undone.</DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setPlayerToDelete(null)}>
+                            Cancel
+                        </Button>
+                        <Button variant="destructive" onClick={handleConfirmDelete}>
+                            Delete
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 }

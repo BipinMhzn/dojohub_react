@@ -5,16 +5,18 @@ import { MoreHorizontal } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Tournament, TournamentGender, TournamentLevel } from '@/pages/tournaments';
 import { StatusBadge } from '@/pages/tournaments/partials/status-badge';
 import { formatUTCDate } from '@/utils/date';
 import { router } from '@inertiajs/react';
-import { useState } from 'react';
 
-export const columns: ColumnDef<Tournament>[] = [
+type TournamentColumnsProps = {
+    onDelete: (player: Tournament) => void;
+};
+
+export const getTournamentColumns = ({ onDelete }: TournamentColumnsProps): ColumnDef<Tournament>[] => [
     {
         accessorKey: 'name',
         header: 'Name',
@@ -119,15 +121,9 @@ export const columns: ColumnDef<Tournament>[] = [
         id: 'actions',
         cell: ({ row }) => {
             const tournament = row.original;
-            const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
             const handleEdit = () => {
                 router.visit(`/manage/tournaments/${tournament.id}/edit`);
-            };
-
-            const handleDelete = () => {
-                router.delete(`/manage/tournaments/${tournament.id}`);
-                setShowDeleteDialog(false);
             };
 
             return (
@@ -142,28 +138,9 @@ export const columns: ColumnDef<Tournament>[] = [
                         <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={handleEdit}>Edit</DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => setShowDeleteDialog(true)}>Delete</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => onDelete(tournament)}>Delete</DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
-
-                    <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Delete Tournament</DialogTitle>
-                                <DialogDescription>
-                                    Are you sure you want to delete {tournament.name}? This action cannot be undone.
-                                </DialogDescription>
-                            </DialogHeader>
-                            <DialogFooter>
-                                <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
-                                    Cancel
-                                </Button>
-                                <Button variant="destructive" onClick={handleDelete}>
-                                    Delete
-                                </Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
                 </>
             );
         },

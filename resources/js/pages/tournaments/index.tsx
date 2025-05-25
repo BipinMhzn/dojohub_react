@@ -3,8 +3,9 @@ import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
 import { DataTableControls } from '@/components/ui/data-table-controls';
 import DataTablePagination from '@/components/ui/data-table-pagination';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import AppLayout from '@/layouts/app-layout';
-import { columns } from '@/pages/tournaments/partials/columns';
+import { getTournamentColumns } from '@/pages/tournaments/partials/columns';
 import type { BreadcrumbItem, PaginationLink } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
@@ -131,6 +132,18 @@ export default function Tournaments({ tournaments, filters }: TournamentsProps) 
         setPageNumber(1);
     };
 
+    const [tournamentToDelete, setTournamentToDelete] = useState<Tournament | null>(null);
+    const columns = getTournamentColumns({
+        onDelete: (tournament) => setTournamentToDelete(tournament),
+    });
+
+    const handleConfirmDelete = () => {
+        if (tournamentToDelete) {
+            router.delete(`/manage/tournaments/${tournamentToDelete.id}`);
+            setTournamentToDelete(null);
+        }
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Tournaments" />
@@ -165,6 +178,25 @@ export default function Tournaments({ tournaments, filters }: TournamentsProps) 
                     />
                 </div>
             </div>
+
+            <Dialog open={!!tournamentToDelete} onOpenChange={(open) => !open && setTournamentToDelete(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Delete Tournament</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to delete {tournamentToDelete?.name}? This action cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setTournamentToDelete(null)}>
+                            Cancel
+                        </Button>
+                        <Button variant="destructive" onClick={handleConfirmDelete}>
+                            Delete
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 }

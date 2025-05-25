@@ -5,14 +5,16 @@ import { MoreHorizontal } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Club } from '@/pages/clubs';
 import { formatUTCDate } from '@/utils/date';
 import { router } from '@inertiajs/react';
-import { useState } from 'react';
 
-export const columns: ColumnDef<Club>[] = [
+type ClubColumnsProps = {
+    onDelete: (player: Club) => void;
+};
+
+export const getClubColumns = ({ onDelete }: ClubColumnsProps): ColumnDef<Club>[] => [
     {
         accessorKey: 'name',
         header: 'Name',
@@ -79,15 +81,9 @@ export const columns: ColumnDef<Club>[] = [
         id: 'actions',
         cell: ({ row }) => {
             const club = row.original;
-            const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
             const handleEdit = () => {
                 router.visit(`/manage/clubs/${club.id}/edit`);
-            };
-
-            const handleDelete = () => {
-                router.delete(`/manage/clubs/${club.id}`);
-                setShowDeleteDialog(false);
             };
 
             return (
@@ -102,26 +98,9 @@ export const columns: ColumnDef<Club>[] = [
                         <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={handleEdit}>Edit</DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => setShowDeleteDialog(true)}>Delete</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => onDelete(club)}>Delete</DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
-
-                    <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Delete Club</DialogTitle>
-                                <DialogDescription>Are you sure you want to delete {club.name}? This action cannot be undone.</DialogDescription>
-                            </DialogHeader>
-                            <DialogFooter>
-                                <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
-                                    Cancel
-                                </Button>
-                                <Button variant="destructive" onClick={handleDelete}>
-                                    Delete
-                                </Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
                 </>
             );
         },

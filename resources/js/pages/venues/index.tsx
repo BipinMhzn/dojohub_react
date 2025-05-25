@@ -3,11 +3,12 @@ import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
 import { DataTableControls } from '@/components/ui/data-table-controls';
 import DataTablePagination from '@/components/ui/data-table-pagination';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import AppLayout from '@/layouts/app-layout';
+import { getVenueColumns } from '@/pages/venues/partials/columns';
 import type { BreadcrumbItem, PaginationLink } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
-import { columns } from './partials/columns';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -103,6 +104,18 @@ export default function Venues({ venues, filters }: VenuesProps) {
         setPageNumber(1);
     };
 
+    const [venueToDelete, setVenueToDelete] = useState<Venue | null>(null);
+    const columns = getVenueColumns({
+        onDelete: (venue) => setVenueToDelete(venue),
+    });
+
+    const handleConfirmDelete = () => {
+        if (venueToDelete) {
+            router.delete(`/manage/venues/${venueToDelete.id}`);
+            setVenueToDelete(null);
+        }
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Venues" />
@@ -138,6 +151,23 @@ export default function Venues({ venues, filters }: VenuesProps) {
                     />
                 </div>
             </div>
+
+            <Dialog open={!!venueToDelete} onOpenChange={(open) => !open && setVenueToDelete(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Delete Venue</DialogTitle>
+                        <DialogDescription>Are you sure you want to delete {venueToDelete?.name}? This action cannot be undone.</DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setVenueToDelete(null)}>
+                            Cancel
+                        </Button>
+                        <Button variant="destructive" onClick={handleConfirmDelete}>
+                            Delete
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 }

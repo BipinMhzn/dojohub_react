@@ -3,8 +3,9 @@ import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
 import { DataTableControls } from '@/components/ui/data-table-controls';
 import DataTablePagination from '@/components/ui/data-table-pagination';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import AppLayout from '@/layouts/app-layout';
-import { columns } from '@/pages/clubs/partials/columns';
+import { getClubColumns } from '@/pages/clubs/partials/columns';
 import type { BreadcrumbItem, PageFilters, PaginationLink } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
@@ -97,6 +98,18 @@ export default function Clubs({ clubs, filters }: ClubsProps) {
         setPageNumber(1);
     };
 
+    const [clubToDelete, setClubToDelete] = useState<Club | null>(null);
+    const columns = getClubColumns({
+        onDelete: (club) => setClubToDelete(club),
+    });
+
+    const handleConfirmDelete = () => {
+        if (clubToDelete) {
+            router.delete(`/manage/clubs/${clubToDelete.id}`);
+            setClubToDelete(null);
+        }
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Clubs" />
@@ -132,6 +145,23 @@ export default function Clubs({ clubs, filters }: ClubsProps) {
                     />
                 </div>
             </div>
+
+            <Dialog open={!!clubToDelete} onOpenChange={(open) => !open && setClubToDelete(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Delete Club</DialogTitle>
+                        <DialogDescription>Are you sure you want to delete {clubToDelete?.name}? This action cannot be undone.</DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setClubToDelete(null)}>
+                            Cancel
+                        </Button>
+                        <Button variant="destructive" onClick={handleConfirmDelete}>
+                            Delete
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 }
