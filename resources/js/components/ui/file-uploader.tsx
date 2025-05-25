@@ -139,7 +139,6 @@ export function FileUploader({ accept, maxSize, onFileSelect, className, initial
                 </div>
             </div>
 
-            {error && <p className="text-sm text-red-500 mt-1">{error}</p>}
             {error && <InputError message={error} />}
         </div>
     );

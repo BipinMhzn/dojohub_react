@@ -55,6 +55,7 @@ interface Props {
 
 export default function CreateTournament({ venues }: Props) {
     const [date, setDate] = useState<Date>();
+    const [venueSearch, setVenueSearch] = useState('');
 
     const { data, setData, post, processing, errors } = useForm({
         name: '',
@@ -116,212 +117,260 @@ export default function CreateTournament({ venues }: Props) {
         post('/manage/tournaments');
     };
 
+    const filteredVenues = venues.filter((venue) =>
+        venue.name.toLowerCase().includes(venueSearch.toLowerCase()),
+    );
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="New Tournament" />
 
             <div className="px-4 py-6">
                 <Heading title="New Tournament" description="Create a new tournament" />
+                <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+                    <div className="flex flex-col gap-4 md:flex-row">
+                        {/* Left Column */}
+                        <div className="flex-1 space-y-4">
+                            <div>
+                                <Label htmlFor="name">Name</Label>
+                                <Input id="name" value={data.name} onChange={(e) => setData('name', e.target.value)} className="mt-1 block w-full" />
+                                <InputError message={errors.name} />
+                            </div>
 
-                <form onSubmit={handleSubmit} className="mt-6 max-w-xl space-y-4">
-                    <div>
-                        <Label>
-                            Logo <span className="text-xs font-light">(Optional)</span>
-                        </Label>
-                        <FileUploader
-                            accept="image/*"
-                            maxSize={1024 * 1024 * 5} // 5MB
-                            onFileSelect={(file) => setData('logo', file)}
-                            className="mt-1 block w-full"
-                        />
-                        <InputError message={errors.logo} />
-                    </div>
+                            {/* Start Date and Venue Row */}
+                            <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+                                <div className="w-full md:w-1/2">
+                                    <Label>Start Date</Label>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                className={cn('mt-1 w-full justify-start text-left font-normal', !date && 'text-muted-foreground')}
+                                            >
+                                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                                {date ? format(date, 'PPP') : <span>Pick a date</span>}
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0">
+                                            <Calendar
+                                                mode="single"
+                                                selected={date}
+                                                onSelect={(newDate) => {
+                                                    setDate(newDate);
+                                                    setData('start_at', newDate ? format(newDate, 'yyyy-MM-dd') : '');
+                                                }}
+                                                initialFocus
+                                            />
+                                        </PopoverContent>
+                                    </Popover>
+                                    <InputError message={errors.start_at} />
+                                </div>
+                                <div className="w-full md:w-1/2">
+                                    <Label htmlFor="venue_id">Venue</Label>
+                                    <Select value={data.venue_id} onValueChange={(value) => setData('venue_id', value)}>
+                                        <SelectTrigger className="mt-1 w-full" id="venue_id">
+                                            <SelectValue placeholder="Select a venue" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <div className="p-2">
+                                                <Input
+                                                    placeholder="Search venues..."
+                                                    value={venueSearch}
+                                                    onChange={(e) => setVenueSearch(e.target.value)}
+                                                    className="w-full"
+                                                />
+                                            </div>
+                                            {filteredVenues.length > 0 ? (
+                                                filteredVenues.map((venue) => (
+                                                    <SelectItem key={venue.id} value={venue.id}>
+                                                        {venue.name}
+                                                    </SelectItem>
+                                                ))
+                                            ) : (
+                                                <div className="p-2 text-center text-sm text-muted-foreground">
+                                                    No venues found.
+                                                </div>
+                                            )}
 
-                    <div>
-                        <Label htmlFor="name">Name</Label>
-                        <Input id="name" value={data.name} onChange={(e) => setData('name', e.target.value)} className="mt-1 block w-full" />
-                        <InputError message={errors.name} />
-                    </div>
+                                        </SelectContent>
+                                    </Select>
+                                    <InputError message={errors.venue_id} />
+                                </div>
+                            </div>
 
-                    <div>
-                        <Label htmlFor="description">
-                            Description <span className="text-xs font-light">(Optional)</span>
-                        </Label>
-                        <Textarea
-                            id="description"
-                            value={data.description}
-                            onChange={(e) => setData('description', e.target.value)}
-                            className="mt-1 block w-full"
-                        />
-                        <InputError message={errors.description} />
-                    </div>
+                            {/* Level and Gender Row */}
+                            <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+                                <div className="w-full md:w-1/2">
+                                    <Label htmlFor="level">Level</Label>
+                                    <Select value={data.level} onValueChange={(value) => setData('level', value)}>
+                                        <SelectTrigger className="mt-1 w-full" id="level">
+                                            <SelectValue placeholder="Select a level" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {Object.entries(TournamentLevel)
+                                                .filter(([key, value]) => typeof value === 'number')
+                                                .map(([key, value]) => (
+                                                    <SelectItem key={value.toString()} value={value.toString()}>
+                                                        {key.charAt(0).toUpperCase() + key.slice(1).toLowerCase()}
+                                                    </SelectItem>
+                                                ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <InputError message={errors.level} />
+                                </div>
+                                <div className="w-full md:w-1/2">
+                                    <Label >Gender of Competitors</Label>
+                                    <RadioGroup
+                                        value={data.gender.toString()}
+                                        onValueChange={(value) => setData('gender', parseInt(value))}
+                                        className="mt-2 flex w-full gap-4 items-center"
+                                    >
+                                        <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value={TournamentGender.MALE.toString()} id="male" />
+                                            <Label htmlFor="male" className="font-normal">
+                                                Male
+                                            </Label>
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value={TournamentGender.FEMALE.toString()} id="female" />
+                                            <Label htmlFor="female" className="font-normal">
+                                                Female
+                                            </Label>
+                                        </div>
+                                    </RadioGroup>
+                                    <InputError message={errors.gender} />
+                                </div>
+                            </div>
 
-                    <div>
-                        <Label>Start Date</Label>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button
-                                    variant="outline"
-                                    className={cn('mt-1 w-full justify-start text-left font-normal', !date && 'text-muted-foreground')}
-                                >
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {date ? format(date, 'PPP') : <span>Pick a date</span>}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0">
-                                <Calendar
-                                    mode="single"
-                                    selected={date}
-                                    onSelect={(newDate) => {
-                                        setDate(newDate);
-                                        setData('start_at', newDate ? format(newDate, 'yyyy-MM-dd') : '');
-                                    }}
-                                    initialFocus
+                            {/* Age Category Row */}
+                            <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+                                <div className="w-full md:w-2/4">
+                                    {' '}
+                                    {/* Takes 2/4 (half) width on md screens */}
+                                    <Label htmlFor="age_category">Age Category</Label>
+                                    <Select value={data.age_category} onValueChange={handleAgeCategoryChange}>
+                                        <SelectTrigger className="mt-1 w-full" id="age_category">
+                                            <SelectValue placeholder="Select an age category" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {ageCategories.map((category) => (
+                                                <SelectItem key={category.label} value={category.label}>
+                                                    {category.label} ({category.min}-{category.max} yrs)
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <InputError message={errors.age_category} />
+                                </div>
+                                <div className="w-full md:w-1/4">
+                                    {' '}
+                                    {/* Takes 1/4 width on md screens */}
+                                    <Label htmlFor="min_age">Min Age</Label>
+                                    <Input
+                                        type="number"
+                                        id="min_age"
+                                        value={data.min_age}
+                                        onChange={(e) => setData('min_age', e.target.value)}
+                                        className="mt-1 block w-full"
+                                        disabled={data.age_category === ''}
+                                    />
+                                    <InputError message={errors.min_age} />
+                                </div>
+                                <div className="w-full md:w-1/4">
+                                    {' '}
+                                    {/* Takes 1/4 width on md screens */}
+                                    <Label htmlFor="max_age">Max Age</Label>
+                                    <Input
+                                        type="number"
+                                        id="max_age"
+                                        value={data.max_age}
+                                        onChange={(e) => setData('max_age', e.target.value)}
+                                        className="mt-1 block w-full"
+                                        disabled={data.age_category === ''}
+                                    />
+                                    <InputError message={errors.max_age} />
+                                </div>
+                            </div>
+
+                            {/* Weight Category Row */}
+                            <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+                                <div className="w-full md:w-2/4">
+                                    {/* Takes 2/4 (half) width on md screens */}
+                                    <Label htmlFor="weight_category">Weight Category</Label>
+                                    <Select value={data.weight_category} onValueChange={handleWeightCategoryChange}>
+                                        <SelectTrigger className="mt-1 w-full" id="weight_category">
+                                            <SelectValue placeholder="Select a weight category" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {weightCategories.map((category) => (
+                                                <SelectItem key={category.label} value={category.label}>
+                                                    {category.label} ({category.min}-{category.max} kg)
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <InputError message={errors.weight_category} />
+                                </div>
+                                <div className="w-full md:w-1/4">
+                                    {/* Takes 1/4 width on md screens */}
+                                    <Label htmlFor="min_weight">Min Weight</Label>
+                                    <Input
+                                        type="number"
+                                        id="min_weight"
+                                        value={data.min_weight}
+                                        onChange={(e) => setData('min_weight', e.target.value)}
+                                        className="mt-1 block w-full"
+                                        disabled={data.weight_category === ''}
+                                    />
+                                    <InputError message={errors.min_weight} />
+                                </div>
+                                <div className="w-full md:w-1/4">
+                                    {/* Takes 1/4 width on md screens */}
+                                    <Label htmlFor="max_weight">Max Weight</Label>
+                                    <Input
+                                        type="number"
+                                        id="max_weight"
+                                        value={data.max_weight}
+                                        onChange={(e) => setData('max_weight', e.target.value)}
+                                        className="mt-1 block w-full"
+                                        disabled={data.weight_category === ''}
+                                    />
+                                    <InputError message={errors.max_weight} />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Right Column */}
+                        <div className="flex-1 space-y-4">
+                            <div>
+                                <Label>
+                                    Logo <span className="text-xs font-light">(Optional)</span>
+                                </Label>
+                                <FileUploader
+                                    accept="image/*"
+                                    maxSize={1024 * 1024 * 5} // 5MB
+                                    onFileSelect={(file) => setData('logo', file)}
+                                    className="mt-1 block w-full"
                                 />
-                            </PopoverContent>
-                        </Popover>
-                        <InputError message={errors.start_at} />
-                    </div>
-
-                    <div>
-                        <Label htmlFor="level">Level</Label>
-                        <Select value={data.level} onValueChange={(value) => setData('level', value)}>
-                            <SelectTrigger className="mt-1 w-full" id="level">
-                                <SelectValue placeholder="Select a level" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {Object.entries(TournamentLevel)
-                                    .filter(([key, value]) => typeof value === 'number')
-                                    .map(([key, value]) => (
-                                        <SelectItem key={value.toString()} value={value.toString()}>
-                                            {key.charAt(0).toUpperCase() + key.slice(1).toLowerCase()}
-                                        </SelectItem>
-                                    ))}
-                            </SelectContent>
-                        </Select>
-                        <InputError message={errors.level} />
-                    </div>
-
-                    <div>
-                        <Label>Gender of Competitors</Label>
-                        <RadioGroup
-                            value={data.gender.toString()}
-                            onValueChange={(value) => setData('gender', parseInt(value))}
-                            className="mt-1 flex w-full gap-4"
-                        >
-                            <div className="flex items-center space-x-2">
-                                <RadioGroupItem value={TournamentGender.MALE.toString()} id="male" />
-                                <Label htmlFor="male">Male</Label>
+                                <InputError message={errors.logo} />
                             </div>
-                            <div className="flex items-center space-x-2">
-                                <RadioGroupItem value={TournamentGender.FEMALE.toString()} id="female" />
-                                <Label htmlFor="female">Female</Label>
+
+                            <div>
+                                <Label htmlFor="description">
+                                    Description <span className="text-xs font-light">(Optional)</span>
+                                </Label>
+                                <Textarea
+                                    id="description"
+                                    value={data.description}
+                                    onChange={(e) => setData('description', e.target.value)}
+                                    className="mt-1 block min-h-32 w-full"
+                                />
+                                <InputError message={errors.description} />
                             </div>
-                        </RadioGroup>
-                        <InputError message={errors.gender} />
+                        </div>
                     </div>
 
-                    <div>
-                        <Label htmlFor="venue_id">Venue</Label>
-                        <Select value={data.venue_id} onValueChange={(value) => setData('venue_id', value)}>
-                            <SelectTrigger className="mt-1 w-full" id="venue_id">
-                                <SelectValue placeholder="Select a venue" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {venues.map((venue) => (
-                                    <SelectItem key={venue.id} value={venue.id}>
-                                        {venue.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        <InputError message={errors.venue_id} />
-                    </div>
-
-                    <div>
-                        <Label htmlFor="age_category">Age Category</Label>
-                        <Select value={data.age_category} onValueChange={handleAgeCategoryChange}>
-                            <SelectTrigger className="mt-1 w-full" id="age_category">
-                                <SelectValue placeholder="Select an age category" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {ageCategories.map((category) => (
-                                    <SelectItem key={category.label} value={category.label}>
-                                        {category.label} ({category.min}-{category.max} yrs)
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        <InputError message={errors.age_category} />
-                    </div>
-                    <div>
-                        <Label htmlFor="min_age">Min Age</Label>
-                        <Input
-                            type="number"
-                            id="min_age"
-                            value={data.min_age}
-                            onChange={(e) => setData('min_age', e.target.value)}
-                            className="mt-1 block w-full"
-                            disabled={data.age_category === ''}
-                        />
-                        <InputError message={errors.min_age} />
-                    </div>
-                    <div>
-                        <Label htmlFor="max_age">Max Age</Label>
-                        <Input
-                            type="number"
-                            id="max_age"
-                            value={data.max_age}
-                            onChange={(e) => setData('max_age', e.target.value)}
-                            className="mt-1 block w-full"
-                            disabled={data.age_category === ''}
-                        />
-                        <InputError message={errors.max_age} />
-                    </div>
-
-                    <div>
-                        <Label htmlFor="weight_category">Weight Category</Label>
-                        <Select value={data.weight_category} onValueChange={handleWeightCategoryChange}>
-                            <SelectTrigger className="mt-1 w-full" id="weight_category">
-                                <SelectValue placeholder="Select a weight category" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {weightCategories.map((category) => (
-                                    <SelectItem key={category.label} value={category.label}>
-                                        {category.label} ({category.min}-{category.max} kg)
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-
-                        <InputError message={errors.weight_category} />
-                    </div>
-                    <div>
-                        <Label htmlFor="min_weight">Min Weight</Label>
-                        <Input
-                            type="number"
-                            id="min_weight"
-                            value={data.min_weight}
-                            onChange={(e) => setData('min_weight', e.target.value)}
-                            className="mt-1 block w-full"
-                            disabled={data.weight_category === ''}
-                        />
-                        <InputError message={errors.min_weight} />
-                    </div>
-                    <div>
-                        <Label htmlFor="max_weight">Max Weight</Label>
-                        <Input
-                            type="number"
-                            id="max_weight"
-                            value={data.max_weight}
-                            onChange={(e) => setData('max_weight', e.target.value)}
-                            className="mt-1 block w-full"
-                            disabled={data.weight_category === ''}
-                        />
-                        <InputError message={errors.max_weight} />
-                    </div>
-
-                    <div className="flex gap-4">
+                    <div className="flex gap-4 pt-4">
                         <Button type="submit" disabled={processing}>
                             {processing ? 'Saving...' : 'Save'}
                         </Button>
