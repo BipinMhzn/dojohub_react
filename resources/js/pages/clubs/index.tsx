@@ -11,7 +11,7 @@ import { useEffect, useRef, useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Club List',
+        title: 'Clubs',
         href: '/manage/clubs',
     },
 ];
@@ -20,9 +20,9 @@ export type Club = {
     id: string;
     name: string;
     abbreviation: string;
-    logo_url: string;
-    address: string;
-    phone_number: string;
+    logo_url: string | null;
+    address: string | null;
+    phone_number: string | null;
     created_at: string;
     updated_at: string;
 };
@@ -41,7 +41,7 @@ export default function Clubs({ clubs, filters }: ClubsProps) {
     const { data, links } = clubs;
     const sortOptions: Record<string, string> = {
         name: 'Name',
-        updated_at: 'Updated Date',
+        updated_at: 'Last Updated',
     };
 
     const [search, setSearch] = useState(filters.keyword ?? '');
@@ -54,7 +54,7 @@ export default function Clubs({ clubs, filters }: ClubsProps) {
     useEffect(() => {
         const handler = setTimeout(() => {
             setDebouncedSearch(search);
-        }, 800);
+        }, 500);
 
         return () => clearTimeout(handler);
     }, [search]);
@@ -103,7 +103,7 @@ export default function Clubs({ clubs, filters }: ClubsProps) {
 
             <div className="px-4 py-6">
                 <div className="flex items-center">
-                    <Heading title="Clubs" />
+                    <Heading title="Clubs" description="Manage clubs for tournament matches" />
                     <Button variant="default" className="ml-auto" asChild>
                         <Link href="/manage/clubs/create">New Club</Link>
                     </Button>

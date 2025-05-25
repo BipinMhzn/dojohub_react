@@ -17,6 +17,7 @@ class PlayerCreateRequest extends BaseRequest
     {
         return [
             'dob' => [
+                'required' => 'The date of birth field is required',
                 'before_or_equal' => 'The date of birth field must be a date before or equal to today.',
             ]
         ];
@@ -29,7 +30,7 @@ class PlayerCreateRequest extends BaseRequest
             'gender' => ['required', new Enum(PlayerGenderEnum::class)],
             'dob' => ['required', 'date_format:Y-m-d', 'before_or_equal:today'],
             'weight' => ['required', 'numeric', 'min:1', 'max:500'],
-            'profile_photo' => ['nullable', 'mimes:jpeg,jpg,png', 'max:' . 5 * 1024], //max 5MB
+            'profile_photo' => ['nullable', 'mimes:jpeg,jpg,png,svg,gif', 'max:' . 5 * 1024], //max 5MB
             'phone_number' => ['nullable', 'max:11', 'regex:/^(\+\d{1,2}\s?)?1?\-?\.?\s?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$/'],
         ];
     }

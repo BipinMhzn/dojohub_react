@@ -5,6 +5,7 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
+    DropdownMenuSeparator,
     DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
@@ -50,10 +51,13 @@ export function DataTableControls({
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                    {Object.entries(sortOptions).map(([key, label]) => (
-                        <DropdownMenuItem key={key} onClick={() => onSortByChange(key)}>
-                            {label}
-                        </DropdownMenuItem>
+                    {Object.entries(sortOptions).map(([key, label], idx) => (
+                        <div key={key}>
+                            <DropdownMenuItem onClick={() => onSortByChange(key)}>
+                                {label}
+                            </DropdownMenuItem>
+                            {idx < Object.entries(sortOptions).length - 1 && <DropdownMenuSeparator />}
+                        </div>
                     ))}
                 </DropdownMenuContent>
             </DropdownMenu>

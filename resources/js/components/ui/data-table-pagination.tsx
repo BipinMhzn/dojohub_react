@@ -11,12 +11,6 @@ import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import React from 'react';
 import { type PaginationLink } from '@/types';
 
-// export type PaginationLink = {
-//     url: string | null;
-//     label: string;
-//     active: boolean;
-// };
-
 type PaginationProps = {
     links: PaginationLink[];
     perPage: number;
@@ -101,10 +95,11 @@ const DataTablePagination: React.FC<PaginationProps> = ({
                                 <ChevronDown />
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
+                        <DropdownMenuContent align="end" className="min-w-[4rem]">
                             {perPageSelect.map((count, idx) => (
                                 <div key={count}>
                                     <DropdownMenuItem
+                                        className="px-2 py-1"
                                         onClick={() => handlePerPageChange(count)}>{count}</DropdownMenuItem>
                                     {idx < perPageSelect.length - 1 && <DropdownMenuSeparator />}
                                 </div>

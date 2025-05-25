@@ -1,5 +1,6 @@
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -8,8 +9,7 @@ import { Venue } from '@/pages/venues/index';
 import type { BreadcrumbItem } from '@/types';
 import countries from '@/utils/countries';
 import { Head, useForm } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
+import React, { useEffect, useState } from 'react';
 
 interface Props {
     venue: Venue;
@@ -101,7 +101,7 @@ export default function EditVenue({ venue }: Props) {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title={`Edit ${venue.name}`} />
+            <Head title={`Edit Venue: ${venue.name}`} />
 
             <div className="px-4 py-6">
                 <div className="flex items-center">
@@ -186,9 +186,12 @@ export default function EditVenue({ venue }: Props) {
                         <InputError message={errors.address} />
                     </div>
 
-                    <div className="pt-4">
+                    <div className="flex gap-4">
                         <Button type="submit" disabled={processing}>
-                            {processing ? 'Saving...' : 'Update Venue'}
+                            {processing ? 'Saving...' : 'Save'}
+                        </Button>
+                        <Button type="button" variant="outline" asChild>
+                            <a href="/manage/venues">Cancel</a>
                         </Button>
                     </div>
                 </form>

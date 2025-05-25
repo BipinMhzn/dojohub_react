@@ -16,7 +16,7 @@ class ClubCreateRequest extends BaseRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'abbreviation' => ['required', 'string', 'uppercase', 'alpha', 'max:10'],
-            'logo' => ['nullable', 'mimes:jpeg,jpg,png', 'max:' . 5 * 1024], //max 5MB
+            'logo' => ['nullable', 'mimes:jpeg,jpg,png,gif,svg', 'max:' . 5 * 1024], //max 5MB
             'address' => ['nullable', 'string', 'max:255'],
             'phone_number' => ['nullable', 'max:11', 'regex:/^(\+\d{1,2}\s?)?1?\-?\.?\s?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$/'],
         ];

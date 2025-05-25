@@ -32,7 +32,7 @@ class TournamentCreateRequest extends BaseRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'logo' => ['nullable', 'mimes:jpeg,jpg,png', 'max:' . 5 * 1024], //max 5MB
+            'logo' => ['nullable', 'mimes:jpeg,jpg,png,svg,gif', 'max:' . 5 * 1024], //max 5MB
             'level' => ['required', 'integer', new Enum(TournamentLevelEnum::class)],
             'start_at' => ['required', 'date_format:Y-m-d H:i:s'],
             'end_at' => ['nullable', 'date', 'date_format:Y-m-d H:i:s'],

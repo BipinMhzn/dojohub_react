@@ -47,7 +47,7 @@ export default function Venues({ venues, filters }: VenuesProps) {
     const { data, links } = venues;
     const sortOptions: Record<string, string> = {
         name: 'Name',
-        updated_at: 'Updated Date',
+        updated_at: 'Last Updated',
     };
 
     const [search, setSearch] = useState(filters.keyword ?? '');
@@ -60,7 +60,7 @@ export default function Venues({ venues, filters }: VenuesProps) {
     useEffect(() => {
         const handler = setTimeout(() => {
             setDebouncedSearch(search);
-        }, 800);
+        }, 500);
 
         return () => clearTimeout(handler);
     }, [search]);

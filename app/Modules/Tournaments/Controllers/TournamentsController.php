@@ -2,6 +2,7 @@
 
 namespace App\Modules\Tournaments\Controllers;
 
+use App\Modules\Tournaments\Database\Models\Venue;
 use App\Modules\Tournaments\Interfaces\TournamentInterface;
 use App\Modules\Tournaments\Requests\TournamentCreateRequest;
 use App\Modules\Tournaments\Requests\TournamentUpdateRequest;
@@ -46,6 +47,13 @@ final class TournamentsController extends BaseController
         ]);
     }
 
+    public function create(): Response
+    {
+        return Inertia::render('tournaments/create', [
+            'venues' => Venue::all(['id', 'name']),
+        ]);
+    }
+
     /**
      * @param TournamentCreateRequest $request
      * @return RedirectResponse
@@ -62,6 +70,13 @@ final class TournamentsController extends BaseController
         $this->repository->create($inputs);
 
         return to_route('tournaments.index')->with('success', 'Tournament created successfully.');
+    }
+
+    public function edit(string $tournament): Response
+    {
+        return Inertia::render('tournaments/edit', [
+            'tournament' => $this->repository->getById($tournament),
+        ]);
     }
 
     /**

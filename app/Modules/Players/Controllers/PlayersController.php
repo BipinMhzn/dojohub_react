@@ -41,6 +41,11 @@ final class PlayersController extends BaseController
         ]);
     }
 
+    public function create(): Response
+    {
+        return Inertia::render('players/create');
+    }
+
     /**
      * @param PlayerCreateRequest $request
      * @return RedirectResponse
@@ -57,6 +62,13 @@ final class PlayersController extends BaseController
         $this->repository->create($inputs);
 
         return to_route('players.index')->with('success', 'Player created successfully.');
+    }
+
+    public function edit(string $player): Response
+    {
+        return Inertia::render('players/edit', [
+            'player' => $this->repository->getById($player),
+        ]);
     }
 
     /**

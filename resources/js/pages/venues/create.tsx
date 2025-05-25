@@ -76,7 +76,7 @@ export default function CreateVenue() {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Venues" />
+            <Head title="New Venue" />
 
             <div className="px-4 py-6">
                 <div className="flex items-center">
@@ -164,9 +164,12 @@ export default function CreateVenue() {
                         <InputError message={errors.address} />
                     </div>
 
-                    <div className="pt-4">
+                    <div className="flex gap-4">
                         <Button type="submit" disabled={processing}>
-                            {processing ? 'Saving...' : 'Save Venue'}
+                            {processing ? 'Saving...' : 'Save'}
+                        </Button>
+                        <Button type="button" variant="outline" asChild>
+                            <a href="/manage/venues">Cancel</a>
                         </Button>
                     </div>
                 </form>

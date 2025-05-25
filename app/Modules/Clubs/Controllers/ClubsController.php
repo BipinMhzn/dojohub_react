@@ -43,6 +43,11 @@ final class ClubsController extends BaseController
         ]);
     }
 
+    public function create(): Response
+    {
+        return Inertia::render('clubs/create');
+    }
+
     /**
      * @param ClubCreateRequest $request
      * @return RedirectResponse
@@ -59,6 +64,13 @@ final class ClubsController extends BaseController
         $this->repository->create($inputs);
 
         return to_route('clubs.index')->with('success', 'Club created successfully.');
+    }
+
+    public function edit(string $club): Response
+    {
+        return Inertia::render('clubs/edit', [
+            'club' => $this->repository->getById($club),
+        ]);
     }
 
     /**

@@ -6,26 +6,27 @@ import DataTablePagination from '@/components/ui/data-table-pagination';
 import AppLayout from '@/layouts/app-layout';
 import { columns } from '@/pages/tournaments/partials/columns';
 import type { BreadcrumbItem, PaginationLink } from '@/types';
-import { Head, router } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Tournament List',
+        title: 'Tournaments',
         href: '/manage/tournaments',
     },
 ];
+
 export enum TournamentStatus {
     SCHEDULED = 0,
     ONGOING = 1,
     COMPLETED = 2,
-    CANCELLED = 3
+    CANCELLED = 3,
 }
 
 export enum TournamentLevel {
     LOCAL = 0,
     REGIONAL = 1,
-    NATIONAL = 2
+    NATIONAL = 2,
 }
 
 export enum TournamentGender {
@@ -36,11 +37,11 @@ export enum TournamentGender {
 export type Tournament = {
     id: string;
     name: string;
-    description: string;
-    logo_url: string;
+    description: string | null;
+    logo_url: string | null;
     level: TournamentLevel;
     start_at: string;
-    end_at: string;
+    end_at: string | null;
     weight_category: string;
     min_weight: number;
     max_weight: number;
@@ -87,7 +88,7 @@ export default function Tournaments({ tournaments, filters }: TournamentsProps) 
     useEffect(() => {
         const handler = setTimeout(() => {
             setDebouncedSearch(search);
-        }, 800);
+        }, 500);
 
         return () => clearTimeout(handler);
     }, [search]);
@@ -135,9 +136,9 @@ export default function Tournaments({ tournaments, filters }: TournamentsProps) 
             <Head title="Tournaments" />
             <div className="px-4 py-6">
                 <div className="flex items-center">
-                    <Heading title="Tournaments" />
-                    <Button variant="default" className="ml-auto">
-                        New Tournament
+                    <Heading title="Tournaments" description="Manage your tournaments" />
+                    <Button variant="default" className="ml-auto" asChild>
+                        <Link href="/manage/tournaments/create">New Tournament</Link>
                     </Button>
                 </div>
 

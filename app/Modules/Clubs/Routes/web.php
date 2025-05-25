@@ -9,7 +9,7 @@ Route::group([
     ],
     'prefix' => 'manage'
 ], function () {
-    Route::apiResource('clubs', 'ClubsController')->except('update')->names('clubs');
+    Route::resource('clubs', 'ClubsController')->except('update')->names('clubs');
     Route::post('clubs/{club}', [ClubsController::class, 'update'])->name('clubs.update');
 });
 

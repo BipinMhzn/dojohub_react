@@ -11,7 +11,7 @@ import { useEffect, useRef, useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Player List',
+        title: 'Players',
         href: '/manage/players',
     },
 ];
@@ -27,8 +27,8 @@ export type Player = {
     gender: PlayerGender;
     dob: string;
     weight: number;
-    profile_photo_url: string;
-    phone_number: string;
+    profile_photo_url: string | null;
+    phone_number: string | null;
     created_at: string;
     updated_at: string;
 };
@@ -47,7 +47,7 @@ export default function Players({ players, filters }: PlayersProps) {
     const { data, links } = players;
     const sortOptions: Record<string, string> = {
         name: 'Name',
-        updated_at: 'Updated Date',
+        updated_at: 'Last Updated',
     };
 
     const [search, setSearch] = useState(filters.keyword ?? '');
@@ -60,7 +60,7 @@ export default function Players({ players, filters }: PlayersProps) {
     useEffect(() => {
         const handler = setTimeout(() => {
             setDebouncedSearch(search);
-        }, 800);
+        }, 500);
 
         return () => clearTimeout(handler);
     }, [search]);
@@ -109,7 +109,7 @@ export default function Players({ players, filters }: PlayersProps) {
 
             <div className="px-4 py-6">
                 <div className="flex items-center">
-                    <Heading title="Players" />
+                    <Heading title="Players" description="Manage players for tournament matches" />
                     <Button variant="default" className="ml-auto" asChild>
                         <Link href="/manage/players/create">New Player</Link>
                     </Button>
