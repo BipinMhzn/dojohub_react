@@ -9,3 +9,7 @@ export const formatUTCDate = (dateStr: string) =>
 export const convertLocalDateToUTCString = (date: Date) => {
     return new Date(date).toISOString().replace('T', ' ').substring(0, 19)
 };
+
+export const convertUTCStringToLocalDate = (dateStr: string) => {
+    return new Date(dateStr);
+};

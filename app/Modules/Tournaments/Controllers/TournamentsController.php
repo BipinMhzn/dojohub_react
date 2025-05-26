@@ -76,6 +76,7 @@ final class TournamentsController extends BaseController
     {
         return Inertia::render('tournaments/edit', [
             'tournament' => $this->repository->getById($tournament),
+            'venues' => Venue::all(['id', 'name']),
         ]);
     }
 

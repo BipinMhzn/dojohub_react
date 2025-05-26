@@ -21,8 +21,8 @@ return new class extends Migration {
             $table->dateTime('start_at');
             $table->dateTime('end_at')->nullable();
             $table->string('weight_category', 50);
-            $table->decimal('min_weight', 5, 2)->unsigned();
-            $table->decimal('max_weight', 5, 2)->unsigned();
+            $table->integer('min_weight')->unsigned();
+            $table->integer('max_weight')->unsigned();
             $table->string('age_category', 50);
             $table->tinyInteger('min_age')->unsigned();
             $table->tinyInteger('max_age')->unsigned();

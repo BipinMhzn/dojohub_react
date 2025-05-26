@@ -41,6 +41,7 @@ class Tournament extends AppBaseModel
         'level' => TournamentLevelEnum::class,
         'gender' => PlayerGenderEnum::class,
         'status' => TournamentStatusEnum::class,
+        'start_at' => 'datetime',
     ];
 
     protected static function newFactory(): TournamentFactory
