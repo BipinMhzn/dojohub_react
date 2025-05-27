@@ -34,7 +34,7 @@ class TournamentCreateRequest extends BaseRequest
             'description' => ['nullable', 'string'],
             'logo' => ['nullable', 'mimes:jpeg,jpg,png,svg,gif', 'max:' . 5 * 1024], //max 5MB
             'level' => ['required', 'integer', new Enum(TournamentLevelEnum::class)],
-            'start_at' => ['required', 'date_format:Y-m-d H:i:s'],
+            'start_at' => ['required', 'date'],
             'end_at' => ['nullable', 'date', 'date_format:Y-m-d H:i:s'],
             'weight_category' => ['required', 'string', 'max:50'],
             'min_weight' => ['required', 'integer', 'min:1', 'max:200'],

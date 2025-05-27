@@ -92,8 +92,6 @@ final class TournamentsController extends BaseController
             $profilePhoto = $this->uploadFile($request->file('logo'), $this->uploadDirectory);
             $inputs['logo_url'] = $profilePhoto['path'];
             unset($inputs['logo']);
-        } else {
-            $inputs['logo_url'] = null;
         }
         $this->repository->update($tournament, $inputs);
 

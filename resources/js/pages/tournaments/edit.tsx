@@ -11,14 +11,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
+import { ageCategories, weightCategories } from '@/pages/tournaments/create';
 import { Venue } from '@/pages/venues';
-import { convertLocalDateToUTCString, convertUTCStringToLocalDate } from '@/utils/date';
 import { Head, useForm } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
 import React, { useState } from 'react';
 import { Tournament, TournamentGender, TournamentLevel } from './index';
-import { ageCategories, weightCategories } from '@/pages/tournaments/create';
 
 interface Props {
     venues: Venue[];
@@ -37,18 +36,18 @@ export default function EditTournament({ venues, tournament }: Props) {
         },
     ];
 
-    const [date, setDate] = useState<Date>();
+    const [date, setDate] = useState<Date>(new Date(tournament.start_at));
     const { data, setData, post, processing, errors } = useForm({
         name: tournament.name,
         description: tournament.description ?? '',
         level: tournament.level.toString(),
-        start_at: tournament.start_at ? convertUTCStringToLocalDate(tournament.start_at) : '',
+        start_at: tournament.start_at,
         weight_category: tournament.weight_category,
-        min_weight: tournament.min_weight,
-        max_weight: tournament.max_weight,
+        min_weight: tournament.min_weight.toString(),
+        max_weight: tournament.max_weight.toString(),
         age_category: tournament.age_category,
-        min_age: tournament.min_age,
-        max_age: tournament.max_age,
+        min_age: tournament.min_age.toString(),
+        max_age: tournament.max_age.toString(),
         gender: tournament.gender,
         venue_id: tournament.venue_id,
         logo: null as File | null,
@@ -133,11 +132,11 @@ export default function EditTournament({ venues, tournament }: Props) {
                                                 mode="single"
                                                 selected={date}
                                                 onSelect={(newDate) => {
-                                                    setDate(newDate);
                                                     if (newDate) {
-                                                        setData('start_at', convertLocalDateToUTCString(newDate));
+                                                        setDate(newDate);
+                                                        setData('start_at', newDate);
                                                     } else {
-                                                        setData('start_at', '');
+                                                        setData('start_at', new Date());
                                                     }
                                                 }}
                                                 disabled={(date) => date < new Date()}
