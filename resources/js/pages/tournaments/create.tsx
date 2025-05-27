@@ -30,7 +30,7 @@ const breadcrumbs = [
     },
 ];
 
-const ageCategories = [
+export const ageCategories = [
     { label: 'Preparation', min: 1, max: 6 },
     { label: 'Super Mini', min: 7, max: 8 },
     { label: 'Mini', min: 9, max: 10 },
@@ -43,7 +43,7 @@ const ageCategories = [
     { label: 'Veterans', min: 31, max: 34 },
 ];
 
-const weightCategories = [
+export const weightCategories = [
     { label: 'Lightweight', min: 40, max: 50 },
     { label: 'Middleweight', min: 51, max: 65 },
     { label: 'Heavyweight', min: 66, max: 80 },

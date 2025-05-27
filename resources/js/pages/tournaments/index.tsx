@@ -41,7 +41,7 @@ export type Tournament = {
     description: string | null;
     logo_url: string | null;
     level: TournamentLevel;
-    start_at: string;
+    start_at: Date;
     end_at: string | null;
     weight_category: string;
     min_weight: number;

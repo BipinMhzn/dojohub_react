@@ -76,6 +76,7 @@ final class TournamentsController extends BaseController
     {
         return Inertia::render('tournaments/edit', [
             'tournament' => $this->repository->getById($tournament),
+            'venues' => Venue::all(['id', 'name']),
         ]);
     }
 
@@ -91,8 +92,6 @@ final class TournamentsController extends BaseController
             $profilePhoto = $this->uploadFile($request->file('logo'), $this->uploadDirectory);
             $inputs['logo_url'] = $profilePhoto['path'];
             unset($inputs['logo']);
-        } else {
-            $inputs['logo_url'] = null;
         }
         $this->repository->update($tournament, $inputs);
 
