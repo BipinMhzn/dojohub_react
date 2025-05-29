@@ -102,7 +102,7 @@ export default function EditTournament({ venues, tournament }: Props) {
             <Head title="Edit Tournament" />
 
             <div className="px-4 py-6">
-                <Heading title="Edit Tournament" description="Edit" />
+                <Heading title="Edit Tournament" description={`Edit ${tournament.name}`} />
                 <form onSubmit={handleSubmit} className="mt-6 space-y-4">
                     <div className="flex flex-col gap-4 md:flex-row">
                         {/* Left Column */}
