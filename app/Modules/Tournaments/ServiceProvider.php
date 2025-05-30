@@ -2,6 +2,7 @@
 
 namespace App\Modules\Tournaments;
 
+use App\Modules\Tournaments\Interfaces\RegistrationInterface;
 use App\Modules\Tournaments\Interfaces\TournamentInterface;
 use App\Modules\Tournaments\Repositories\TournamentRepository;
 use Illuminate\Support\ServiceProvider as BaseServiceProvider;
@@ -23,5 +24,6 @@ class ServiceProvider extends BaseServiceProvider
     public function register(): void
     {
         $this->app->bind(TournamentInterface::class, TournamentRepository::class);
+        $this->app->bind(RegistrationInterface::class, RegistrationRepository::class);
     }
 }

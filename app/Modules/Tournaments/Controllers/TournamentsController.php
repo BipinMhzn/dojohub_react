@@ -119,6 +119,7 @@ final class TournamentsController extends BaseController
     {
         return Inertia::render('tournaments/show', [
             'tournament' => $this->repository->getById($tournament),
+            'venues' => Venue::all(['id', 'name']),
         ]);
     }
 }

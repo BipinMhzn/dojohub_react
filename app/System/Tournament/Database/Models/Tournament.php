@@ -9,6 +9,7 @@ use App\System\Tournament\Foundation\Enums\TournamentStatusEnum;
 use App\System\Venue\Database\Models\Venue;
 use Database\Factories\TournamentFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Tournament extends AppBaseModel
 {
@@ -52,6 +53,11 @@ class Tournament extends AppBaseModel
     public function venue(): BelongsTo
     {
         return $this->belongsTo(Venue::class, 'venue_id', 'id');
+    }
+
+    public function registrations(): HasMany
+    {
+        return $this->hasMany(TournamentRegistration::class, 'tournament_id', 'id');
     }
 }
 
