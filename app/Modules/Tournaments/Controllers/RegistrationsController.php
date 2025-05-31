@@ -47,7 +47,7 @@ final class RegistrationsController extends BaseController
             $clubs = [];
         }
 
-        return Inertia::render('tournaments/show', [
+        return Inertia::render('tournaments/registrations/index', [
             'tournament' => $tournament,
             'registrations' => $this->repository->getTournamentRegistrations($tournament),
             'players' => $players,
@@ -71,7 +71,7 @@ final class RegistrationsController extends BaseController
 
         $this->repository->create($inputs);
 
-        return to_route('tournaments.index')->with('success', 'Player registered successfully.');
+        return to_route('tournaments.registrations.index', [$tournamentId])->with('success', 'Player registered successfully.');
     }
 
     /**
@@ -91,7 +91,7 @@ final class RegistrationsController extends BaseController
 
         $this->repository->updateTournamentRegistration($tournament, $registrationId, $inputs);
 
-        return to_route('tournaments.index')->with('success', 'Player registration updated successfully.');
+        return to_route('tournaments.registrations.index', [$tournamentId])->with('success', 'Player registration updated successfully.');
     }
 
     /**
@@ -105,6 +105,6 @@ final class RegistrationsController extends BaseController
         $tournament = $this->repository->getScheduledTournamentById($tournamentId);
         $this->repository->destroyTournamentRegistration($tournament, $registrationId);
 
-        return to_route('tournaments.index')->with('success', 'Player registration deleted successfully.');
+        return to_route('tournaments.registrations.index', [$tournamentId])->with('success', 'Player registration deleted successfully.');
     }
 }

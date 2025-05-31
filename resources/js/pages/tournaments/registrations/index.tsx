@@ -8,8 +8,9 @@ import { Club } from '@/pages/clubs';
 import { Player } from '@/pages/players';
 import { Head, router } from '@inertiajs/react';
 import { format } from 'date-fns';
+import { Trash2 } from 'lucide-react';
 import React, { useState } from 'react';
-import { Tournament, TournamentGender, TournamentLevel, TournamentStatus } from './index';
+import { Tournament, TournamentGender, TournamentLevel, TournamentStatus } from '../index';
 
 export type tournamentRegistration = {
     id: string;
@@ -30,7 +31,7 @@ interface Props {
     registrations: tournamentRegistration[];
 }
 
-export default function TournamentDetail({ tournament, registrations, players, clubs }: Props) {
+export default function TournamentRegistrations({ tournament, registrations, players, clubs }: Props) {
     const breadcrumbs = [
         {
             title: 'Tournaments',
@@ -63,10 +64,19 @@ export default function TournamentDetail({ tournament, registrations, players, c
 
         if (!selectedPlayerId || !selectedClubId) return;
 
-        router.post(`/manage/tournaments/${tournament.id}/registrations`, {
-            player_id: selectedPlayerId,
-            club_id: selectedClubId,
-        });
+        router.post(
+            `/manage/tournaments/${tournament.id}/registrations`,
+            {
+                player_id: selectedPlayerId,
+                club_id: selectedClubId,
+            },
+            {
+                onSuccess: () => {
+                    setSelectedPlayerId(null);
+                    setSelectedClubId(null);
+                },
+            },
+        );
     }
 
     return (
@@ -121,12 +131,18 @@ export default function TournamentDetail({ tournament, registrations, players, c
                                     <TableHead>Club</TableHead>
                                     <TableHead>Age</TableHead>
                                     <TableHead>Weight (Kg)</TableHead>
-                                    <TableHead>Actions</TableHead>
+                                    {tournament.status === TournamentStatus.SCHEDULED && <TableHead>Actions</TableHead>}
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {registrations.map((reg) => {
-                                    return (
+                                {registrations.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={5} className="text-muted-foreground text-center">
+                                            No players registered yet.
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    registrations.map((reg) => (
                                         <TableRow key={reg.id}>
                                             <TableCell>
                                                 <div className="flex items-center gap-3">
@@ -162,20 +178,20 @@ export default function TournamentDetail({ tournament, registrations, players, c
                                             </TableCell>
                                             <TableCell>{reg.player_age}</TableCell>
                                             <TableCell>{reg.player_weight}</TableCell>
-                                            <TableCell>
-                                                <Button
-                                                    variant="destructive"
-                                                    size="sm"
-                                                    onClick={() =>
-                                                        router.delete(`/manage/tournaments/${tournament.id}/registrations/${reg.id}`)
-                                                    }
-                                                >
-                                                    Remove
-                                                </Button>
-                                            </TableCell>
+                                            {tournament.status === TournamentStatus.SCHEDULED && (
+                                                <TableCell>
+                                                    <Button
+                                                        variant="destructive"
+                                                        size="sm"
+                                                        onClick={() => router.delete(`/manage/tournaments/${tournament.id}/registrations/${reg.id}`)}
+                                                    >
+                                                        <Trash2 size={18} />
+                                                    </Button>
+                                                </TableCell>
+                                            )}
                                         </TableRow>
-                                    );
-                                })}
+                                    ))
+                                )}
 
                                 {tournament.status === TournamentStatus.SCHEDULED && (
                                     <TableRow>
@@ -228,7 +244,6 @@ export default function TournamentDetail({ tournament, registrations, players, c
                                                                         <span>{club.name}</span>
                                                                     </div>
                                                                 </SelectItem>
-
                                                             ))}
                                                         </SelectContent>
                                                     </Select>
@@ -237,6 +252,10 @@ export default function TournamentDetail({ tournament, registrations, players, c
                                                         Register
                                                     </Button>
                                                 </div>
+
+                                                <p className="text-muted-foreground mt-2 text-center text-sm md:text-left">
+                                                    To register a player, select both the player and their club. Only unregistered players are listed.
+                                                </p>
                                             </form>
                                         </TableCell>
                                     </TableRow>
