@@ -11,6 +11,8 @@ import { format } from 'date-fns';
 import { Trash2 } from 'lucide-react';
 import React, { useState } from 'react';
 import { Tournament, TournamentGender, TournamentLevel, TournamentStatus } from '../index';
+import { lowerCase, upperFirst } from 'lodash';
+import { formatUTCDate } from '@/utils/date';
 
 export type tournamentRegistration = {
     id: string;
@@ -84,7 +86,6 @@ export default function TournamentRegistrations({ tournament, registrations, pla
             <Head title={`Tournament Detail: ${tournament.name}`} />
 
             <div className="px-4 py-6">
-                {/*<Heading title={tournament.name} description={tournament.description ?? undefined} />*/}
                 <Card className="mb-6">
                     <CardHeader>
                         <div className="flex items-center justify-between">
@@ -97,23 +98,23 @@ export default function TournamentRegistrations({ tournament, registrations, pla
                     </CardHeader>
                     <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div>
-                            <strong>Status:</strong> {TournamentStatus[tournament.status]}
+                            <strong>Level:</strong> {upperFirst(lowerCase(TournamentLevel[tournament.level]))}
                         </div>
                         <div>
-                            <strong>Level:</strong> {TournamentLevel[tournament.level]}
-                        </div>
-                        <div>
-                            <strong>Gender:</strong> {TournamentGender[tournament.gender]}
-                        </div>
-                        <div>
-                            <strong>Dates:</strong> {format(new Date(tournament.start_at), 'PPP')} –{' '}
-                            {tournament.end_at ? format(new Date(tournament.end_at), 'PPP') : 'TBD'}
+                            <strong>Gender:</strong> {upperFirst(lowerCase(TournamentGender[tournament.gender]))}
                         </div>
                         <div>
                             <strong>Age Category:</strong> {tournament.age_category} ({tournament.min_age}–{tournament.max_age} years)
                         </div>
                         <div>
                             <strong>Weight Category:</strong> {tournament.weight_category} ({tournament.min_weight}–{tournament.max_weight} Kg)
+                        </div>
+                        <div>
+                            <strong>Duration:</strong> {formatUTCDate(tournament.start_at)} –{' '}
+                            {tournament.end_at ? formatUTCDate(tournament.end_at) : 'TBD'}
+                        </div>
+                        <div>
+                            <strong>Status:</strong> {upperFirst(lowerCase(TournamentStatus[tournament.status]))}
                         </div>
                     </CardContent>
                 </Card>
@@ -198,7 +199,7 @@ export default function TournamentRegistrations({ tournament, registrations, pla
                                         <TableCell colSpan={4}>
                                             <form onSubmit={handleRegister}>
                                                 <div className="flex flex-col items-center gap-4 md:flex-row">
-                                                    <Select onValueChange={setSelectedPlayerId}>
+                                                    <Select value={selectedPlayerId ?? ''} onValueChange={setSelectedPlayerId}>
                                                         <SelectTrigger className="w-full md:w-64">
                                                             <SelectValue placeholder="Select player" />
                                                         </SelectTrigger>
@@ -229,7 +230,7 @@ export default function TournamentRegistrations({ tournament, registrations, pla
                                                         </SelectContent>
                                                     </Select>
 
-                                                    <Select onValueChange={setSelectedClubId}>
+                                                    <Select value={selectedClubId ?? ''} onValueChange={setSelectedClubId}>
                                                         <SelectTrigger className="w-full md:w-64">
                                                             <SelectValue placeholder="Select club" />
                                                         </SelectTrigger>
