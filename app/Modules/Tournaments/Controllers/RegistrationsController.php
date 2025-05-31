@@ -84,7 +84,7 @@ final class RegistrationsController extends BaseController
     {
         $inputs = $request->validated();
         $tournament = $this->repository->getScheduledTournamentById($tournamentId);
-        $player = $this->repository->getRegisteringPlayerById($tournament, $inputs['player_id']);
+        $player = $this->repository->getRegisteringPlayerById($tournament, $inputs['player_id'], $registrationId);
         $inputs['player_age'] = Carbon::parse($player->dob)->age;
         $inputs['player_weight'] = $player->weight;
         $inputs['tournament_id'] = $tournamentId;

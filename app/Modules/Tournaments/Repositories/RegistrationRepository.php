@@ -55,7 +55,10 @@ final class RegistrationRepository extends BaseRepository implements Registratio
 
     public function getTournamentRegistrations(Tournament $tournament): Collection
     {
-        return $this->registration->newQuery()->where('tournament_id', $tournament->id)->get();
+        return $this->registration->newQuery()
+            ->where('tournament_id', $tournament->id)
+            ->with(['player', 'club'])
+            ->get();
     }
 
     public function getClubList(): Collection
@@ -71,12 +74,14 @@ final class RegistrationRepository extends BaseRepository implements Registratio
         return $this->player->newQuery()
             ->whereBetween('dob', [$minDob, $maxDob])
             ->whereBetween('weight', [$tournament->min_weight, $tournament->max_weight])
+            ->where('gender', $tournament->gender)
             ->get();
     }
 
     /**
      * @param Tournament $tournament
      * @param string $playerId
+     * @param string|null $registrationId
      * @return Player
      * @throws PlayerAlreadyRegisteredException
      */
@@ -88,13 +93,14 @@ final class RegistrationRepository extends BaseRepository implements Registratio
         $player = $this->player->newQuery()
             ->whereBetween('dob', [$minDob, $maxDob])
             ->whereBetween('weight', [$tournament->min_weight, $tournament->max_weight])
-            ->where('player_id', $playerId)
+            ->where('gender', $tournament->gender)
+            ->where('id', $playerId)
             ->firstOrFail();
 
         $registeredPlayer = $this->registration->newQuery()
             ->where('tournament_id', $tournament->id)
             ->where('player_id', $playerId)
-            ->whereNot('registration_id', $registrationId)
+            ->whereNot('id', $registrationId)
             ->first();
 
         if ($registeredPlayer) {

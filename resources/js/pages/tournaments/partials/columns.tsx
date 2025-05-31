@@ -10,7 +10,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { Tournament, TournamentGender, TournamentLevel } from '@/pages/tournaments';
 import { StatusBadge } from '@/pages/tournaments/partials/status-badge';
 import { formatUTCDate } from '@/utils/date';
-import { router } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 
 type TournamentColumnsProps = {
     onDelete: (player: Tournament) => void;
@@ -23,7 +23,7 @@ export const getTournamentColumns = ({ onDelete }: TournamentColumnsProps): Colu
         cell: ({ row }) => {
             const tournament = row.original;
             return (
-                <div className="flex items-center gap-3">
+                <Link href={`/manage/tournaments/${tournament.id}/registrations`} className="flex items-center gap-3">
                     <Avatar className="h-8 w-8">
                         <AvatarImage src={tournament.logo_url ?? undefined} alt={tournament.name} />
                         <AvatarFallback>
@@ -36,7 +36,7 @@ export const getTournamentColumns = ({ onDelete }: TournamentColumnsProps): Colu
                         </AvatarFallback>
                     </Avatar>
                     <span>{tournament.name}</span>
-                </div>
+                </Link>
             );
         },
     },
