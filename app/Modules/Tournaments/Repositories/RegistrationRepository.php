@@ -63,7 +63,7 @@ final class RegistrationRepository extends BaseRepository implements Registratio
 
     public function getClubList(): Collection
     {
-        return $this->club->newQuery()->get();
+        return $this->club->newQuery()->orderBy('name')->get();
     }
 
     public function getPlayerList(Tournament $tournament): Collection
@@ -75,6 +75,7 @@ final class RegistrationRepository extends BaseRepository implements Registratio
             ->whereBetween('dob', [$minDob, $maxDob])
             ->whereBetween('weight', [$tournament->min_weight, $tournament->max_weight])
             ->where('gender', $tournament->gender)
+            ->orderBy('name')
             ->get();
     }
 
