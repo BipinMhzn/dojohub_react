@@ -35,12 +35,26 @@ export enum TournamentGender {
     FEMALE = 1,
 }
 
+export enum TournamentType {
+    SINGLE_ELIMINATION = 0,
+    DOUBLE_ELIMINATION = 1,
+    ROUND_ROBIN = 2,
+}
+
+export enum MatchStatus {
+    PENDING = 0,
+    ONGOING = 1,
+    COMPLETED = 2,
+    CANCELLED = 3,
+}
+
 export type Tournament = {
     id: string;
     name: string;
     description: string | null;
     logo_url: string | null;
     level: TournamentLevel;
+    type: TournamentType;
     start_at: Date;
     end_at: string | null;
     weight_category: string;
@@ -54,6 +68,38 @@ export type Tournament = {
     venue_id: string;
     created_at: string;
     updated_at: string;
+};
+
+export type MatchPlayer = {
+    id: string;
+    name: string;
+    seed: number | null;
+    score: number | null;
+};
+
+export type Match = {
+    id: string;
+    match_order: number;
+    player1: MatchPlayer | null;
+    player2: MatchPlayer | null;
+    winner_id: string | null;
+    status: number;
+    scheduled_at: string | null;
+    has_bye: boolean;
+};
+
+export type BracketRound = {
+    round_number: number;
+    round_name: string;
+    matches: Match[];
+};
+
+export type BracketStructure = {
+    type: number;
+    brackets: {
+        main: BracketRound[];
+        losers?: BracketRound[];
+    };
 };
 
 type TournamentsProps = {

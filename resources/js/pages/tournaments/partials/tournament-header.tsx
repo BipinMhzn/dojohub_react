@@ -1,5 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tournament, TournamentGender, TournamentLevel, TournamentStatus } from '@/pages/tournaments';
+import { Tournament, TournamentGender, TournamentLevel, TournamentStatus, TournamentType } from '@/pages/tournaments';
 import { formatUTCDate } from '@/utils/date';
 import { lowerCase, upperFirst } from 'lodash';
 
@@ -22,6 +22,9 @@ export default function TournamentHeader({ tournament }: Props) {
             <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
                     <strong>Level:</strong> {upperFirst(lowerCase(TournamentLevel[tournament.level]))}
+                </div>
+                <div>
+                    <strong>Type:</strong> {TournamentType[tournament.type].split('_').map(word => upperFirst(lowerCase(word))).join(' ')}
                 </div>
                 <div>
                     <strong>Gender:</strong> {upperFirst(lowerCase(TournamentGender[tournament.gender]))}

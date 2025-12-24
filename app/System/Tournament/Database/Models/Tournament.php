@@ -6,6 +6,7 @@ use App\System\AppBaseModel;
 use App\System\Player\Foundation\Enums\PlayerGenderEnum;
 use App\System\Tournament\Foundation\Enums\TournamentLevelEnum;
 use App\System\Tournament\Foundation\Enums\TournamentStatusEnum;
+use App\System\Tournament\Foundation\Enums\TournamentTypeEnum;
 use App\System\Venue\Database\Models\Venue;
 use Database\Factories\TournamentFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -19,6 +20,7 @@ class Tournament extends AppBaseModel
         'description',
         'logo_url',
         'level',
+        'type',
         'start_at',
         'end_at',
         'weight_category',
@@ -40,6 +42,7 @@ class Tournament extends AppBaseModel
 
     protected $casts = [
         'level' => TournamentLevelEnum::class,
+        'type' => TournamentTypeEnum::class,
         'gender' => PlayerGenderEnum::class,
         'status' => TournamentStatusEnum::class,
         'start_at' => 'datetime',
@@ -58,6 +61,11 @@ class Tournament extends AppBaseModel
     public function registrations(): HasMany
     {
         return $this->hasMany(TournamentRegistration::class, 'tournament_id', 'id');
+    }
+
+    public function matches(): HasMany
+    {
+        return $this->hasMany(TournamentMatch::class, 'tournament_id', 'id');
     }
 }
 

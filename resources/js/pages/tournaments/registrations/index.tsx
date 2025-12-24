@@ -1,6 +1,7 @@
 import HeadingSmall from '@/components/heading-small';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
@@ -9,7 +10,7 @@ import { Player } from '@/pages/players';
 import TournamentHeader from '@/pages/tournaments/partials/tournament-header';
 import TournamentTabs from '@/pages/tournaments/partials/tournament-tabs';
 import { Head, router } from '@inertiajs/react';
-import { Trash2 } from 'lucide-react';
+import { Trash2, UserPlus } from 'lucide-react';
 import React, { useState } from 'react';
 import { Tournament, TournamentStatus } from '../index';
 
@@ -56,6 +57,7 @@ export default function TournamentRegistrations({ tournament, registrations, pla
 
     const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
     const [selectedClubId, setSelectedClubId] = useState<string | null>(null);
+    const [dialogOpen, setDialogOpen] = useState(false);
     const registeredPlayerIds = registrations.map((reg) => reg.player_id);
 
     const eligiblePlayers = players.filter((p) => !registeredPlayerIds.includes(p.id));
@@ -75,6 +77,7 @@ export default function TournamentRegistrations({ tournament, registrations, pla
                 onSuccess: () => {
                     setSelectedPlayerId(null);
                     setSelectedClubId(null);
+                    setDialogOpen(false);
                 },
             },
         );
@@ -89,10 +92,92 @@ export default function TournamentRegistrations({ tournament, registrations, pla
                 <TournamentTabs tournamentId={tournament.id} activeTab="players" />
 
                 <div className="mb-6">
-                    <HeadingSmall
-                        title="Registered Players"
-                        description={`${registrations.length} player${registrations.length !== 1 ? 's' : ''} registered`}
-                    />
+                    <div className="flex items-center justify-between">
+                        <HeadingSmall
+                            title="Registered Players"
+                            description={`${registrations.length} player${registrations.length !== 1 ? 's' : ''} registered`}
+                        />
+                        {tournament.status === TournamentStatus.SCHEDULED && (
+                            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                                <DialogTrigger asChild>
+                                    <Button>
+                                        <UserPlus className="mr-2 size-4" />
+                                        Register Player
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-md">
+                                    <DialogHeader>
+                                        <DialogTitle>Register Player</DialogTitle>
+                                        <DialogDescription>
+                                            Select a player and their club to register for this tournament.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <form onSubmit={handleRegister} className="space-y-4">
+                                        <div className="space-y-4">
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-medium">Player</label>
+                                                <Select value={selectedPlayerId ?? ''} onValueChange={setSelectedPlayerId}>
+                                                    <SelectTrigger className="w-full">
+                                                        <SelectValue placeholder="Select player" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {eligiblePlayers.length > 0 ? (
+                                                            eligiblePlayers.map((player) => (
+                                                                <SelectItem key={player.id} value={player.id}>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <Avatar className="h-6 w-6">
+                                                                            <AvatarImage src={player.profile_photo_url ?? undefined} alt={player.name} />
+                                                                            <AvatarFallback>{player.name[0]}</AvatarFallback>
+                                                                        </Avatar>
+                                                                        <span>
+                                                                            {player.name} — Age: {calculateAge(player.dob)}, Weight: {player.weight} Kg
+                                                                        </span>
+                                                                    </div>
+                                                                </SelectItem>
+                                                            ))
+                                                        ) : (
+                                                            <div className="text-muted-foreground px-3 py-2 text-sm">All players are registered</div>
+                                                        )}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-medium">Club</label>
+                                                <Select value={selectedClubId ?? ''} onValueChange={setSelectedClubId}>
+                                                    <SelectTrigger className="w-full">
+                                                        <SelectValue placeholder="Select club" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {clubs.map((club) => (
+                                                            <SelectItem key={club.id} value={club.id}>
+                                                                <div className="flex items-center gap-2">
+                                                                    <Avatar className="h-6 w-6">
+                                                                        <AvatarImage src={club.logo_url ?? undefined} alt={club.name} />
+                                                                        <AvatarFallback>{club.name[0]}</AvatarFallback>
+                                                                    </Avatar>
+                                                                    <span>{club.name}</span>
+                                                                </div>
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                        </div>
+
+                                        <DialogFooter>
+                                            <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                                                Cancel
+                                            </Button>
+                                            <Button type="submit" disabled={!selectedPlayerId || !selectedClubId}>
+                                                Register
+                                            </Button>
+                                        </DialogFooter>
+                                    </form>
+                                </DialogContent>
+                            </Dialog>
+                        )}
+                    </div>
 
                     <Table className="mt-4">
                         <TableHeader>
@@ -164,64 +249,6 @@ export default function TournamentRegistrations({ tournament, registrations, pla
                             )}
                         </TableBody>
                     </Table>
-
-                    {tournament.status === TournamentStatus.SCHEDULED && (
-                        <form onSubmit={handleRegister} className="mt-4">
-                            <div className="flex flex-col items-center gap-4 md:flex-row">
-                                <Select value={selectedPlayerId ?? ''} onValueChange={setSelectedPlayerId}>
-                                    <SelectTrigger className="w-full md:w-64">
-                                        <SelectValue placeholder="Select player" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {eligiblePlayers.length > 0 ? (
-                                            eligiblePlayers.map((player) => (
-                                                <SelectItem key={player.id} value={player.id}>
-                                                    <div className="flex items-center gap-2">
-                                                        <Avatar className="h-6 w-6">
-                                                            <AvatarImage src={player.profile_photo_url ?? undefined} alt={player.name} />
-                                                            <AvatarFallback>{player.name[0]}</AvatarFallback>
-                                                        </Avatar>
-                                                        <span>
-                                                            {player.name} — Age: {calculateAge(player.dob)}, Weight: {player.weight} Kg
-                                                        </span>
-                                                    </div>
-                                                </SelectItem>
-                                            ))
-                                        ) : (
-                                            <div className="text-muted-foreground px-3 py-2 text-sm">All players are registered</div>
-                                        )}
-                                    </SelectContent>
-                                </Select>
-
-                                <Select value={selectedClubId ?? ''} onValueChange={setSelectedClubId}>
-                                    <SelectTrigger className="w-full md:w-64">
-                                        <SelectValue placeholder="Select club" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {clubs.map((club) => (
-                                            <SelectItem key={club.id} value={club.id}>
-                                                <div className="flex items-center gap-2">
-                                                    <Avatar className="h-6 w-6">
-                                                        <AvatarImage src={club.logo_url ?? undefined} alt={club.name} />
-                                                        <AvatarFallback>{club.name[0]}</AvatarFallback>
-                                                    </Avatar>
-                                                    <span>{club.name}</span>
-                                                </div>
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-
-                                <Button type="submit" disabled={!selectedPlayerId || !selectedClubId}>
-                                    Register
-                                </Button>
-                            </div>
-
-                            <p className="text-muted-foreground mt-2 text-center text-sm md:text-left">
-                                To register a player, select both the player and their club. Only unregistered players are listed.
-                            </p>
-                        </form>
-                    )}
                 </div>
             </div>
         </AppLayout>

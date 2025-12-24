@@ -2,10 +2,14 @@
 
 namespace App\Modules\Tournaments;
 
+use App\Modules\Tournaments\Interfaces\BracketServiceInterface;
+use App\Modules\Tournaments\Interfaces\MatchInterface;
 use App\Modules\Tournaments\Interfaces\RegistrationInterface;
 use App\Modules\Tournaments\Interfaces\TournamentInterface;
+use App\Modules\Tournaments\Repositories\MatchRepository;
 use App\Modules\Tournaments\Repositories\RegistrationRepository;
 use App\Modules\Tournaments\Repositories\TournamentRepository;
+use App\Modules\Tournaments\Services\BracketService;
 use Illuminate\Support\ServiceProvider as BaseServiceProvider;
 
 /**
@@ -26,5 +30,7 @@ class ServiceProvider extends BaseServiceProvider
     {
         $this->app->bind(TournamentInterface::class, TournamentRepository::class);
         $this->app->bind(RegistrationInterface::class, RegistrationRepository::class);
+        $this->app->bind(MatchInterface::class, MatchRepository::class);
+        $this->app->bind(BracketServiceInterface::class, BracketService::class);
     }
 }

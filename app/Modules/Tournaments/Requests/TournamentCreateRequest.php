@@ -4,6 +4,7 @@ namespace App\Modules\Tournaments\Requests;
 
 use App\System\Player\Foundation\Enums\PlayerGenderEnum;
 use App\System\Tournament\Foundation\Enums\TournamentLevelEnum;
+use App\System\Tournament\Foundation\Enums\TournamentTypeEnum;
 use BaseSystem\Requests\BaseRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Enum;
@@ -44,6 +45,7 @@ class TournamentCreateRequest extends BaseRequest
             'max_age' => ['required', 'integer', 'min:1', 'max:200', 'gt:min_age'],
             'gender' => ['required', new Enum(PlayerGenderEnum::class)],
             'venue_id' => ['required', 'string', Rule::exists('venues', 'id')->whereNull('deleted_at')],
+            'type' => ['required', 'integer', new Enum(TournamentTypeEnum::class)],
         ];
     }
 }

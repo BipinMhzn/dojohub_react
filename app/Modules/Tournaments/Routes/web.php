@@ -20,6 +20,9 @@ Route::group([
        Route::delete('registrations/{registration}', [RegistrationsController::class, 'destroy'])->name('tournaments.registrations.destroy');
 
        Route::get('matches', [MatchesController::class, 'index'])->name('tournaments.matches.index');
+       Route::post('matches/generate', [MatchesController::class, 'generate'])->name('tournaments.matches.generate');
+       Route::patch('matches/{match}/result', [MatchesController::class, 'updateResult'])->name('tournaments.matches.update-result');
+       Route::patch('matches/{match}/schedule', [MatchesController::class, 'updateSchedule'])->name('tournaments.matches.update-schedule');
 
     });
 });

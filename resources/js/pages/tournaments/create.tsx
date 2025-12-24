@@ -17,7 +17,7 @@ import { Head, useForm } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
 import React, { useState } from 'react';
-import { TournamentGender, TournamentLevel } from './index';
+import { TournamentGender, TournamentLevel, TournamentType } from './index';
 
 const breadcrumbs = [
     {
@@ -60,6 +60,7 @@ export default function CreateTournament({ venues }: Props) {
         name: '',
         description: '',
         level: '',
+        type: TournamentType.SINGLE_ELIMINATION,
         start_at: '',
         weight_category: '',
         min_weight: '',
@@ -130,6 +131,27 @@ export default function CreateTournament({ venues }: Props) {
                                 <Label htmlFor="name">Name</Label>
                                 <Input id="name" value={data.name} onChange={(e) => setData('name', e.target.value)} className="mt-1 block w-full" />
                                 <InputError message={errors.name} />
+                            </div>
+
+                            <div>
+                                <Label htmlFor="type">Tournament Type</Label>
+                                <Select value={data.type.toString()} onValueChange={(value) => setData('type', parseInt(value))}>
+                                    <SelectTrigger className="mt-1 w-full" id="type">
+                                        <SelectValue placeholder="Select tournament type" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {Object.entries(TournamentType)
+                                            .filter(([key, value]) => typeof value === 'number')
+                                            .map(([key, value]) => (
+                                                <SelectItem key={value.toString()} value={value.toString()}>
+                                                    {key.split('_').map(word =>
+                                                        word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                                                    ).join(' ')}
+                                                </SelectItem>
+                                            ))}
+                                    </SelectContent>
+                                </Select>
+                                <InputError message={errors.type} />
                             </div>
 
                             {/* Start Date and Venue Row */}

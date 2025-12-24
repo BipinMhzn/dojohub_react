@@ -2,109 +2,124 @@
 
 namespace App\Modules\Tournaments\Controllers;
 
+use App\Modules\Tournaments\Interfaces\BracketServiceInterface;
 use App\Modules\Tournaments\Interfaces\RegistrationInterface;
-use App\Modules\Tournaments\Requests\TournamentRegistrationCreateRequest;
-use App\Modules\Tournaments\Requests\TournamentRegistrationUpdateRequest;
-use App\System\Tournament\Foundation\Enums\TournamentStatusEnum;
+use App\Modules\Tournaments\Requests\MatchResultRequest;
+use App\Modules\Tournaments\Requests\MatchScheduleRequest;
 use BaseSystem\Controllers\BaseController;
-use BaseSystem\Requests\BaseListRequest;
 use BaseSystem\Requests\BaseRequest;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Carbon;
 use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * Class TournamentsController
+ * Class MatchesController
  * @package App\Modules\Tournaments\Controllers
  */
 final class MatchesController extends BaseController
 {
     /**
-     * TournamentsController constructor.
-     * @param RegistrationInterface $repository
+     * MatchesController constructor.
+     *
+     * @param RegistrationInterface $registrationRepository
+     * @param BracketServiceInterface $bracketService
      */
     public function __construct(
-        private readonly RegistrationInterface $repository,
-    )
-    {
+        private readonly RegistrationInterface $registrationRepository,
+        private readonly BracketServiceInterface $bracketService,
+    ) {
     }
 
     /**
-     * @param BaseListRequest $request
+     * Display tournament bracket
+     *
+     * @param BaseRequest $request
      * @param string $tournamentId
      * @return Response
      */
-    public function index(BaseListRequest $request, string $tournamentId): Response
+    public function index(BaseRequest $request, string $tournamentId): Response
     {
-        $tournament = $this->repository->getTournamentById($tournamentId);
-
-        if ($tournament->status === TournamentStatusEnum::SCHEDULED) {
-            $players = $this->repository->getPlayerList($tournament);
-            $clubs = $this->repository->getClubList();
-        } else {
-            $players = [];
-            $clubs = [];
-        }
+        $tournament = $this->registrationRepository->getTournamentById($tournamentId);
+        $bracketStructure = $this->bracketService->getBracketStructure($tournament);
 
         return Inertia::render('tournaments/matches/index', [
             'tournament' => $tournament,
-            'registrations' => $this->repository->getTournamentRegistrations($tournament),
-            'players' => $players,
-            'clubs' => $clubs,
+            'bracket' => empty($bracketStructure['brackets']) ? null : $bracketStructure,
         ]);
     }
 
     /**
-     * @param TournamentRegistrationCreateRequest $request
-     * @param string $tournamentId
-     * @return RedirectResponse
-     */
-    public function store(TournamentRegistrationCreateRequest $request, string $tournamentId): RedirectResponse
-    {
-        $inputs = $request->validated();
-        $tournament = $this->repository->getScheduledTournamentById($tournamentId);
-        $player = $this->repository->getRegisteringPlayerById($tournament, $inputs['player_id']);
-        $inputs['player_age'] = Carbon::parse($player->dob)->age;
-        $inputs['player_weight'] = $player->weight;
-        $inputs['tournament_id'] = $tournamentId;
-
-        $this->repository->create($inputs);
-
-        return to_route('tournaments.registrations.index', [$tournamentId])->with('success', 'Player registered successfully.');
-    }
-
-    /**
-     * @param TournamentRegistrationUpdateRequest $request
-     * @param string $tournamentId
-     * @param string $registrationId
-     * @return RedirectResponse
-     */
-    public function update(TournamentRegistrationUpdateRequest $request, string $tournamentId, string $registrationId): RedirectResponse
-    {
-        $inputs = $request->validated();
-        $tournament = $this->repository->getScheduledTournamentById($tournamentId);
-        $player = $this->repository->getRegisteringPlayerById($tournament, $inputs['player_id'], $registrationId);
-        $inputs['player_age'] = Carbon::parse($player->dob)->age;
-        $inputs['player_weight'] = $player->weight;
-        $inputs['tournament_id'] = $tournamentId;
-
-        $this->repository->updateTournamentRegistration($tournament, $registrationId, $inputs);
-
-        return to_route('tournaments.registrations.index', [$tournamentId])->with('success', 'Player registration updated successfully.');
-    }
-
-    /**
+     * Generate bracket for tournament
+     *
      * @param BaseRequest $request
      * @param string $tournamentId
-     * @param string $registrationId
      * @return RedirectResponse
      */
-    public function destroy(BaseRequest $request, string $tournamentId, string $registrationId): RedirectResponse
+    public function generate(BaseRequest $request, string $tournamentId): RedirectResponse
     {
-        $tournament = $this->repository->getScheduledTournamentById($tournamentId);
-        $this->repository->destroyTournamentRegistration($tournament, $registrationId);
+        $tournament = $this->registrationRepository->getTournamentById($tournamentId);
 
-        return to_route('tournaments.registrations.index', [$tournamentId])->with('success', 'Player registration deleted successfully.');
+        // Check if bracket already exists
+        if ($tournament->matches()->count() > 0) {
+            return back()->with('error', 'Bracket already generated for this tournament.');
+        }
+
+        try {
+            $this->bracketService->generateBracket($tournament);
+
+            return to_route('tournaments.matches.index', [$tournamentId])
+                ->with('success', 'Bracket generated successfully.');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Record match result
+     *
+     * @param MatchResultRequest $request
+     * @param string $tournamentId
+     * @param string $matchId
+     * @return RedirectResponse
+     */
+    public function updateResult(MatchResultRequest $request, string $tournamentId, string $matchId): RedirectResponse
+    {
+        $inputs = $request->validated();
+
+        try {
+            $this->bracketService->recordMatchResult(
+                $matchId,
+                $inputs['winner_id'],
+                $inputs['player1_score'] ?? null,
+                $inputs['player2_score'] ?? null
+            );
+
+            return to_route('tournaments.matches.index', [$tournamentId])
+                ->with('success', 'Match result recorded successfully.');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Schedule match
+     *
+     * @param MatchScheduleRequest $request
+     * @param string $tournamentId
+     * @param string $matchId
+     * @return RedirectResponse
+     */
+    public function updateSchedule(MatchScheduleRequest $request, string $tournamentId, string $matchId): RedirectResponse
+    {
+        $inputs = $request->validated();
+
+        try {
+            $this->bracketService->scheduleMatch($matchId, $inputs['scheduled_at']);
+
+            return to_route('tournaments.matches.index', [$tournamentId])
+                ->with('success', 'Match scheduled successfully.');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
     }
 }

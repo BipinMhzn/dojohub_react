@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Tournament, TournamentGender, TournamentLevel } from '@/pages/tournaments';
+import { Tournament, TournamentGender, TournamentLevel, TournamentType } from '@/pages/tournaments';
 import { StatusBadge } from '@/pages/tournaments/partials/status-badge';
 import { formatUTCDate } from '@/utils/date';
 import { Link, router } from '@inertiajs/react';
@@ -52,6 +52,23 @@ export const getTournamentColumns = ({ onDelete }: TournamentColumnsProps): Colu
                     return 'Regional';
                 case TournamentLevel.NATIONAL:
                     return 'National';
+                default:
+                    return 'Unknown';
+            }
+        },
+    },
+    {
+        accessorKey: 'type',
+        header: 'Type',
+        cell: ({ row }) => {
+            const type = Number(row.original.type);
+            switch (type) {
+                case TournamentType.SINGLE_ELIMINATION:
+                    return 'Single Elimination';
+                case TournamentType.DOUBLE_ELIMINATION:
+                    return 'Double Elimination';
+                case TournamentType.ROUND_ROBIN:
+                    return 'Round Robin';
                 default:
                     return 'Unknown';
             }
