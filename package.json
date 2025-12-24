@@ -55,6 +55,7 @@
         "lodash": "^4.17.21",
         "lucide-react": "^0.475.0",
         "react": "^19.0.0",
+        "react-brackets": "^0.4.7",
         "react-day-picker": "^8.10.1",
         "react-dom": "^19.0.0",
         "tailwind-merge": "^3.0.1",

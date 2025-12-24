@@ -1,20 +1,17 @@
+import HeadingSmall from '@/components/heading-small';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { Club } from '@/pages/clubs';
 import { Player } from '@/pages/players';
-import TournamentTabs from '@/pages/tournaments/partials/tournament-tabs';
-import { formatUTCDate } from '@/utils/date';
-import { Head, router } from '@inertiajs/react';
-import { lowerCase, upperFirst } from 'lodash';
-import { Heading1, Heading2, Trash2 } from 'lucide-react';
-import React, { useState } from 'react';
-import { Tournament, TournamentGender, TournamentLevel, TournamentStatus } from '../index';
-import HeadingSmall from '@/components/heading-small';
 import TournamentHeader from '@/pages/tournaments/partials/tournament-header';
+import TournamentTabs from '@/pages/tournaments/partials/tournament-tabs';
+import { Head, router } from '@inertiajs/react';
+import { Trash2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { Tournament, TournamentStatus } from '../index';
 
 export type tournamentRegistration = {
     id: string;
@@ -92,7 +89,10 @@ export default function TournamentRegistrations({ tournament, registrations, pla
                 <TournamentTabs tournamentId={tournament.id} activeTab="players" />
 
                 <div className="mb-6">
-                    <HeadingSmall title="Registered Players" description={`${registrations.length} player${registrations.length !== 1 ? 's' : ''} registered`} />
+                    <HeadingSmall
+                        title="Registered Players"
+                        description={`${registrations.length} player${registrations.length !== 1 ? 's' : ''} registered`}
+                    />
 
                     <Table className="mt-4">
                         <TableHeader>
@@ -178,23 +178,17 @@ export default function TournamentRegistrations({ tournament, registrations, pla
                                                 <SelectItem key={player.id} value={player.id}>
                                                     <div className="flex items-center gap-2">
                                                         <Avatar className="h-6 w-6">
-                                                            <AvatarImage
-                                                                src={player.profile_photo_url ?? undefined}
-                                                                alt={player.name}
-                                                            />
+                                                            <AvatarImage src={player.profile_photo_url ?? undefined} alt={player.name} />
                                                             <AvatarFallback>{player.name[0]}</AvatarFallback>
                                                         </Avatar>
                                                         <span>
-                                                                                {player.name} — Age: {calculateAge(player.dob)}, Weight:{' '}
-                                                            {player.weight} Kg
-                                                                            </span>
+                                                            {player.name} — Age: {calculateAge(player.dob)}, Weight: {player.weight} Kg
+                                                        </span>
                                                     </div>
                                                 </SelectItem>
                                             ))
                                         ) : (
-                                            <div className="text-muted-foreground px-3 py-2 text-sm">
-                                                All players are registered
-                                            </div>
+                                            <div className="text-muted-foreground px-3 py-2 text-sm">All players are registered</div>
                                         )}
                                     </SelectContent>
                                 </Select>
