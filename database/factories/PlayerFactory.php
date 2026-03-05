@@ -24,7 +24,7 @@ class PlayerFactory extends Factory
             'name' => $this->faker->name,
             'gender' => $this->faker->randomElement(PlayerGenderEnum::class),
             'dob' => $this->faker->date(),
-            'weight' => $this->faker->randomFloat(2, 1, 1000),
+            'weight' => $this->faker->randomFloat(2, 1, 200),
             'phone_number' => $this->faker->phoneNumber(),
         ];
     }

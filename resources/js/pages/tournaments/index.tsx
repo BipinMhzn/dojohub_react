@@ -75,6 +75,7 @@ export type MatchPlayer = {
     name: string;
     seed: number | null;
     score: number | null;
+    profile_photo: string | null;
 };
 
 export type Match = {

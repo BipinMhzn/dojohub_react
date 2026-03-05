@@ -89,7 +89,9 @@ export default function TournamentMatches({ tournament, bracket }: Props) {
                             </div>
                         </div>
 
-                        <BracketContainer bracket={bracket} onMatchClick={handleMatchClick} />
+                        <div className="w-full overflow-x-auto border rounded-lg bg-card">
+                            <BracketContainer bracket={bracket} onMatchClick={handleMatchClick} />
+                        </div>
                     </div>
                 )}
             </div>

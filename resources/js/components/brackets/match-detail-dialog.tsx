@@ -9,14 +9,14 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Match } from '@/pages/tournaments';
-import { useForm } from '@inertiajs/react';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon } from 'lucide-react';
-import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
-import { useState } from 'react';
+import { useForm, router } from '@inertiajs/react';
+import { CalendarIcon, AlertCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useInitials } from '@/hooks/use-initials';
 
 interface MatchDetailDialogProps {
     match: Match | null;
@@ -31,9 +31,8 @@ export default function MatchDetailDialog({
     open,
     onOpenChange,
 }: MatchDetailDialogProps) {
-    const [scheduleDate, setScheduleDate] = useState<Date | undefined>(
-        match?.scheduled_at ? new Date(match.scheduled_at) : undefined
-    );
+    const [scheduleDateTimeLocal, setScheduleDateTimeLocal] = useState<string>('');
+    const getInitials = useInitials();
 
     const resultForm = useForm({
         winner_id: '',
@@ -41,10 +40,32 @@ export default function MatchDetailDialog({
         player2_score: '',
     });
 
+    // Update schedule date when match changes
+    useEffect(() => {
+        if (match?.scheduled_at) {
+            // Convert ISO string to datetime-local format (YYYY-MM-DDTHH:mm)
+            const date = new Date(match.scheduled_at);
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            setScheduleDateTimeLocal(`${year}-${month}-${day}T${hours}:${minutes}`);
+        } else {
+            setScheduleDateTimeLocal('');
+        }
+    }, [match?.scheduled_at]);
+
     if (!match) return null;
 
     const handleSubmitResult = (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Prevent submission if no schedule date
+        if (!match.scheduled_at && !scheduleDateTimeLocal) {
+            return;
+        }
+
         resultForm.patch(
             route('tournaments.matches.update-result', [tournamentId, match.id]),
             {
@@ -56,26 +77,28 @@ export default function MatchDetailDialog({
         );
     };
 
-    const handleSchedule = (date: Date | undefined) => {
-        if (!date) return;
-        setScheduleDate(date);
+    const handleScheduleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setScheduleDateTimeLocal(value);
 
-        // Submit schedule immediately
-        const formData = new FormData();
-        formData.append('scheduled_at', date.toISOString());
+        if (value) {
+            // Convert datetime-local to ISO string
+            const date = new Date(value);
 
-        // Use router.patch for the schedule update
-        const { router } = require('@inertiajs/react');
-        router.patch(
-            route('tournaments.matches.update-schedule', [tournamentId, match.id]),
-            { scheduled_at: date.toISOString() },
-            {
-                onSuccess: () => {
-                    // Dialog stays open
-                },
-            }
-        );
+            router.patch(
+                route('tournaments.matches.update-schedule', [tournamentId, match.id]),
+                { scheduled_at: date.toISOString() },
+                {
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        // Dialog stays open
+                    },
+                }
+            );
+        }
     };
+
+    const isScheduled = !!match.scheduled_at || !!scheduleDateTimeLocal;
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -90,61 +113,89 @@ export default function MatchDetailDialog({
                 <div className="space-y-6">
                     {/* Match Info */}
                     <div className="space-y-2">
-                        <div className="flex items-center justify-between p-3 border rounded-md">
-                            <span className="font-medium">
-                                {match.player1?.name || 'TBD'}
-                            </span>
-                            {match.player1?.seed && (
-                                <span className="text-sm text-muted-foreground">
-                                    #{match.player1.seed}
-                                </span>
+                        <div className="flex items-center gap-3 p-3 border rounded-md bg-muted/30">
+                            {match.player1 ? (
+                                <>
+                                    <Avatar className="size-10">
+                                        <AvatarImage
+                                            src={match.player1.profile_photo || undefined}
+                                        />
+                                        <AvatarFallback>
+                                            {getInitials(match.player1.name)}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-1">
+                                        <div className="font-medium">{match.player1.name}</div>
+                                        {match.player1.seed && (
+                                            <Badge variant="outline" className="text-xs mt-1">
+                                                Seed #{match.player1.seed}
+                                            </Badge>
+                                        )}
+                                    </div>
+                                </>
+                            ) : (
+                                <span className="text-muted-foreground italic">TBD</span>
                             )}
                         </div>
-                        <div className="text-center text-xs text-muted-foreground">vs</div>
-                        <div className="flex items-center justify-between p-3 border rounded-md">
-                            <span className="font-medium">
-                                {match.player2?.name || 'TBD'}
-                            </span>
-                            {match.player2?.seed && (
-                                <span className="text-sm text-muted-foreground">
-                                    #{match.player2.seed}
-                                </span>
+                        <div className="text-center text-xs text-muted-foreground font-medium">
+                            vs
+                        </div>
+                        <div className="flex items-center gap-3 p-3 border rounded-md bg-muted/30">
+                            {match.player2 ? (
+                                <>
+                                    <Avatar className="size-10">
+                                        <AvatarImage
+                                            src={match.player2.profile_photo || undefined}
+                                        />
+                                        <AvatarFallback>
+                                            {getInitials(match.player2.name)}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-1">
+                                        <div className="font-medium">{match.player2.name}</div>
+                                        {match.player2.seed && (
+                                            <Badge variant="outline" className="text-xs mt-1">
+                                                Seed #{match.player2.seed}
+                                            </Badge>
+                                        )}
+                                    </div>
+                                </>
+                            ) : (
+                                <span className="text-muted-foreground italic">TBD</span>
                             )}
                         </div>
                     </div>
 
                     {/* Schedule Match */}
                     <div className="space-y-2">
-                        <Label>Schedule Match</Label>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button
-                                    variant="outline"
-                                    className={cn(
-                                        'w-full justify-start text-left font-normal',
-                                        !scheduleDate && 'text-muted-foreground'
-                                    )}
-                                >
-                                    <CalendarIcon className="mr-2 size-4" />
-                                    {scheduleDate
-                                        ? format(scheduleDate, 'PPP p')
-                                        : 'Pick a date and time'}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                    mode="single"
-                                    selected={scheduleDate}
-                                    onSelect={handleSchedule}
-                                    initialFocus
-                                />
-                            </PopoverContent>
-                        </Popover>
+                        <Label htmlFor="schedule">Schedule Match *</Label>
+                        <div className="relative">
+                            <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
+                            <Input
+                                id="schedule"
+                                type="datetime-local"
+                                value={scheduleDateTimeLocal}
+                                onChange={handleScheduleDateChange}
+                                className="pl-9"
+                                required
+                            />
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                            Match schedule is required before recording results
+                        </p>
                     </div>
 
                     {/* Record Result */}
                     {match.player1 && match.player2 && (
                         <form onSubmit={handleSubmitResult} className="space-y-4">
+                            {!isScheduled && (
+                                <Alert variant="destructive">
+                                    <AlertCircle className="size-4" />
+                                    <AlertDescription>
+                                        Please schedule the match before recording results
+                                    </AlertDescription>
+                                </Alert>
+                            )}
                             <div className="space-y-2">
                                 <Label>Winner</Label>
                                 <div className="flex gap-2">
@@ -155,12 +206,21 @@ export default function MatchDetailDialog({
                                                 ? 'default'
                                                 : 'outline'
                                         }
-                                        className="flex-1"
+                                        className="flex-1 flex items-center gap-2 justify-center"
                                         onClick={() =>
                                             resultForm.setData('winner_id', match.player1!.id)
                                         }
+                                        disabled={!isScheduled}
                                     >
-                                        {match.player1.name}
+                                        <Avatar className="size-5">
+                                            <AvatarImage
+                                                src={match.player1.profile_photo || undefined}
+                                            />
+                                            <AvatarFallback className="text-[9px]">
+                                                {getInitials(match.player1.name)}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <span className="truncate">{match.player1.name}</span>
                                     </Button>
                                     <Button
                                         type="button"
@@ -169,12 +229,21 @@ export default function MatchDetailDialog({
                                                 ? 'default'
                                                 : 'outline'
                                         }
-                                        className="flex-1"
+                                        className="flex-1 flex items-center gap-2 justify-center"
                                         onClick={() =>
                                             resultForm.setData('winner_id', match.player2!.id)
                                         }
+                                        disabled={!isScheduled}
                                     >
-                                        {match.player2.name}
+                                        <Avatar className="size-5">
+                                            <AvatarImage
+                                                src={match.player2.profile_photo || undefined}
+                                            />
+                                            <AvatarFallback className="text-[9px]">
+                                                {getInitials(match.player2.name)}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <span className="truncate">{match.player2.name}</span>
                                     </Button>
                                 </div>
                             </div>
@@ -192,6 +261,7 @@ export default function MatchDetailDialog({
                                         onChange={(e) =>
                                             resultForm.setData('player1_score', e.target.value)
                                         }
+                                        disabled={!isScheduled}
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -206,6 +276,7 @@ export default function MatchDetailDialog({
                                         onChange={(e) =>
                                             resultForm.setData('player2_score', e.target.value)
                                         }
+                                        disabled={!isScheduled}
                                     />
                                 </div>
                             </div>
@@ -214,7 +285,9 @@ export default function MatchDetailDialog({
                                 <Button
                                     type="submit"
                                     disabled={
-                                        !resultForm.data.winner_id || resultForm.processing
+                                        !isScheduled ||
+                                        !resultForm.data.winner_id ||
+                                        resultForm.processing
                                     }
                                 >
                                     Record Result
