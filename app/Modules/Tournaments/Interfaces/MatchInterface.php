@@ -2,8 +2,8 @@
 
 namespace App\Modules\Tournaments\Interfaces;
 
-use App\System\Tournament\Database\Models\Tournament;
-use App\System\Tournament\Database\Models\TournamentMatch;
+use App\System\Tournament\Models\Tournament;
+use App\System\Tournament\Models\TournamentMatch;
 use BaseSystem\Interfaces\BaseInterface;
 use Illuminate\Support\Collection;
 

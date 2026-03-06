@@ -2,18 +2,16 @@
 
 namespace App\Modules\Tournaments\Interfaces;
 
-use App\Modules\Tournaments\Database\Models\Player;
-use App\Modules\Tournaments\Database\Models\Tournament;
+use App\Modules\Tournaments\Models\Player;
+use App\Modules\Tournaments\Models\Tournament;
 use BaseSystem\Interfaces\BaseInterface;
 use Illuminate\Support\Collection;
 
 /**
  * Interface TournamentInterface
- * @package App\Modules\Tournaments\Interfaces
  */
 interface RegistrationInterface extends BaseInterface
 {
-
     public function getTournamentById(string $tournamentId): Tournament;
 
     public function getScheduledTournamentById(string $tournamentId): Tournament;

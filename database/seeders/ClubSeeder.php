@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\System\Club\Database\Models\Club;
+use App\System\Club\Models\Club;
 use Illuminate\Database\Seeder;
 
 class ClubSeeder extends Seeder

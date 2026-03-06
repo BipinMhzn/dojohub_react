@@ -2,8 +2,8 @@
 
 namespace App\Modules\Tournaments\Controllers;
 
-use App\Modules\Tournaments\Database\Models\Venue;
 use App\Modules\Tournaments\Interfaces\TournamentInterface;
+use App\Modules\Tournaments\Models\Venue;
 use App\Modules\Tournaments\Requests\TournamentCreateRequest;
 use App\Modules\Tournaments\Requests\TournamentUpdateRequest;
 use App\System\Foundation\Traits\FileUpload;

@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\System\Player\Database\Models\Player;
+use App\System\Player\Models\Player;
 use App\System\Player\Foundation\Enums\PlayerGenderEnum;
 use Illuminate\Database\Eloquent\Factories\Factory;
 

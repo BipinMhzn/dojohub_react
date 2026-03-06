@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\System\Venue\Database\Models\Venue;
+use App\System\Venue\Models\Venue;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

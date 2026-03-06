@@ -2,26 +2,23 @@
 
 namespace App\Modules\Tournaments\Services;
 
-use App\Modules\Tournaments\Database\Models\TournamentMatch;
 use App\Modules\Tournaments\Interfaces\BracketServiceInterface;
-use App\System\Tournament\Database\Models\Tournament;
+use App\Modules\Tournaments\Models\TournamentMatch;
 use App\System\Tournament\Foundation\Enums\MatchStatusEnum;
 use App\System\Tournament\Foundation\Enums\TournamentTypeEnum;
+use App\System\Tournament\Models\Tournament;
 use Exception;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
  * Class BracketService
- * @package App\Modules\Tournaments\Services
  */
 class BracketService implements BracketServiceInterface
 {
     /**
      * Generate bracket based on tournament type
      *
-     * @param Tournament $tournament
-     * @return Collection
      * @throws Exception
      */
     public function generateBracket(Tournament $tournament): Collection
@@ -40,8 +37,6 @@ class BracketService implements BracketServiceInterface
     /**
      * Seed players with top 3 separated
      *
-     * @param Tournament $tournament
-     * @return array
      * @throws Exception
      */
     public function seedPlayers(Tournament $tournament): array
@@ -82,16 +77,12 @@ class BracketService implements BracketServiceInterface
 
     /**
      * Generate Single Elimination bracket
-     *
-     * @param Tournament $tournament
-     * @param array $seededPlayers
-     * @return Collection
      */
     private function generateSingleEliminationBracket(Tournament $tournament, array $seededPlayers): Collection
     {
         $playerCount = count($seededPlayers);
         $bracketSize = $this->getNextPowerOfTwo($playerCount);
-        $totalRounds = (int)log($bracketSize, 2);
+        $totalRounds = (int) log($bracketSize, 2);
 
         // Generate standard seeding pairs for first round
         $firstRoundPairs = $this->generateStandardSeeding($bracketSize);
@@ -179,10 +170,6 @@ class BracketService implements BracketServiceInterface
 
     /**
      * Generate Double Elimination bracket (placeholder for future implementation)
-     *
-     * @param Tournament $tournament
-     * @param array $seededPlayers
-     * @return Collection
      */
     private function generateDoubleEliminationBracket(Tournament $tournament, array $seededPlayers): Collection
     {
@@ -193,10 +180,6 @@ class BracketService implements BracketServiceInterface
 
     /**
      * Generate Round Robin bracket (placeholder for future implementation)
-     *
-     * @param Tournament $tournament
-     * @param array $seededPlayers
-     * @return Collection
      */
     private function generateRoundRobinBracket(Tournament $tournament, array $seededPlayers): Collection
     {
@@ -207,9 +190,6 @@ class BracketService implements BracketServiceInterface
     /**
      * Generate standard bracket seeding pairs
      * This ensures seeds 1, 2, 3 are separated
-     *
-     * @param int $bracketSize
-     * @return array
      */
     private function generateStandardSeeding(int $bracketSize): array
     {
@@ -227,22 +207,14 @@ class BracketService implements BracketServiceInterface
 
     /**
      * Calculate next power of 2 for bracket size
-     *
-     * @param int $number
-     * @return int
      */
     private function getNextPowerOfTwo(int $number): int
     {
-        return (int)pow(2, ceil(log($number, 2)));
+        return (int) pow(2, ceil(log($number, 2)));
     }
 
     /**
      * Get round name based on position in bracket
-     *
-     * @param int $roundNumber
-     * @param int $totalRounds
-     * @param int $bracketSize
-     * @return string
      */
     private function getRoundName(int $roundNumber, int $totalRounds, int $bracketSize): string
     {
@@ -255,18 +227,13 @@ class BracketService implements BracketServiceInterface
         } elseif ($roundNumber === $totalRounds - 2) {
             return 'Quarterfinals';
         } else {
-            return 'Round of ' . ((int)$matchesInRound * 2);
+            return 'Round of '.((int) $matchesInRound * 2);
         }
     }
 
     /**
      * Record match result and advance winner
      *
-     * @param string $matchId
-     * @param string $winnerId
-     * @param int|null $player1Score
-     * @param int|null $player2Score
-     * @return void
      * @throws Exception
      */
     public function recordMatchResult(string $matchId, string $winnerId, ?int $player1Score, ?int $player2Score): void
@@ -317,10 +284,6 @@ class BracketService implements BracketServiceInterface
 
     /**
      * Schedule a match
-     *
-     * @param string $matchId
-     * @param string $scheduledAt
-     * @return void
      */
     public function scheduleMatch(string $matchId, string $scheduledAt): void
     {
@@ -332,9 +295,6 @@ class BracketService implements BracketServiceInterface
 
     /**
      * Get bracket structure for frontend
-     *
-     * @param Tournament $tournament
-     * @return array
      */
     public function getBracketStructure(Tournament $tournament): array
     {
@@ -354,7 +314,7 @@ class BracketService implements BracketServiceInterface
             $bracketType = $match->bracket_type;
             $roundNumber = $match->round_number;
 
-            if (!isset($structure[$bracketType][$roundNumber])) {
+            if (! isset($structure[$bracketType][$roundNumber])) {
                 $structure[$bracketType][$roundNumber] = [
                     'round_number' => $roundNumber,
                     'round_name' => $match->round_name,
@@ -387,7 +347,7 @@ class BracketService implements BracketServiceInterface
         }
 
         // Remove empty brackets and convert to arrays
-        $structure = array_filter($structure, fn($bracket) => !empty($bracket));
+        $structure = array_filter($structure, fn ($bracket) => ! empty($bracket));
         foreach ($structure as $key => $bracket) {
             $structure[$key] = array_values($bracket);
         }

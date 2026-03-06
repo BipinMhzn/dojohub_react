@@ -53,7 +53,7 @@ class ModuleGenerateCommand extends Command
         'Filter.stub' => ['Filters', true, 'prefixed'],
         'CreateRequest.stub' => ['Requests', false, 'prefixed'],
         'Interface.stub' => ['Interfaces', false, 'prefixed'],
-        'Model.stub' => ['Database/Models', false, 'replaced'],
+        'Model.stub' => ['Models', false, 'replaced'],
         'ServiceProvider.stub' => ['', false, 'none'],
         'Repository.stub' => ['Repositories', false, 'prefixed'],
         'UpdateRequest.stub' => ['Requests', false, 'prefixed'],
@@ -68,7 +68,7 @@ class ModuleGenerateCommand extends Command
         'Filter.stub' => ['Filters', true, 'prefixed'],
         'WebCreateRequest.stub' => ['Requests', false, 'prefixed', 'CreateRequest.php'],
         'Interface.stub' => ['Interfaces', false, 'prefixed'],
-        'Model.stub' => ['Database/Models', false, 'replaced'],
+        'Model.stub' => ['Models', false, 'replaced'],
         'ServiceProvider.stub' => ['', false, 'none'],
         'Repository.stub' => ['Repositories', false, 'prefixed'],
         'WebUpdateRequest.stub' => ['Requests', false, 'prefixed', 'UpdateRequest.php'],
@@ -79,7 +79,7 @@ class ModuleGenerateCommand extends Command
      * @var array[]
      */
     protected array $systemStubFiles = [
-        'SystemModel.stub' => ['Database/Models', false, 'replaced'],
+        'SystemModel.stub' => ['Models', false, 'replaced'],
     ];
 
     /**

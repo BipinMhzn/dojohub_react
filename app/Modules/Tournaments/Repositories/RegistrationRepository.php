@@ -2,12 +2,12 @@
 
 namespace App\Modules\Tournaments\Repositories;
 
-use App\Modules\Tournaments\Database\Models\Club;
-use App\Modules\Tournaments\Database\Models\Player;
-use App\Modules\Tournaments\Database\Models\Tournament;
-use App\Modules\Tournaments\Database\Models\TournamentRegistration;
 use App\Modules\Tournaments\Exceptions\PlayerAlreadyRegisteredException;
 use App\Modules\Tournaments\Interfaces\RegistrationInterface;
+use App\Modules\Tournaments\Models\Club;
+use App\Modules\Tournaments\Models\Player;
+use App\Modules\Tournaments\Models\Tournament;
+use App\Modules\Tournaments\Models\TournamentRegistration;
 use App\System\Tournament\Foundation\Enums\TournamentStatusEnum;
 use BaseSystem\Repositories\BaseRepository;
 use Illuminate\Database\Eloquent\Builder;
@@ -16,33 +16,22 @@ use Illuminate\Support\Collection;
 
 /**
  * Class TournamentRepository
- * @package App\Modules\Tournaments\Repositories
  */
 final class RegistrationRepository extends BaseRepository implements RegistrationInterface
 {
     /**
      * TournamentRepository constructor.
-     * @param Tournament $tournament
-     * @param TournamentRegistration $registration
-     * @param Player $player
-     * @param Club $club
      */
     public function __construct(
-        private readonly Tournament             $tournament,
+        private readonly Tournament $tournament,
         private readonly TournamentRegistration $registration,
-        private readonly Player                 $player,
-        private readonly Club                   $club
-    )
-    {
+        private readonly Player $player,
+        private readonly Club $club
+    ) {
         parent::__construct($registration);
     }
 
-    /**
-     * @param Builder $builder
-     */
-    public function getFilter(Builder $builder): void
-    {
-    }
+    public function getFilter(Builder $builder): void {}
 
     public function getTournamentById(string $tournamentId): Tournament
     {
@@ -80,10 +69,6 @@ final class RegistrationRepository extends BaseRepository implements Registratio
     }
 
     /**
-     * @param Tournament $tournament
-     * @param string $playerId
-     * @param string|null $registrationId
-     * @return Player
      * @throws PlayerAlreadyRegisteredException
      */
     public function getRegisteringPlayerById(Tournament $tournament, string $playerId, ?string $registrationId = null): Player
@@ -105,7 +90,7 @@ final class RegistrationRepository extends BaseRepository implements Registratio
             ->first();
 
         if ($registeredPlayer) {
-            throw new PlayerAlreadyRegisteredException();
+            throw new PlayerAlreadyRegisteredException;
         }
 
         return $player;

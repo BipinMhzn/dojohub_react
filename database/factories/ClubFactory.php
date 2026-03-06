@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\System\Club\Database\Models\Club;
+use App\System\Club\Models\Club;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
