@@ -6,7 +6,8 @@
 |----------|------|
 | Database Schema (all tables, enums, migrations) | [database/DatabaseWiki.md](database/DatabaseWiki.md) |
 | Base System architecture & code generator | [base_system/README.md](base_system/README.md) |
-| Venues module | [database/VenueModuleWiki.md](database/VenueModuleWiki.md) |
+| Venues module | [app/Modules/Venues/VenueModuleWiki.md](app/Modules/Venues/VenueModuleWiki.md) |
+| Clubs module | [app/Modules/Clubs/ClubModuleWiki.md](app/Modules/Clubs/ClubModuleWiki.md) |
 
 ---
 
