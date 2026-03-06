@@ -5,15 +5,14 @@ namespace App\Modules\Tournaments\Requests;
 use App\System\Player\Foundation\Enums\PlayerGenderEnum;
 use App\System\Tournament\Foundation\Enums\TournamentLevelEnum;
 use App\System\Tournament\Foundation\Enums\TournamentTypeEnum;
-use BaseSystem\Requests\BaseRequest;
+use BaseSystem\Requests\BaseWebRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Enum;
 
 /**
  * Class TournamentCreateRequest
- * @package App\Modules\Tournaments\Requests
  */
-class TournamentCreateRequest extends BaseRequest
+class TournamentCreateRequest extends BaseWebRequest
 {
     public function messages(): array
     {
@@ -24,7 +23,7 @@ class TournamentCreateRequest extends BaseRequest
             ],
             'venue_id' => [
                 'required' => 'The venue is required',
-            ]
+            ],
         ];
     }
 
@@ -33,7 +32,7 @@ class TournamentCreateRequest extends BaseRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'logo' => ['nullable', 'mimes:jpeg,jpg,png,svg,gif', 'max:' . 5 * 1024], //max 5MB
+            'logo' => ['nullable', 'mimes:jpeg,jpg,png,svg,gif', 'max:'. 5 * 1024], // max 5MB
             'level' => ['required', 'integer', new Enum(TournamentLevelEnum::class)],
             'start_at' => ['required', 'date'],
             'end_at' => ['nullable', 'date', 'date_format:Y-m-d H:i:s'],

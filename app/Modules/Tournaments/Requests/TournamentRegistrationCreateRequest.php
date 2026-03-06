@@ -2,17 +2,13 @@
 
 namespace App\Modules\Tournaments\Requests;
 
-use App\System\Player\Foundation\Enums\PlayerGenderEnum;
-use App\System\Tournament\Foundation\Enums\TournamentLevelEnum;
-use BaseSystem\Requests\BaseRequest;
+use BaseSystem\Requests\BaseWebRequest;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Enum;
 
 /**
  * Class TournamentCreateRequest
- * @package App\Modules\Tournaments\Requests
  */
-class TournamentRegistrationCreateRequest extends BaseRequest
+class TournamentRegistrationCreateRequest extends BaseWebRequest
 {
     public function messages(): array
     {
@@ -22,7 +18,7 @@ class TournamentRegistrationCreateRequest extends BaseRequest
             ],
             'club_id' => [
                 'required' => 'The club is required',
-            ]
+            ],
         ];
     }
 

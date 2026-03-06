@@ -6,43 +6,32 @@ use App\Modules\Tournaments\Interfaces\BracketServiceInterface;
 use App\Modules\Tournaments\Interfaces\RegistrationInterface;
 use App\Modules\Tournaments\Requests\MatchResultRequest;
 use App\Modules\Tournaments\Requests\MatchScheduleRequest;
-use BaseSystem\Controllers\BaseController;
-use BaseSystem\Requests\BaseRequest;
+use BaseSystem\Controllers\BaseWebController;
 use Illuminate\Http\RedirectResponse;
-use Inertia\Inertia;
 use Inertia\Response;
 
 /**
  * Class MatchesController
- * @package App\Modules\Tournaments\Controllers
  */
-final class MatchesController extends BaseController
+final class MatchesController extends BaseWebController
 {
     /**
      * MatchesController constructor.
-     *
-     * @param RegistrationInterface $registrationRepository
-     * @param BracketServiceInterface $bracketService
      */
     public function __construct(
         private readonly RegistrationInterface $registrationRepository,
         private readonly BracketServiceInterface $bracketService,
-    ) {
-    }
+    ) {}
 
     /**
      * Display tournament bracket
-     *
-     * @param BaseRequest $request
-     * @param string $tournamentId
-     * @return Response
      */
-    public function index(BaseRequest $request, string $tournamentId): Response
+    public function index(string $tournamentId): Response
     {
         $tournament = $this->registrationRepository->getTournamentById($tournamentId);
         $bracketStructure = $this->bracketService->getBracketStructure($tournament);
 
-        return Inertia::render('tournaments/matches/index', [
+        return $this->render('tournaments/matches/index', [
             'tournament' => $tournament,
             'bracket' => empty($bracketStructure['brackets']) ? null : $bracketStructure,
         ]);
@@ -50,12 +39,8 @@ final class MatchesController extends BaseController
 
     /**
      * Generate bracket for tournament
-     *
-     * @param BaseRequest $request
-     * @param string $tournamentId
-     * @return RedirectResponse
      */
-    public function generate(BaseRequest $request, string $tournamentId): RedirectResponse
+    public function generate(string $tournamentId): RedirectResponse
     {
         $tournament = $this->registrationRepository->getTournamentById($tournamentId);
 
@@ -76,11 +61,6 @@ final class MatchesController extends BaseController
 
     /**
      * Record match result
-     *
-     * @param MatchResultRequest $request
-     * @param string $tournamentId
-     * @param string $matchId
-     * @return RedirectResponse
      */
     public function updateResult(MatchResultRequest $request, string $tournamentId, string $matchId): RedirectResponse
     {
@@ -103,11 +83,6 @@ final class MatchesController extends BaseController
 
     /**
      * Schedule match
-     *
-     * @param MatchScheduleRequest $request
-     * @param string $tournamentId
-     * @param string $matchId
-     * @return RedirectResponse
      */
     public function updateSchedule(MatchScheduleRequest $request, string $tournamentId, string $matchId): RedirectResponse
     {

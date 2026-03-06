@@ -1,13 +1,13 @@
 <?php
+
 namespace App\Modules\Venues\Requests;
 
-use BaseSystem\Requests\BaseRequest;
+use BaseSystem\Requests\BaseWebRequest;
 
 /**
  * Class VenueCreateRequest
- * @package App\Modules\Venues\Requests
  */
-class VenueCreateRequest extends BaseRequest
+class VenueCreateRequest extends BaseWebRequest
 {
     public function rules(): array
     {

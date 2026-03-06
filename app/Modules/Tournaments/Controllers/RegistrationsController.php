@@ -6,36 +6,28 @@ use App\Modules\Tournaments\Interfaces\RegistrationInterface;
 use App\Modules\Tournaments\Requests\TournamentRegistrationCreateRequest;
 use App\Modules\Tournaments\Requests\TournamentRegistrationUpdateRequest;
 use App\System\Tournament\Foundation\Enums\TournamentStatusEnum;
-use BaseSystem\Controllers\BaseController;
-use BaseSystem\Requests\BaseListRequest;
-use BaseSystem\Requests\BaseRequest;
+use BaseSystem\Controllers\BaseWebController;
+use BaseSystem\Requests\BaseWebListRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Carbon;
-use Inertia\Inertia;
 use Inertia\Response;
 
 /**
  * Class TournamentsController
- * @package App\Modules\Tournaments\Controllers
  */
-final class RegistrationsController extends BaseController
+final class RegistrationsController extends BaseWebController
 {
     /**
      * TournamentsController constructor.
-     * @param RegistrationInterface $repository
      */
     public function __construct(
         private readonly RegistrationInterface $repository,
-    )
-    {
-    }
+    ) {}
 
     /**
-     * @param BaseListRequest $request
-     * @param string $tournamentId
-     * @return Response
+     * @param  BaseListRequest  $request
      */
-    public function index(BaseListRequest $request, string $tournamentId): Response
+    public function index(BaseWebListRequest $request, string $tournamentId): Response
     {
         $tournament = $this->repository->getTournamentById($tournamentId);
 
@@ -47,7 +39,7 @@ final class RegistrationsController extends BaseController
             $clubs = [];
         }
 
-        return Inertia::render('tournaments/registrations/index', [
+        return $this->render('tournaments/registrations/index', [
             'tournament' => $tournament,
             'registrations' => $this->repository->getTournamentRegistrations($tournament),
             'players' => $players,
@@ -55,11 +47,6 @@ final class RegistrationsController extends BaseController
         ]);
     }
 
-    /**
-     * @param TournamentRegistrationCreateRequest $request
-     * @param string $tournamentId
-     * @return RedirectResponse
-     */
     public function store(TournamentRegistrationCreateRequest $request, string $tournamentId): RedirectResponse
     {
         $inputs = $request->validated();
@@ -74,12 +61,6 @@ final class RegistrationsController extends BaseController
         return to_route('tournaments.registrations.index', [$tournamentId])->with('success', 'Player registered successfully.');
     }
 
-    /**
-     * @param TournamentRegistrationUpdateRequest $request
-     * @param string $tournamentId
-     * @param string $registrationId
-     * @return RedirectResponse
-     */
     public function update(TournamentRegistrationUpdateRequest $request, string $tournamentId, string $registrationId): RedirectResponse
     {
         $inputs = $request->validated();
@@ -94,13 +75,7 @@ final class RegistrationsController extends BaseController
         return to_route('tournaments.registrations.index', [$tournamentId])->with('success', 'Player registration updated successfully.');
     }
 
-    /**
-     * @param BaseRequest $request
-     * @param string $tournamentId
-     * @param string $registrationId
-     * @return RedirectResponse
-     */
-    public function destroy(BaseRequest $request, string $tournamentId, string $registrationId): RedirectResponse
+    public function destroy(string $tournamentId, string $registrationId): RedirectResponse
     {
         $tournament = $this->repository->getScheduledTournamentById($tournamentId);
         $this->repository->destroyTournamentRegistration($tournament, $registrationId);

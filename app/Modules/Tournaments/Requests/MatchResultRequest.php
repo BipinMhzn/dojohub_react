@@ -2,9 +2,9 @@
 
 namespace App\Modules\Tournaments\Requests;
 
-use BaseSystem\Requests\BaseRequest;
+use BaseSystem\Requests\BaseWebRequest;
 
-class MatchResultRequest extends BaseRequest
+class MatchResultRequest extends BaseWebRequest
 {
     /**
      * Get the validation rules that apply to the request.
