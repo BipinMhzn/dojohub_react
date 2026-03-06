@@ -28,8 +28,10 @@ class PlayerCreateRequest extends BaseWebRequest
             'gender' => ['required', new Enum(PlayerGenderEnum::class)],
             'dob' => ['required', 'date_format:Y-m-d', 'before_or_equal:today'],
             'weight' => ['required', 'numeric', 'min:1', 'max:500'],
+            'nationality' => ['required', 'string', 'max:100'],
+            'email' => ['nullable', 'email', 'max:255'],
             'profile_photo' => ['nullable', 'mimes:jpeg,jpg,png,svg,gif', 'max:'. 5 * 1024], // max 5MB
-            'phone_number' => ['nullable', 'max:11', 'regex:/^(\+\d{1,2}\s?)?1?\-?\.?\s?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$/'],
+            'phone_number' => ['nullable', 'max:20', 'regex:/^\+?[\d\s\-().]{7,20}$/'],
         ];
     }
 }

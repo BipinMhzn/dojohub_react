@@ -8,6 +8,8 @@
 | Base System architecture & code generator | [base_system/README.md](base_system/README.md) |
 | Venues module | [app/Modules/Venues/VenueModuleWiki.md](app/Modules/Venues/VenueModuleWiki.md) |
 | Clubs module | [app/Modules/Clubs/ClubModuleWiki.md](app/Modules/Clubs/ClubModuleWiki.md) |
+| Club Players (membership management) | [app/Modules/Clubs/ClubPlayersWiki.md](app/Modules/Clubs/ClubPlayersWiki.md) |
+| Players module | [app/Modules/Players/PlayerModuleWiki.md](app/Modules/Players/PlayerModuleWiki.md) |
 
 ---
 

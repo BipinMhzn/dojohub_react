@@ -13,6 +13,8 @@ class Player extends AppBaseModel
         'gender',
         'dob',
         'weight',
+        'nationality',
+        'email',
         'profile_photo_url',
         'phone_number',
     ];

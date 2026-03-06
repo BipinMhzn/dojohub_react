@@ -7,8 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
+import countries from '@/utils/countries';
 import { Head, useForm } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
@@ -38,6 +40,8 @@ export default function EditPlayer({ player }: Props) {
         gender: player.gender,
         dob: player.dob ? format(new Date(player.dob), 'yyyy-MM-dd') : '',
         weight: player.weight.toString(),
+        nationality: player.nationality ?? '',
+        email: player.email ?? '',
         phone_number: player.phone_number ?? '',
         profile_photo: null as File | null,
     });
@@ -133,6 +137,37 @@ export default function EditPlayer({ player }: Props) {
                             className="mt-1 block w-full"
                         />
                         <InputError message={errors.weight} />
+                    </div>
+
+                    <div>
+                        <Label htmlFor="nationality">Nationality</Label>
+                        <Select value={data.nationality} onValueChange={(value) => setData('nationality', value)}>
+                            <SelectTrigger className="mt-1 w-full">
+                                <SelectValue placeholder="Select a country" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {countries.map((country) => (
+                                    <SelectItem key={country.name} value={country.name}>
+                                        {country.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <InputError message={errors.nationality} />
+                    </div>
+
+                    <div>
+                        <Label htmlFor="email">
+                            Email <span className="text-xs font-light">(Optional)</span>
+                        </Label>
+                        <Input
+                            id="email"
+                            type="email"
+                            value={data.email}
+                            onChange={(e) => setData('email', e.target.value)}
+                            className="mt-1 block w-full"
+                        />
+                        <InputError message={errors.email} />
                     </div>
 
                     <div>
