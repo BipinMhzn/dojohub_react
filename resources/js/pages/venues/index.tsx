@@ -17,13 +17,19 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export type Venue = {
+export type VenueAddress = {
     id: string;
-    name: string;
     address: string;
     city: string;
     state: string;
     country: string;
+};
+
+export type Venue = {
+    id: string;
+    name: string;
+    mat_count: number;
+    address: VenueAddress;
     created_at: string;
     updated_at: string;
 };

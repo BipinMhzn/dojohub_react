@@ -29,10 +29,11 @@ export default function EditVenue({ venue }: Props) {
 
     const { data, setData, put, processing, errors } = useForm({
         name: venue.name,
-        address: venue.address,
-        city: venue.city,
-        state: venue.state,
-        country: venue.country,
+        mat_count: venue.mat_count,
+        address: venue.address?.address ?? '',
+        city: venue.address?.city ?? '',
+        state: venue.address?.state ?? '',
+        country: venue.address?.country ?? '',
     });
 
     const [availableStates, setAvailableStates] = useState<{ name: string }[]>([]);
@@ -40,13 +41,16 @@ export default function EditVenue({ venue }: Props) {
 
     // Initialize states and cities based on initial venue data
     useEffect(() => {
-        if (venue.country) {
-            const country = countries.find((c) => c.name === venue.country);
+        const venueCountry = venue.address?.country;
+        const venueState = venue.address?.state;
+
+        if (venueCountry) {
+            const country = countries.find((c) => c.name === venueCountry);
             if (country) {
                 setAvailableStates(country.states);
 
-                if (venue.state) {
-                    const state = country.states.find((s) => s.name === venue.state);
+                if (venueState) {
+                    const state = country.states.find((s) => s.name === venueState);
                     if (state) {
                         setAvailableCities(state.cities);
                     }
@@ -61,17 +65,12 @@ export default function EditVenue({ venue }: Props) {
             const country = countries.find((c) => c.name === data.country);
             if (country) {
                 setAvailableStates(country.states);
-                // Reset state and city when country changes if different from current
-                if (data.country !== venue.country) {
-                    setData((data) => ({
-                        ...data,
-                        state: '',
-                        city: '',
-                    }));
+                if (data.country !== venue.address?.country) {
+                    setData((prev) => ({ ...prev, state: '', city: '' }));
                 }
             }
         }
-    }, [data.country, setData, venue.country]);
+    }, [data.country, setData, venue.address?.country]);
 
     // Update cities when state changes
     useEffect(() => {
@@ -80,16 +79,12 @@ export default function EditVenue({ venue }: Props) {
             const state = country?.states.find((s) => s.name === data.state);
             if (state) {
                 setAvailableCities(state.cities);
-                // Reset city when state changes if different from current
-                if (data.state !== venue.state) {
-                    setData((data) => ({
-                        ...data,
-                        city: '',
-                    }));
+                if (data.state !== venue.address?.state) {
+                    setData((prev) => ({ ...prev, city: '' }));
                 }
             }
         }
-    }, [data.country, data.state, setData, venue.state]);
+    }, [data.country, data.state, setData, venue.address?.state]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -184,6 +179,21 @@ export default function EditVenue({ venue }: Props) {
                             disabled={processing}
                         />
                         <InputError message={errors.address} />
+                    </div>
+
+                    <div>
+                        <Label htmlFor="mat_count">Number of Mats</Label>
+                        <Input
+                            id="mat_count"
+                            type="number"
+                            min={1}
+                            max={99}
+                            value={data.mat_count}
+                            className="mt-1 block w-full"
+                            onChange={(e) => setData('mat_count', Number(e.target.value))}
+                            disabled={processing}
+                        />
+                        <InputError message={errors.mat_count} />
                     </div>
 
                     <div className="flex gap-4">

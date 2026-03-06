@@ -18,11 +18,10 @@ final class VenuesController extends BaseWebController
     /**
      * VenuesController constructor.
      */
-    public function __construct(private readonly VenueInterface $repository) {}
+    public function __construct(private readonly VenueInterface $repository)
+    {
+    }
 
-    /**
-     * @param  BaseListRequest  $request
-     */
     public function index(BaseWebListRequest $request): Response
     {
         return $this->render('venues/index', [
@@ -31,16 +30,16 @@ final class VenuesController extends BaseWebController
         ]);
     }
 
+    public function store(VenueCreateRequest $request): RedirectResponse
+    {
+        $this->repository->createVenue($request->validated());
+
+        return to_route('venues.index')->with('success', 'Venue created successfully.');
+    }
+
     public function create(): Response
     {
         return $this->render('venues/create');
-    }
-
-    public function store(VenueCreateRequest $request): RedirectResponse
-    {
-        $this->repository->create($request->validated());
-
-        return to_route('venues.index')->with('success', 'Venue created successfully.');
     }
 
     public function edit(string $venue): Response
@@ -52,14 +51,14 @@ final class VenuesController extends BaseWebController
 
     public function update(VenueUpdateRequest $request, string $venue): RedirectResponse
     {
-        $this->repository->update($venue, $request->validated());
+        $this->repository->updateVenue($request->validated(), $venue);
 
         return to_route('venues.index')->with('success', 'Venue updated successfully.');
     }
 
     public function destroy(string $venue): RedirectResponse
     {
-        $this->repository->destroy($venue);
+        $this->repository->deleteVenue($venue);
 
         return to_route('venues.index')->with('success', 'Venue deleted successfully.');
     }

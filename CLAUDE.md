@@ -1,5 +1,15 @@
 # DojoHub - Project Context
 
+## Wiki / Reference Docs
+
+| Document | Path |
+|----------|------|
+| Database Schema (all tables, enums, migrations) | [database/DatabaseWiki.md](database/DatabaseWiki.md) |
+| Base System architecture & code generator | [base_system/README.md](base_system/README.md) |
+| Venues module | [database/VenueModuleWiki.md](database/VenueModuleWiki.md) |
+
+---
+
 ## Project Overview
 DojoHub is a full-stack martial arts management system for organizing tournaments, managing players, clubs, and venues. Built with modern web technologies for scalability and maintainability.
 
@@ -40,7 +50,7 @@ app/Modules/
 ├── Players/
 ├── Tournaments/     # Main feature area
 ├── Users/
-└── Venues/
+└── Venues/          # ✓ Updated — uses addresses table (address_id FK + mat_count)
 ```
 
 Each module contains:
@@ -55,9 +65,12 @@ Each module contains:
 
 ### Base System Layer
 `app/System/` contains base models extended by modules:
-- AppBaseModel (base for all models)
-- Tournament, TournamentRegistration
-- Player, Club, Venue, User
+- AppBaseModel (base for all models — HasUlids, SoftDeletes, EditorLogs, HasFactory)
+- Address (shared address entity used by Venue and Club)
+- Venue (address_id FK + mat_count)
+- Club, Player, User
+- Tournament, TournamentCategory, TournamentRegistration
+- TournamentBracket, TournamentMatch, TournamentMatchCompetitor, TournamentResult
 
 ### Shared Foundation
 `base_system/src/` provides shared architecture:
@@ -82,12 +95,26 @@ Each module contains:
 
 ### Key Tables
 - **users**: Authentication and user profiles
+- **addresses**: Shared address records (used by venues and clubs). Contains address, city, state, country.
 - **players**: Martial arts practitioners (DOB, weight, gender, phone, profile_photo)
-- **clubs**: Organizations grouping players
-- **venues**: Event locations for tournaments
-- **tournaments**: Tournament definitions with filters (weight/age categories, gender, status)
-- **tournament_registrations**: Player enrollments with calculated age/weight at registration time
-- **Pivot tables**: Relationship management between entities
+- **clubs**: Organizations grouping players (clubs.address_id → addresses.id, nullable)
+- **venues**: Event locations for tournaments (venues.address_id → addresses.id, required; plus mat_count)
+- **clubs_players**: Club membership history pivot (started_at, ended_at)
+- **tournaments**: Tournament event container (name, level, status, venue_id, start_at/end_at)
+- **tournament_categories**: Competitive divisions within a tournament (gender + age + weight class)
+- **tournament_registrations**: Player enrollments per category (snapshot age/weight at registration time)
+- **tournament_brackets**: Competition structure per category (type, seeding_method, status)
+- **tournament_matches**: Individual fights within a bracket (round, section, scheduling, winner progression)
+- **tournament_match_competitors**: Per-match athlete record (position Blue/White, score, penalties, result)
+- **tournament_results**: Final finishing positions per category
+
+### Address Lifecycle
+Addresses are managed at the repository level (not via DB cascades). The controller is thin — it calls custom repository methods (e.g. `createVenue`, `updateVenue`, `deleteVenue`). The repository injects both the entity model and the Address model and owns the full lifecycle.
+
+Delete pattern is soft-delete safe: `SoftDeletes` issues an UPDATE (sets `deleted_at`), not a hard DELETE, so the RESTRICT FK constraint is not triggered. Sequence: soft-delete address → soft-delete entity.
+
+- **Venues**: address is required — `createVenue` creates Address then Venue; `deleteVenue` soft-deletes address then venue.
+- **Clubs**: address is nullable — same pattern applies when address_id is set.
 
 ### Key Conventions
 - **Primary Keys**: ULID (not auto-increment integers)
