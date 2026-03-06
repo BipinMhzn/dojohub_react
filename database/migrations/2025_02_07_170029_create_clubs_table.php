@@ -15,7 +15,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('abbreviation', 10);
             $table->string('logo_url')->nullable();
-            $table->ulid('address_id')->nullable();
+            $table->ulid('address_id');
             $table->string('phone_number', 20)->nullable();
             $this->editorLogs($table);
 

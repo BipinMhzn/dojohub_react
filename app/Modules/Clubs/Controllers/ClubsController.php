@@ -26,12 +26,12 @@ final class ClubsController extends BaseWebController
     public function __construct(private readonly ClubInterface $repository) {}
 
     /**
-     * @param  BaseListRequest  $request
+     * @param  BaseWebListRequest  $request
      */
     public function index(BaseWebListRequest $request): Response
     {
         return $this->render('clubs/index', [
-            'clubs' => $this->repository->getList($request->validated()),
+            'clubs'   => $this->repository->getList($request->validated()),
             'filters' => $request->validated(),
         ]);
     }
@@ -50,7 +50,7 @@ final class ClubsController extends BaseWebController
             unset($inputs['logo']);
         }
 
-        $this->repository->create($inputs);
+        $this->repository->createClub($inputs);
 
         return to_route('clubs.index')->with('success', 'Club created successfully.');
     }
@@ -70,14 +70,14 @@ final class ClubsController extends BaseWebController
             $inputs['logo_url'] = $profilePhoto['path'];
             unset($inputs['logo']);
         }
-        $this->repository->update($club, $inputs);
+        $this->repository->updateClub($inputs, $club);
 
         return to_route('clubs.index')->with('success', 'Club updated successfully.');
     }
 
     public function destroy(string $club): RedirectResponse
     {
-        $this->repository->destroy($club);
+        $this->repository->deleteClub($club);
 
         return to_route('clubs.index')->with('success', 'Club deleted successfully.');
     }
@@ -89,3 +89,4 @@ final class ClubsController extends BaseWebController
         ]);
     }
 }
+

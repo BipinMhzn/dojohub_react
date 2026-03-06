@@ -43,19 +43,24 @@ export const getClubColumns = ({ onDelete }: ClubColumnsProps): ColumnDef<Club>[
         header: 'Abbreviation',
     },
     {
-        accessorKey: 'address',
+        id: 'address',
         header: 'Address',
-        cell: ({ row }) => {
-            const club = row.original;
-            if (!club.address) {
-                return '-';
-            }
-            return (
-                <a href={`tel:${club.address}`}>
-                    <span>{club.address}</span>
-                </a>
-            );
-        },
+        cell: ({ row }) => row.original.address?.address ?? '—',
+    },
+    {
+        id: 'city',
+        header: 'City',
+        cell: ({ row }) => row.original.address?.city ?? '—',
+    },
+    {
+        id: 'state',
+        header: 'State',
+        cell: ({ row }) => row.original.address?.state ?? '—',
+    },
+    {
+        id: 'country',
+        header: 'Country',
+        cell: ({ row }) => row.original.address?.country ?? '—',
     },
     {
         accessorKey: 'phone_number',
@@ -63,7 +68,7 @@ export const getClubColumns = ({ onDelete }: ClubColumnsProps): ColumnDef<Club>[
         cell: ({ row }) => {
             const club = row.original;
             if (!club.phone_number) {
-                return '-';
+                return '—';
             }
             return (
                 <a href={`tel:${club.phone_number}`}>
