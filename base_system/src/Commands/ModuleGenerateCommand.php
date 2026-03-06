@@ -8,6 +8,7 @@ use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Str;
 use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputOption;
 
 class ModuleGenerateCommand extends Command
 {
@@ -56,7 +57,22 @@ class ModuleGenerateCommand extends Command
         'ServiceProvider.stub' => ['', false, 'none'],
         'Repository.stub' => ['Repositories', false, 'prefixed'],
         'UpdateRequest.stub' => ['Requests', false, 'prefixed'],
-        'web.stub' => ['Routes', false, 'none']
+        'web.stub' => ['Routes', false, 'none'],
+    ];
+
+    /**
+     * @var array[]
+     */
+    protected array $webModuleStubFiles = [
+        'WebController.stub' => ['Controllers', true, 'prefixed', 'Controller.php'],
+        'Filter.stub' => ['Filters', true, 'prefixed'],
+        'WebCreateRequest.stub' => ['Requests', false, 'prefixed', 'CreateRequest.php'],
+        'Interface.stub' => ['Interfaces', false, 'prefixed'],
+        'Model.stub' => ['Database/Models', false, 'replaced'],
+        'ServiceProvider.stub' => ['', false, 'none'],
+        'Repository.stub' => ['Repositories', false, 'prefixed'],
+        'WebUpdateRequest.stub' => ['Requests', false, 'prefixed', 'UpdateRequest.php'],
+        'WebRoute.stub' => ['Routes', false, 'none', 'web.php'],
     ];
 
     /**
@@ -68,21 +84,17 @@ class ModuleGenerateCommand extends Command
 
     /**
      * ModuleGenerateCommand constructor
-     * @param Filesystem $files
-     * @param Application $app
      */
     public function __construct(protected Filesystem $files, protected Application $app)
     {
         parent::__construct();
         $this->moduleContainer = $this->app['config']->get('base-system.module');
         $this->moduleSystem = $this->app['config']->get('base-system.system');
-        $this->namespacePrefix = '\App\\' . $this->moduleContainer;
-        $this->stubPath = dirname(__DIR__) . "/Stubs/";
+        $this->namespacePrefix = '\App\\'.$this->moduleContainer;
+        $this->stubPath = dirname(__DIR__).'/Stubs/';
     }
 
     /**
-     * @return void
-     *
      * @throws FileNotFoundException
      */
     public function handle(): void
@@ -93,7 +105,6 @@ class ModuleGenerateCommand extends Command
     /**
      * Generate the desired migration.
      *
-     * @return void
      * @throws FileNotFoundException
      */
     protected function makeModule(): void
@@ -101,11 +112,12 @@ class ModuleGenerateCommand extends Command
         $name = ucfirst($this->argument('name'));
         $this->moduleName = Str::singular($name);
         $this->moduleNamePlural = Str::plural($name);
-        $this->namespace = $this->namespacePrefix . "\\" . $this->moduleNamePlural;
+        $this->namespace = $this->namespacePrefix.'\\'.$this->moduleNamePlural;
         $this->modulePath = $this->getPath($this->moduleNamePlural, 'module');
 
         if ($this->files->exists($this->modulePath)) {
-            $this->error('Module ' . $name . '  already exists!');
+            $this->error('Module '.$name.'  already exists!');
+
             return;
         }
         $this->moduleSystemPath = $this->getPath($this->moduleName, 'system');
@@ -115,23 +127,19 @@ class ModuleGenerateCommand extends Command
 
     /**
      * Get the path to where we should store the migration.
-     *
-     * @param string $name
-     * @param string $type
-     * @return string
      */
     protected function getPath(string $name, string $type): string
     {
         if ($type === 'module') {
-            return app_path($this->moduleContainer . "/" . $name);
+            return app_path($this->moduleContainer.'/'.$name);
         }
-        return app_path($this->moduleSystem . "/" . $name);
+
+        return app_path($this->moduleSystem.'/'.$name);
     }
 
     /**
      * Build the directory for the class if necessary.
      *
-     * @return void
      * @throws FileNotFoundException
      */
     protected function copyModuleStructureFromStubs(): void
@@ -141,80 +149,76 @@ class ModuleGenerateCommand extends Command
     }
 
     /**
-     * @return void
      * @throws FileNotFoundException
      */
     protected function copyModule(): void
     {
-        if (!$this->files->isDirectory(dirname($this->modulePath))) {
+        if (! $this->files->isDirectory(dirname($this->modulePath))) {
             $this->files->makeDirectory(dirname($this->modulePath), 0777, true, true);
         }
 
-        $this->files->copyDirectory(realpath($this->stubPath . "Module"), $this->modulePath);
+        $this->files->copyDirectory(realpath($this->stubPath.'Module'), $this->modulePath);
         $this->generateModuleCodeFromStubs();
     }
 
     /**
      * Generate Cod from stubs
      *
-     * @return void
      * @throws FileNotFoundException
      */
     protected function generateModuleCodeFromStubs(): void
     {
-        foreach ($this->moduleStubFiles as $stubName => $stubConfig) {
-            [$folderName, $isPlural, $action] = $stubConfig;
+        $stubFiles = $this->option('web') ? $this->webModuleStubFiles : $this->moduleStubFiles;
 
-            $stubPath = $this->stubPath . $stubName;
-            $destination = $this->modulePath . "/" . $folderName;
-            $this->generateFileInDestination($stubPath, $isPlural, $stubName, $action, $destination);
+        foreach ($stubFiles as $stubName => $stubConfig) {
+            [$folderName, $isPlural, $action] = $stubConfig;
+            $filenameOverride = $stubConfig[3] ?? null;
+
+            $stubPath = $this->stubPath.$stubName;
+            $destination = $this->modulePath.'/'.$folderName;
+            $this->generateFileInDestination($stubPath, $isPlural, $stubName, $action, $destination, $filenameOverride);
         }
     }
 
     /**
-     * @param string $stubPath
-     * @param bool $isPlural
-     * @param string $stubName
-     * @param string $action
-     * @param string $destination
-     *
-     * @return void
      * @throws FileNotFoundException
      */
-    protected function generateFileInDestination(string $stubPath, bool $isPlural, string $stubName, string $action, string $destination): void
+    protected function generateFileInDestination(string $stubPath, bool $isPlural, string $stubName, string $action, string $destination, ?string $filenameOverride = null): void
     {
         $stub = $this->files->get($stubPath);
-        //replace the placeholders in the stubs
+        // replace the placeholders in the stubs
         $name = $isPlural ? $this->moduleNamePlural : $this->moduleName;
-        $stub = str_replace(array("{{routemodule}}", "{{module}}", "{module}", "{moduleContainer}", "{system}"), array(strtolower($this->moduleNamePlural), $this->moduleNamePlural, $this->moduleName, $this->moduleContainer, $this->moduleSystem), $stub);
-        $filename = str_replace(".stub", ".php", $stubName);
+        $stub = str_replace(
+            ['{{routemodule_singular}}', '{{routemodule}}', '{{module}}', '{module}', '{moduleContainer}', '{system}'],
+            [strtolower($this->moduleName), strtolower($this->moduleNamePlural), $this->moduleNamePlural, $this->moduleName, $this->moduleContainer, $this->moduleSystem],
+            $stub
+        );
+        $filename = $filenameOverride ?? str_replace('.stub', '.php', $stubName);
         switch ($action) {
             case 'prefixed':
-                $filename = $name . $filename;
+                $filename = $name.$filename;
                 break;
-            case "replaced":
-                $filename = $name . ".php";
+            case 'replaced':
+                $filename = $name.'.php';
                 break;
         }
-        $this->files->put($destination . "/" . $filename, $stub);
+        $this->files->put($destination.'/'.$filename, $stub);
     }
 
     /**
-     * @return void
      * @throws FileNotFoundException
      */
     protected function copySystem(): void
     {
-        if (!$this->files->isDirectory(dirname($this->moduleSystemPath))) {
+        if (! $this->files->isDirectory(dirname($this->moduleSystemPath))) {
             $this->files->makeDirectory(dirname($this->moduleSystemPath), 0777, true, true);
         }
 
-        $this->files->copyDirectory(realpath($this->stubPath . "System"), $this->moduleSystemPath);
+        $this->files->copyDirectory(realpath($this->stubPath.'System'), $this->moduleSystemPath);
         $this->generateSystemCodeFromStubs();
     }
 
     /**
-     * @return void
      * @throws FileNotFoundException
      */
     protected function generateSystemCodeFromStubs(): void
@@ -222,9 +226,9 @@ class ModuleGenerateCommand extends Command
         foreach ($this->systemStubFiles as $stubName => $stubConfig) {
             [$folderName, $isPlural, $action] = $stubConfig;
 
-            $stubPath = $this->stubPath . $stubName;
-            $destination = $this->moduleSystemPath . "/" . $folderName;
-            $this->generateFileInDestination($stubPath, $isPlural, $stubName, $action, $destination);
+            $stubPath = $this->stubPath.$stubName;
+            $destination = $this->moduleSystemPath.'/'.$folderName;
+            $this->generateFileInDestination($stubPath, $isPlural, $stubName, $action, $destination, null);
         }
     }
 
@@ -235,6 +239,16 @@ class ModuleGenerateCommand extends Command
     {
         return [
             ['name', InputArgument::REQUIRED, 'The name of the module'],
+        ];
+    }
+
+    /**
+     * @return array[]
+     */
+    protected function getOptions(): array
+    {
+        return [
+            ['web', null, InputOption::VALUE_NONE, 'Generate a web (Inertia.js) module instead of an API module'],
         ];
     }
 }

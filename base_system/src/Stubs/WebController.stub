@@ -1,0 +1,102 @@
+<?php
+
+namespace App\{moduleContainer}\{{module}}\Controllers;
+
+use App\{moduleContainer}\{{module}}\Interfaces\{module}Interface;
+use App\{moduleContainer}\{{module}}\Requests\{module}CreateRequest;
+use App\{moduleContainer}\{{module}}\Requests\{module}UpdateRequest;
+use BaseSystem\Controllers\BaseWebController;
+use BaseSystem\Requests\BaseWebListRequest;
+use Illuminate\Http\RedirectResponse;
+use Inertia\Response;
+
+/**
+ * Class {{module}}Controller
+ * @package App\{moduleContainer}\{{module}}\Controllers
+ */
+final class {{module}}Controller extends BaseWebController
+{
+    /**
+     * {{module}}Controller constructor.
+     * @param {module}Interface $repository
+     */
+    public function __construct(private readonly {module}Interface $repository)
+    {
+    }
+
+    /**
+     * @param BaseWebListRequest $request
+     * @return Response
+     */
+    public function index(BaseWebListRequest $request): Response
+    {
+        return $this->render('{{routemodule}}/index', [
+            '{{routemodule}}' => $this->repository->getList($request->validated()),
+            'filters' => $request->validated(),
+        ]);
+    }
+
+    /**
+     * @return Response
+     */
+    public function create(): Response
+    {
+        return $this->render('{{routemodule}}/create');
+    }
+
+    /**
+     * @param {module}CreateRequest $request
+     * @return RedirectResponse
+     */
+    public function store({module}CreateRequest $request): RedirectResponse
+    {
+        $this->repository->create($request->validated());
+
+        return to_route('{{routemodule}}.index')->with('success', '{{module}} created successfully.');
+    }
+
+    /**
+     * @param string ${{routemodule_singular}}
+     * @return Response
+     */
+    public function edit(string ${{routemodule_singular}}): Response
+    {
+        return $this->render('{{routemodule}}/edit', [
+            '{{routemodule_singular}}' => $this->repository->getById(${{routemodule_singular}}),
+        ]);
+    }
+
+    /**
+     * @param {module}UpdateRequest $request
+     * @param string ${{routemodule_singular}}
+     * @return RedirectResponse
+     */
+    public function update({module}UpdateRequest $request, string ${{routemodule_singular}}): RedirectResponse
+    {
+        $this->repository->update(${{routemodule_singular}}, $request->validated());
+
+        return to_route('{{routemodule}}.index')->with('success', '{{module}} updated successfully.');
+    }
+
+    /**
+     * @param string ${{routemodule_singular}}
+     * @return RedirectResponse
+     */
+    public function destroy(string ${{routemodule_singular}}): RedirectResponse
+    {
+        $this->repository->destroy(${{routemodule_singular}});
+
+        return to_route('{{routemodule}}.index')->with('success', '{{module}} deleted successfully.');
+    }
+
+    /**
+     * @param string ${{routemodule_singular}}
+     * @return Response
+     */
+    public function show(string ${{routemodule_singular}}): Response
+    {
+        return $this->render('{{routemodule}}/show', [
+            '{{routemodule_singular}}' => $this->repository->getById(${{routemodule_singular}}),
+        ]);
+    }
+}
