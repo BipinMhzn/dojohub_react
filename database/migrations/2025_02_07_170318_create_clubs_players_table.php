@@ -16,6 +16,8 @@ return new class extends Migration
             $table->ulid('player_id');
             $table->dateTime('started_at');
             $table->dateTime('ended_at')->nullable();
+            $table->tinyInteger('belt_rank')->unsigned()->nullable();
+            $table->string('grade', 50)->nullable();
             $this->editorLogs($table);
 
             $table->foreign('club_id')->references('id')->on('clubs')->onDelete('restrict')->onUpdate('cascade');

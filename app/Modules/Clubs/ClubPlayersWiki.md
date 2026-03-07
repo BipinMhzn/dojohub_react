@@ -23,9 +23,11 @@ Tracks club membership history. A player may belong to multiple clubs over time 
 | id         | ulid (PK) |                                                                |
 | club_id    | ulid (FK) | → clubs.id ON DELETE RESTRICT ON UPDATE CASCADE                |
 | player_id  | ulid (FK) | → players.id ON DELETE RESTRICT ON UPDATE CASCADE              |
-| started_at | datetime  | When the player joined this club                               |
-| ended_at   | datetime  | Nullable — null means membership is currently active           |
-| *audit*    |           | EditorTrait                                                    |
+| started_at  | datetime       | When the player joined this club                               |
+| ended_at    | datetime       | Nullable — null means membership is currently active           |
+| belt_rank   | tinyint        | Nullable — `BeltRankEnum` integer value (0=White … 7=Black)    |
+| grade       | varchar        | Nullable — free-form sub-grade, e.g. `1st dan`, `2nd kyu`      |
+| *audit*     |                | EditorTrait                                                    |
 
 **Index**: `(club_id, player_id)` for fast membership lookups.
 
@@ -46,13 +48,16 @@ New files added within `app/Modules/Clubs/`:
 app/
 ├── System/
 │   └── ClubPlayer/
-│       └── Models/
-│           └── ClubPlayer.php              # Canonical model: fillable, casts, club/player relationships
+│       ├── Models/
+│       │   └── ClubPlayer.php              # Canonical model: fillable, casts, club/player relationships
+│       └── Foundation/
+│           └── Enums/
+│               └── BeltRankEnum.php        # int-backed enum: WHITE=0 … BLACK=7
 └── Modules/
     └── Clubs/
         ├── Controllers/
-        │   ├── ClubsController.php         # Existing — unchanged
-        │   └── ClubPlayersController.php   # index (list), store (assign), update (end membership)
+        │   ├── ClubsController.php         # Existing — show() also passes memberships + availablePlayers
+        │   └── ClubPlayersController.php   # store (assign), update (end membership) — no index, handled by ClubsController::show
         ├── Interfaces/
         │   ├── ClubInterface.php           # Existing — unchanged
         │   └── ClubPlayerInterface.php     # Declares getClubPlayers, getAvailablePlayers, assignPlayer, endMembership
@@ -80,11 +85,12 @@ app/
 ```php
 protected $table = 'clubs_players';
 
-protected $fillable = ['club_id', 'player_id', 'started_at', 'ended_at'];
+protected $fillable = ['club_id', 'player_id', 'started_at', 'ended_at', 'belt_rank', 'grade'];
 
 protected $casts = [
     'started_at' => 'datetime',
     'ended_at'   => 'datetime',
+    'belt_rank'  => BeltRankEnum::class,
 ];
 
 public function club(): BelongsTo
@@ -99,6 +105,28 @@ public function player(): BelongsTo
 ```
 
 The module-level `app/Modules/Clubs/Models/ClubPlayer.php` extends this system model (thin wrapper, starts empty).
+
+---
+
+## Enums
+
+### `app/System/ClubPlayer/Foundation/Enums/BeltRankEnum.php`
+
+```php
+enum BeltRankEnum: int
+{
+    case WHITE  = 0;
+    case YELLOW = 1;
+    case ORANGE = 2;
+    case GREEN  = 3;
+    case BLUE   = 4;
+    case PURPLE = 5;
+    case BROWN  = 6;
+    case BLACK  = 7;
+}
+```
+
+Stored as a `tinyint` in the database. Nullable — a membership record does not require a belt rank.
 
 ---
 
@@ -223,6 +251,8 @@ public function assignPlayer(string $clubId, array $validated): ClubPlayer
         'club_id'    => $clubId,
         'player_id'  => $validated['player_id'],
         'started_at' => $validated['started_at'],
+        'belt_rank'  => $validated['belt_rank'] ?? null,
+        'grade'      => $validated['grade'] ?? null,
     ]);
 }
 ```
@@ -246,36 +276,36 @@ public function endMembership(string $clubId, string $membershipId, array $valid
 
 ## Controller
 
-**`ClubPlayersController`** — thin, delegates entirely to repository. Injected alongside the existing `ClubInterface` to load the club for breadcrumbs/context.
+**`ClubPlayersController`** — thin, delegates entirely to repository. Only handles write operations; the list view is rendered by `ClubsController::show()`.
 
 ```php
-public function __construct(
-    private readonly ClubInterface $clubs,
-    private readonly ClubPlayerInterface $repository,
-) {}
-
-public function index(BaseWebListRequest $request, string $club): Response
-{
-    return $this->render('clubs/players/index', [
-        'club'             => $this->clubs->getById($club),
-        'memberships'      => $this->repository->getClubPlayers($club, $request->validated()),
-        'availablePlayers' => $this->repository->getAvailablePlayers($club),
-        'filters'          => $request->validated(),
-    ]);
-}
+public function __construct(private readonly ClubPlayerInterface $repository) {}
 
 public function store(ClubPlayerAssignRequest $request, string $club): RedirectResponse
 {
     $this->repository->assignPlayer($club, $request->validated());
 
-    return to_route('clubs.players.index', $club)->with('success', 'Player assigned successfully.');
+    return to_route('clubs.show', $club)->with('success', 'Player assigned successfully.');
 }
 
 public function update(ClubPlayerEndRequest $request, string $club, string $membership): RedirectResponse
 {
     $this->repository->endMembership($club, $membership, $request->validated());
 
-    return to_route('clubs.players.index', $club)->with('success', 'Membership ended successfully.');
+    return to_route('clubs.show', $club)->with('success', 'Membership ended successfully.');
+}
+```
+
+**`ClubsController::show()`** — extended to also pass membership data for the detail page:
+
+```php
+public function show(string $club): Response
+{
+    return $this->render('clubs/show', [
+        'club'             => $this->repository->getById($club),
+        'memberships'      => $this->clubPlayers->getClubPlayers($club, []),
+        'availablePlayers' => $this->clubPlayers->getAvailablePlayers($club),
+    ]);
 }
 ```
 
@@ -285,10 +315,12 @@ public function update(ClubPlayerEndRequest $request, string $club, string $memb
 
 ### `ClubPlayerAssignRequest`
 
-| Field      | Rules                                                             |
-|------------|-------------------------------------------------------------------|
-| player_id  | required, string, exists:players,id                               |
-| started_at | required, date_format:Y-m-d, before_or_equal:today               |
+| Field      | Rules                                                                              |
+|------------|------------------------------------------------------------------------------------|
+| player_id  | required, string, exists:players,id                                                |
+| started_at | required, date_format:Y-m-d, before_or_equal:today                                |
+| belt_rank  | nullable, integer, in: BeltRankEnum values (0–7)                                   |
+| grade      | nullable, string, max:50                                                           |
 
 ### `ClubPlayerEndRequest`
 
@@ -313,11 +345,10 @@ Route::group([
     Route::resource('clubs', 'ClubsController')->names('clubs');
     Route::post('clubs/{club}', [ClubsController::class, 'update'])->name('clubs.update');
 
-    // Club Players (membership management)
+    // Club Players (write operations only — list is served by clubs.show)
     Route::prefix('clubs/{club}/players')->name('clubs.players.')->group(function () {
-        Route::get('/',                        [ClubPlayersController::class, 'index']) ->name('index');
-        Route::post('/',                       [ClubPlayersController::class, 'store']) ->name('store');
-        Route::put('/{membership}',            [ClubPlayersController::class, 'update'])->name('update');
+        Route::post('/',            [ClubPlayersController::class, 'store']) ->name('store');
+        Route::put('/{membership}', [ClubPlayersController::class, 'update'])->name('update');
     });
 });
 ```
@@ -325,7 +356,7 @@ Route::group([
 Named routes:
 
 ```
-GET  /manage/clubs/{club}/players                → clubs.players.index
+GET  /manage/clubs/{club}                        → clubs.show  (detail + members list)
 POST /manage/clubs/{club}/players                → clubs.players.store
 PUT  /manage/clubs/{club}/players/{membership}   → clubs.players.update
 ```
@@ -334,23 +365,38 @@ PUT  /manage/clubs/{club}/players/{membership}   → clubs.players.update
 
 ## Frontend Pages
 
-| File                                         | Purpose                                                         |
-|----------------------------------------------|-----------------------------------------------------------------|
-| `pages/clubs/players/index.tsx`              | Lists all memberships; "Assign Player" dialog; "End Membership" dialog |
-| `pages/clubs/players/partials/columns.tsx`   | TanStack Table column definitions for membership rows           |
+| File                                         | Purpose                                                                       |
+|----------------------------------------------|-------------------------------------------------------------------------------|
+| `pages/clubs/show.tsx`                       | Club detail card + members table; "Assign Player" dialog; "End Membership" dialog |
+| `pages/clubs/players/partials/columns.tsx`   | TanStack Table column definitions for membership rows                         |
 
 ### Page behaviour
 
-- **Assign Player** — opens a Dialog containing a `<Select>` populated from `availablePlayers`. Fields: player (required), started_at (required). Submits via Inertia `POST clubs.players.store`.
-- **End Membership** — per active membership row, an "End Membership" action opens a Dialog with a date picker for `ended_at`. Submits via Inertia `PUT clubs.players.update`.
+- **Club detail** (`GET /manage/clubs/{club}`) — shows club info card (logo, name, abbreviation, address, phone) and the full members table below it.
+- **Assign Player** — opens a Dialog with a `<Select>` populated from `availablePlayers`. Fields: player (required), started_at (defaults to today), belt_rank (optional), grade (optional). Submits via Inertia `POST clubs.players.store`, redirects back to `clubs.show`.
+- **End Membership** — per active membership row, an "End Membership" button opens a Dialog with a date picker for `ended_at`. Submits via Inertia `PUT clubs.players.update`, redirects back to `clubs.show`.
 - Historical memberships (ended_at set) are shown with a muted "Ended" badge; no action available on them.
-- The page includes a breadcrumb trail: `Clubs → {club.name} → Players`.
+- The page includes a breadcrumb trail: `Clubs → {club.name}`.
+- Dialogs do not close on outside click (`onInteractOutside` prevented) so the Calendar Popover inside a Dialog works correctly.
 
 ---
 
 ## TypeScript Types
 
 ```typescript
+export type BeltRank = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;  // WHITE … BLACK
+
+export const BELT_RANK_LABELS: Record<BeltRank, string> = {
+    0: 'White',
+    1: 'Yellow',
+    2: 'Orange',
+    3: 'Green',
+    4: 'Blue',
+    5: 'Purple',
+    6: 'Brown',
+    7: 'Black',
+};
+
 export type ClubMembership = {
     id: string;
     club_id: string;
@@ -365,6 +411,8 @@ export type ClubMembership = {
     };
     started_at: string;
     ended_at: string | null;   // null = currently active
+    belt_rank: BeltRank | null;
+    grade: string | null;
     created_at: string;
     updated_at: string;
 };
@@ -398,6 +446,8 @@ public function definition(): array
         'player_id'  => Player::factory(),
         'started_at' => fake()->dateTimeBetween('-3 years', '-1 month'),
         'ended_at'   => null,
+        'belt_rank'  => fake()->optional()->randomElement(BeltRankEnum::cases())->value,
+        'grade'      => null,
     ];
 }
 

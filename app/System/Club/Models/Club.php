@@ -4,8 +4,12 @@ namespace App\System\Club\Models;
 
 use App\System\Address\Models\Address;
 use App\System\AppBaseModel;
+use App\System\ClubPlayer\Models\ClubPlayer;
+use App\System\Player\Models\Player;
 use Database\Factories\ClubFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Club extends AppBaseModel
 {
@@ -31,5 +35,21 @@ class Club extends AppBaseModel
     public function address(): BelongsTo
     {
         return $this->belongsTo(Address::class, 'address_id', 'id');
+    }
+
+    public function memberships(): HasMany
+    {
+        return $this->hasMany(ClubPlayer::class, 'club_id');
+    }
+
+    public function activeMemberships(): HasMany
+    {
+        return $this->hasMany(ClubPlayer::class, 'club_id')->whereNull('ended_at');
+    }
+
+    public function players(): BelongsToMany
+    {
+        return $this->belongsToMany(Player::class, 'clubs_players', 'club_id', 'player_id')
+            ->withPivot(['id', 'started_at', 'ended_at', 'belt_rank', 'grade']);
     }
 }

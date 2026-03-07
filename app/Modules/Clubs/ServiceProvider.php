@@ -1,13 +1,15 @@
 <?php
+
 namespace App\Modules\Clubs;
 
-use \Illuminate\Support\ServiceProvider as BaseServiceProvider;
 use App\Modules\Clubs\Interfaces\ClubInterface;
+use App\Modules\Clubs\Interfaces\ClubPlayerInterface;
+use App\Modules\Clubs\Repositories\ClubPlayerRepository;
 use App\Modules\Clubs\Repositories\ClubRepository;
+use Illuminate\Support\ServiceProvider as BaseServiceProvider;
 
 /**
  * Class ServiceProvider
- * @package App\Modules\Clubs
  */
 class ServiceProvider extends BaseServiceProvider
 {
@@ -22,5 +24,6 @@ class ServiceProvider extends BaseServiceProvider
     public function register(): void
     {
         $this->app->bind(ClubInterface::class, ClubRepository::class);
+        $this->app->bind(ClubPlayerInterface::class, ClubPlayerRepository::class);
     }
 }

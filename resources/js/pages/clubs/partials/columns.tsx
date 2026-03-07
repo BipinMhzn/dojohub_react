@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Club } from '@/pages/clubs';
 import { formatUTCDate } from '@/utils/date';
-import { router } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 
 type ClubColumnsProps = {
     onDelete: (player: Club) => void;
@@ -21,7 +21,7 @@ export const getClubColumns = ({ onDelete }: ClubColumnsProps): ColumnDef<Club>[
         cell: ({ row }) => {
             const club = row.original;
             return (
-                <div className="flex items-center gap-3">
+                <Link href={`/manage/clubs/${club.id}`} className="flex items-center gap-3 hover:underline">
                     <Avatar className="h-8 w-8">
                         <AvatarImage src={club.logo_url ?? undefined} alt={club.name} />
                         <AvatarFallback>
@@ -34,7 +34,7 @@ export const getClubColumns = ({ onDelete }: ClubColumnsProps): ColumnDef<Club>[
                         </AvatarFallback>
                     </Avatar>
                     <span>{club.name}</span>
-                </div>
+                </Link>
             );
         },
     },
@@ -101,6 +101,9 @@ export const getClubColumns = ({ onDelete }: ClubColumnsProps): ColumnDef<Club>[
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => router.visit(`/manage/clubs/${club.id}`)}>
+                                View
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={handleEdit}>Edit</DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => onDelete(club)}>Delete</DropdownMenuItem>

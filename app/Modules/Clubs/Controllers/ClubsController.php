@@ -3,6 +3,7 @@
 namespace App\Modules\Clubs\Controllers;
 
 use App\Modules\Clubs\Interfaces\ClubInterface;
+use App\Modules\Clubs\Interfaces\ClubPlayerInterface;
 use App\Modules\Clubs\Requests\ClubCreateRequest;
 use App\Modules\Clubs\Requests\ClubUpdateRequest;
 use App\System\Foundation\Traits\FileUpload;
@@ -23,15 +24,15 @@ final class ClubsController extends BaseWebController
     /**
      * ClubsController constructor.
      */
-    public function __construct(private readonly ClubInterface $repository) {}
+    public function __construct(
+        private readonly ClubInterface $repository,
+        private readonly ClubPlayerInterface $clubPlayers,
+    ) {}
 
-    /**
-     * @param  BaseWebListRequest  $request
-     */
     public function index(BaseWebListRequest $request): Response
     {
         return $this->render('clubs/index', [
-            'clubs'   => $this->repository->getList($request->validated()),
+            'clubs' => $this->repository->getList($request->validated()),
             'filters' => $request->validated(),
         ]);
     }
@@ -86,7 +87,8 @@ final class ClubsController extends BaseWebController
     {
         return $this->render('clubs/show', [
             'club' => $this->repository->getById($club),
+            'memberships' => $this->clubPlayers->getAllClubPlayers($club),
+            'availablePlayers' => $this->clubPlayers->getAvailablePlayers($club),
         ]);
     }
 }
-
