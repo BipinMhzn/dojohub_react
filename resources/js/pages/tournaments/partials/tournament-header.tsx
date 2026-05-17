@@ -1,5 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tournament, TournamentLevel, TournamentStatus } from '@/pages/tournaments';
+import { Tournament } from '@/pages/tournaments';
 import { formatUTCDate } from '@/utils/date';
 
 interface Props {

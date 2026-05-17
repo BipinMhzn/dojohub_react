@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import AppLayout from '@/layouts/app-layout';
 import { Club } from '@/pages/clubs';
 import { Player } from '@/pages/players';
-import { AgeCategory, CategoryStatus, Gender, Tournament, TournamentCategory, TournamentRegistration, WeightCategory } from '@/pages/tournaments';
+import { CategoryStatus, Gender, Tournament, TournamentCategory, TournamentRegistration } from '@/pages/tournaments';
 import type { BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
 import { Trash2, UserPlus } from 'lucide-react';

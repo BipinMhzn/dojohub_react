@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
-import { AgeCategory, BracketMatch, BracketRound, BracketStructure, BracketType, CompetitorResult, Gender, MatchStatus, Tournament, TournamentCategory, WeightCategory } from '@/pages/tournaments';
+import { BracketMatch, BracketRound, BracketStructure, Gender, MatchStatus, Tournament, TournamentCategory } from '@/pages/tournaments';
 import type { BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
 import { Info, Trophy } from 'lucide-react';
@@ -52,7 +52,6 @@ export default function TournamentMatches({ tournament, category, bracket, brack
     const [selectedMatch, setSelectedMatch] = useState<BracketMatch | null>(null);
     const [resultDialogOpen, setResultDialogOpen] = useState(false);
     const [winnerPosition, setWinnerPosition] = useState<string>('');
-    const [scheduledAt, setScheduledAt] = useState('');
 
     const handleGenerateBracket = () => {
         router.post(

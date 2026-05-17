@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import AppLayout from '@/layouts/app-layout';
 import TournamentHeader from '@/pages/tournaments/partials/tournament-header';
 import TournamentTabs from '@/pages/tournaments/partials/tournament-tabs';
-import { AgeCategory, CategoryStatus, Gender, Tournament, TournamentCategory, WeightCategory } from '@/pages/tournaments';
+import { Gender, Tournament, TournamentCategory } from '@/pages/tournaments';
 import type { BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
 import { MoreHorizontal, Users } from 'lucide-react';

@@ -1,413 +1,206 @@
-# DojoHub - Project Context
+# DojoHub — Project Context
 
-## Wiki / Reference Docs
+DojoHub is a martial arts tournament management system: tournaments, players, clubs, venues.
 
-| Document | Path |
-|----------|------|
-| Database Schema (all tables, enums, migrations) | [database/DatabaseWiki.md](database/DatabaseWiki.md) |
-| Base System architecture & code generator | [base_system/README.md](base_system/README.md) |
-| Venues module | [app/Modules/Venues/VenueModuleWiki.md](app/Modules/Venues/VenueModuleWiki.md) |
-| Clubs module | [app/Modules/Clubs/ClubModuleWiki.md](app/Modules/Clubs/ClubModuleWiki.md) |
-| Club Players (membership management) | [app/Modules/Clubs/ClubPlayersWiki.md](app/Modules/Clubs/ClubPlayersWiki.md) |
-| Players module | [app/Modules/Players/PlayerModuleWiki.md](app/Modules/Players/PlayerModuleWiki.md) |
-| Tournaments module | [app/Modules/Tournaments/Wiki/TournamentModuleWiki.md](app/Modules/Tournaments/Wiki/TournamentModuleWiki.md) |
+**App URL**: http://dojohub_react.test (served by Laravel Herd — always available, no `php artisan serve` needed).
+
+> **Read the wiki before editing.** The detailed reference for every topic below lives under `wiki/`. CLAUDE.md is a map; the wiki is the territory.
 
 ---
 
-## Project Overview
-DojoHub is a full-stack martial arts management system for organizing tournaments, managing players, clubs, and venues. Built with modern web technologies for scalability and maintainability.
+## Wiki
 
-**Application URL**: http://dojohub_react.test
+All authoritative docs live under [`wiki/`](wiki/README.md).
 
-## Tech Stack
+| Document | What's in it |
+|----------|--------------|
+| [wiki/README.md](wiki/README.md) | Wiki index |
+| [wiki/Architecture.md](wiki/Architecture.md) | System vs Module model split, Repository pattern, Interface bindings, BaseController/BaseRepository |
+| [wiki/Conventions.md](wiki/Conventions.md) | Routes, PUT vs POST, soft-delete + FK RESTRICT, file naming, Pint workflow |
+| [wiki/Frontend.md](wiki/Frontend.md) | Pages, Inertia, TypeScript, forms, dark mode, data tables |
+| [wiki/Enums.md](wiki/Enums.md) | All backend enums (canonical integer values) |
+| [wiki/Database.md](wiki/Database.md) | Authoritative schema — every table, FK, index, migration |
+| [wiki/VenuesModule.md](wiki/VenuesModule.md) | Venues (required address) |
+| [wiki/ClubsModule.md](wiki/ClubsModule.md) | Clubs (nullable address, logo upload) |
+| [wiki/ClubPlayers.md](wiki/ClubPlayers.md) | Club membership history sub-feature |
+| [wiki/PlayersModule.md](wiki/PlayersModule.md) | Players (standard repository, profile photo) |
+| [wiki/TournamentsModule.md](wiki/TournamentsModule.md) | Tournament → Category → Bracket → Match → MatchCompetitor |
+| [base_system/README.md](base_system/README.md) | Local `base_system` package (BaseModel/Repository/Controller, code generator) |
 
-### Backend
-- **Framework**: Laravel 12.10 (PHP 8.4+)
-- **ORM**: Eloquent with ULID primary keys
-- **Frontend Bridge**: Inertia.js 2.0 (server-side rendering)
-- **Route Helper**: Ziggy 2.5 (exposes Laravel routes to frontend)
+When a module wiki and `wiki/Database.md` conflict on schema, the database wiki wins. When `wiki/Architecture.md` and a module wiki disagree on a pattern, the **module wiki wins** — it tracks real code.
 
-### Frontend
-- **Library**: React 19.0.0
-- **Language**: TypeScript 5.7.2 (strict mode)
-- **Build Tool**: Vite 6.0 with Laravel Vite Plugin
-- **Styling**: Tailwind CSS 4.0.0
-- **UI Components**: shadcn/ui (based on Radix UI)
-- **Icons**: Lucide React
-- **Data Tables**: TanStack React Table 8.21.3
-- **Tournament Brackets**: react-brackets 0.4.7
-- **Date Handling**: date-fns 3.6.0
+---
 
-### Development Tools
-- **Linting**: ESLint 9.19.0 with TypeScript support
-- **Formatting**: Prettier 3.4.2 (with Tailwind class sorting)
-- **Testing**: PHPUnit 11.5.18
+## Tech stack
 
-## Architecture Patterns
+**Backend**: Laravel 12.10 · PHP 8.4 · Eloquent (ULID PKs) · Inertia.js 2 (server-side rendering) · Ziggy 2.5
+**Frontend**: React 19 · TypeScript 5.7 (strict) · Vite 6 · Tailwind 4 · shadcn/ui (Radix UI) · TanStack React Table 8 · react-brackets · date-fns
+**Tooling**: ESLint 9, Prettier 3 (Tailwind sort), Laravel Pint, PHPUnit 11
 
-### Modular Architecture
-The project follows a modular design pattern where each feature is organized into separate modules:
+---
+
+## Architecture in one breath
+
+Every domain entity has **two** Eloquent models:
+
+| Layer | Path | Purpose |
+|-------|------|---------|
+| **System model** | `app/System/{Entity}/Models/{Entity}.php` | Canonical — fillable, casts, relationships |
+| **Module model** | `app/Modules/{Plural}/Models/{Entity}.php` | Thin extension point — usually empty, e.g. `class Venue extends \App\System\Venue\Models\Venue {}` |
+
+Module code always references the **module-level** class. Both extend `app/System/AppBaseModel.php`, which bundles `HasUlids`, `SoftDeletes`, `HasFactory`, and the `EditorLogs` audit trait.
+
+**Repositories** extend `BaseSystem\Repositories\BaseRepository` and implement an interface that extends `BaseInterface`. Controllers depend on the **interface**, not the concrete class. Bindings live in each module's `ServiceProvider.php` (auto-discovered by `BaseSystemProvider`).
+
+**Multi-table writes** (Venue + Address, Club + Address) belong in repository methods (`createVenue`, `updateVenue`, `deleteVenue`), not the controller. The repository injects every involved model via its constructor.
+
+**Eager loading** uses the `onBeforeResult(Builder $builder)` hook on the repository — and you must override `getById()` to attach the same `with(...)` because `getById` doesn't go through the hook.
+
+Full details: [wiki/Architecture.md](wiki/Architecture.md).
+
+---
+
+## Module skeleton
 
 ```
-app/Modules/
-├── Clubs/
-├── Players/
-├── Tournaments/     # Main feature area
-├── Users/
-└── Venues/          # ✓ Updated — uses addresses table (address_id FK + mat_count)
+app/Modules/{Plural}/
+├── Controllers/          # Thin — delegate to repository, return Inertia\Response or RedirectResponse
+├── Exceptions/
+├── Filters/              # extends BaseFilter — public methods become query-string filters
+├── Interfaces/           # extends BaseInterface — declares repository contract
+├── Models/               # Thin module-level models extending System models
+├── Repositories/         # extends BaseRepository — implements interface
+├── Requests/             # extends BaseWebRequest / BaseWebListRequest
+├── Routes/
+│   ├── api.php           # (optional) JSON API routes
+│   └── web.php           # Inertia routes — auth+verified middleware, manage prefix
+├── Services/             # (optional) multi-repository business logic
+└── ServiceProvider.php   # Binds Interface → Repository (auto-registered)
 ```
 
-Each module contains:
-- **Controllers/**: HTTP request handlers (Inertia responses)
-- **Database/Models/**: Eloquent ORM models
-- **Repositories/**: Data access layer (repository pattern)
-- **Requests/**: Form validation classes
-- **Routes/**: Module-specific routes (web.php, api.php)
-- **Filters/**: Query filtering logic
-- **Interfaces/**: Module contracts
-- **Middlewares/**: Module-specific middleware
+Existing modules: **Clubs**, **Players**, **Tournaments**, **Users**, **Venues**.
 
-### Base System Layer
-`app/System/` contains base models extended by modules:
-- AppBaseModel (base for all models — HasUlids, SoftDeletes, EditorLogs, HasFactory)
-- Address (shared address entity used by Venue and Club)
-- Venue (address_id FK + mat_count)
-- Club, Player, User
-- Tournament, TournamentCategory, TournamentRegistration
-- TournamentBracket, TournamentMatch, TournamentMatchCompetitor, TournamentResult
+---
 
-### Shared Foundation
-`base_system/src/` provides shared architecture:
-- BaseController, BaseRepository
-- Query Filters framework
-- Base Request classes
-- Artisan command stubs for scaffolding
+## Routes
 
-### Backend Patterns
-- **Repository Pattern**: Data access abstraction
-- **Request Validation**: Form request classes for input validation
-- **Trait Composition**: EditorTrait for audit logging (created_by, updated_by, created_at, updated_at)
-- **Middleware**: HandleInertiaRequests, HandleAppearance
+All web modules share:
 
-### Frontend Patterns
-- **Component-Based**: Reusable React components with TypeScript
-- **Layout System**: Separate layouts (app-layout, auth-layout)
-- **Partial Components**: Reusable page sections in `partials/` directories
-- **Path Aliases**: `@/` maps to `resources/js/`
+- Middleware: `['auth', 'verified']`
+- Prefix: `manage` (i.e. `/manage/venues`, `/manage/tournaments/...`)
+- Resource update method:
+  - **PUT** for modules without file uploads (Venues, Tournament Categories)
+  - **POST** for modules with file uploads (Clubs, Players, Tournaments) — Inertia's `router.put()` transparently sends `_method`
+- Route names: dot notation. Nested deeply for Tournaments:
+  - `tournaments.categories.index`
+  - `tournaments.categories.registrations.index`
+  - `tournaments.categories.matches.update-result`
 
-## Database Schema
+Always use `route('name', params)` (Ziggy) and Inertia `<Link>` for navigation.
 
-### Key Tables
-- **users**: Authentication and user profiles
-- **addresses**: Shared address records (used by venues and clubs). Contains address, city, state, country.
-- **players**: Martial arts practitioners (DOB, weight, gender, phone, profile_photo)
-- **clubs**: Organizations grouping players (clubs.address_id → addresses.id, nullable)
-- **venues**: Event locations for tournaments (venues.address_id → addresses.id, required; plus mat_count)
-- **clubs_players**: Club membership history pivot (started_at, ended_at)
-- **tournaments**: Tournament event container (name, level, status, venue_id, start_at/end_at)
-- **tournament_categories**: Competitive divisions within a tournament (gender + age + weight class)
-- **tournament_registrations**: Player enrollments per category (snapshot age/weight at registration time)
-- **tournament_brackets**: Competition structure per category (type, seeding_method, status)
-- **tournament_matches**: Individual fights within a bracket (round, section, scheduling, winner progression)
-- **tournament_match_competitors**: Per-match athlete record (position Blue/White, score, penalties, result)
-- **tournament_results**: Final finishing positions per category
+---
 
-### Address Lifecycle
-Addresses are managed at the repository level (not via DB cascades). The controller is thin — it calls custom repository methods (e.g. `createVenue`, `updateVenue`, `deleteVenue`). The repository injects both the entity model and the Address model and owns the full lifecycle.
+## Database
 
-Delete pattern is soft-delete safe: `SoftDeletes` issues an UPDATE (sets `deleted_at`), not a hard DELETE, so the RESTRICT FK constraint is not triggered. Sequence: soft-delete address → soft-delete entity.
+Every domain table:
+- ULID primary key (`$table->ulid('id')->primary()`)
+- `created_by`, `updated_by`, `deleted_by`, `created_at`, `updated_at`, `deleted_at`
+- Soft-delete via Eloquent `SoftDeletes`
 
-- **Venues**: address is required — `createVenue` creates Address then Venue; `deleteVenue` soft-deletes address then venue.
-- **Clubs**: address is nullable — same pattern applies when address_id is set.
+**Soft-delete + FK RESTRICT** is safe by design: `SoftDeletes` issues an UPDATE (setting `deleted_at`), which does not trigger an `ON DELETE RESTRICT` FK. Repositories soft-delete the related row first, then the parent (see Venues/Clubs).
 
-### Key Conventions
-- **Primary Keys**: ULID (not auto-increment integers)
-- **Audit Trails**: All models have created_by, updated_by, created_at, updated_at
-- **Foreign Keys**: Proper cascade/restrict actions
-- **Timestamps**: Laravel timestamps on all tables
+Tournament hierarchy:
 
-## Project Structure
+```
+Tournament
+  └── TournamentCategory
+        ├── TournamentRegistration   (player + club + age/weight snapshot)
+        ├── TournamentBracket
+        │     └── TournamentMatch
+        │           └── TournamentMatchCompetitor   (registration_id + position: White=0, Blue=1)
+        └── TournamentResult         (final positions)
+```
 
-### Frontend Organization
+Match competitors live in `TournamentMatchCompetitor` — there is no `player1_id`/`player2_id` on `tournament_matches`. `winner_id` on the match is a denormalised shortcut.
+
+Full schema: [wiki/Database.md](wiki/Database.md). Full enum list: [wiki/Enums.md](wiki/Enums.md).
+
+---
+
+## Frontend in one breath
+
 ```
 resources/js/
-├── app.tsx                    # Inertia app entry point
-├── ssr.tsx                    # Server-side rendering entry
-├── components/
-│   ├── ui/                    # 20+ shadcn/ui components (Button, Input, Dialog, etc.)
-│   ├── app-*.tsx              # App-specific components (AppSidebar, AppBreadcrumbs, etc.)
-│   └── svg/                   # Custom SVG components
-├── hooks/
-│   ├── use-appearance.tsx     # Dark mode management
-│   ├── use-initials.tsx
-│   └── use-mobile.tsx
-├── layouts/
-│   ├── app-layout.tsx         # Main app layout with sidebar
-│   ├── auth-layout.tsx        # Authentication pages layout
-│   └── app/                   # Layout components (sidebar, nav)
-├── lib/                       # Utility functions
-├── pages/                     # 32 page components (see below)
-├── types/                     # TypeScript type definitions
-└── utils/                     # Utility functions
+├── app.tsx, ssr.tsx
+├── components/{ui, app-*, svg}
+├── hooks/{use-appearance, use-initials, use-mobile}
+├── layouts/{app-layout, auth-layout, app/}
+├── pages/{auth, clubs, players, tournaments, venues, settings, dashboard, welcome}
+├── types/
+└── utils/
 ```
 
-### Page Components (32 pages)
-```
-pages/
-├── auth/                      # Login, Register, Password reset/confirm, Email verification
-├── clubs/                     # Club CRUD (index, create, edit)
-├── players/                   # Player CRUD (index, create, edit)
-├── tournaments/               # Tournament management
-│   ├── index.tsx              # List tournaments
-│   ├── create.tsx             # Create new tournament
-│   ├── edit.tsx               # Edit tournament
-│   ├── matches/               # Tournament brackets/matches (NEW)
-│   │   └── index.tsx
-│   ├── registrations/         # Player registration management
-│   │   └── index.tsx
-│   └── partials/              # Reusable tournament components
-│       ├── create-form.tsx
-│       ├── tournament-detail-header.tsx
-│       ├── tournament-detail-info.tsx
-│       ├── tournament-detail-players.tsx
-│       └── tournament-registrations-columns.tsx
-├── venues/                    # Venue CRUD (index, create, edit)
-├── settings/                  # User settings
-│   ├── profile.tsx            # User profile management
-│   ├── appearance.tsx         # Dark mode toggle
-│   └── password.tsx           # Password change
-├── dashboard.tsx              # Main dashboard
-└── welcome.tsx                # Public welcome page
-```
+Pages are Inertia components — props come from the Laravel controller. Navigation via `<Link>`; forms via `useForm`. Path alias `@/` resolves to `resources/js/`. Dark mode is mandatory for every new page (`dark:` variants).
 
-### UI Component System
-All UI components follow shadcn/ui conventions:
-- Located in `resources/js/components/ui/`
-- Built with Radix UI primitives + Tailwind CSS
-- Fully accessible and customizable
-- TypeScript with proper prop types
+Tournament pages include `categories/{index,create,edit}.tsx`, `registrations/index.tsx`, `matches/index.tsx`.
 
-Key components:
-- Forms: Button, Input, Checkbox, Radio, Select, Textarea, Toggle
-- Layout: Card, Sheet, Dialog, Popover, Tooltip, Sidebar
-- Data: DataTable (TanStack Table), Avatar, Badge, Breadcrumb
-- Utilities: Alert, Calendar, FileUploader, NavigationMenu
+Full guide: [wiki/Frontend.md](wiki/Frontend.md).
 
-## Core Features
+---
 
-### 1. User Management
-- Authentication (login, register, email verification, password reset)
-- User profiles and settings
-- Dark mode appearance toggle
+## Daily commands
 
-### 2. Club Management
-- CRUD operations for clubs
-- Sortable/filterable data tables
-- Club-player associations
-
-### 3. Player Management
-- CRUD operations for players
-- Attributes: Name, Gender, DOB, Weight, Profile photo, Phone number
-- Age calculation from DOB
-- Club association
-
-### 4. Venue Management
-- CRUD operations for venues
-- Tournament venue assignment
-
-### 5. Tournament Management (Primary Feature)
-- **Tournament CRUD**: Create, edit, list tournaments
-- **Tournament Attributes**:
-  - Basic: Name, Description, Logo
-  - Categories: Weight (min/max), Age (min/max), Gender filter
-  - Status: Scheduled, In Progress, Completed
-  - Venue, Dates (start_at, end_at), Tournament level
-- **Tournament Registrations**:
-  - Register players based on tournament criteria
-  - Calculate player age/weight at registration time
-  - Club-Player-Tournament relationship tracking
-  - Registration deletion/unregistration
-  - Filtered player list based on tournament filters
-- **Tournament Matches** (Current Development):
-  - Bracket visualization with react-brackets
-  - Multi-round tournaments (Quarterfinals, Semifinals, Finals)
-  - Match scheduling and management
-
-## Development Workflows
-
-### Installation
 ```bash
-composer install              # Backend dependencies
-npm install                   # Frontend dependencies
-php artisan migrate          # Run migrations
+composer dev          # Serve + queue + pail + vite (one terminal, all services)
+composer dev:ssr      # Same with SSR
+npm run dev           # Vite only
+npm run build         # Production build
+npm run types         # tsc strict check
+npm run lint          # ESLint auto-fix
+npm run format        # Prettier
+composer test         # PHPUnit suite
+
+vendor/bin/pint --dirty           # Format PHP — run after every PHP change
+php artisan test --filter=Name    # Run one test
+php artisan migrate               # Migrations
+php artisan migrate:fresh --seed  # Reset DB
 ```
 
-### Development
+Scaffold a new module:
+
 ```bash
-composer dev                 # Start all services (Laravel, Queue, Logs, Vite)
-composer dev:ssr            # Start with server-side rendering
-npm run dev                 # Start Vite dev server only
-php artisan serve           # Start Laravel server only
+php artisan base-system:generate Tournament --web   # Inertia module (web)
+php artisan base-system:generate Tournament         # JSON API module
 ```
 
-### Build
-```bash
-npm run build               # Production build
-npm run build:ssr          # Production build with SSR
-```
+The generator does not produce a migration — write that separately.
 
-### Code Quality
-```bash
-npm run lint               # ESLint (auto-fix)
-npm run format             # Prettier format
-npm run format:check       # Check formatting only
-npm run types              # TypeScript type checking
-composer test              # PHPUnit tests
-```
+---
 
-### Database
-```bash
-php artisan migrate        # Run migrations
-php artisan migrate:fresh  # Fresh migration
-php artisan db:seed        # Seed database
-```
+## Laravel Boost MCP
 
-## TypeScript Configuration
+This project ships with the **Laravel Boost MCP server**. Prefer its tools when they fit:
 
-### Path Aliases
-```typescript
-import { Button } from '@/components/ui/button'
-import { useAppearance } from '@/hooks/use-appearance'
-```
+- `search-docs` — version-pinned Laravel/Inertia/Tailwind docs. Use it **before** reaching for WebSearch when working on Laravel-ecosystem packages. Multiple short queries are better than one long one.
+- `list-artisan-commands` — confirm flags and signatures before running `php artisan ...`.
+- `get-absolute-url` — when sharing a URL with the user, use this to render the correct scheme/host/port for Herd.
+- `tinker` / `database-query` — debug models or run a read-only query. Skip these when a feature test would prove the same thing — tests are preferred.
+- `browser-logs` — read recent browser console output for frontend bugs.
 
-`@/` resolves to `resources/js/`
+See the `<laravel-boost-guidelines>` block below for the full rule set.
 
-### Important Types
-- `PageProps`: Global page props type (user, auth, etc.)
-- `User`: User model type
-- `Player`: Player model type
-- `Tournament`: Tournament model type
-- `TournamentRegistration`: Tournament registration type
-- Various Inertia types for type-safe routing
+---
 
-## Key Conventions
+## What NOT to do
 
-### Backend
-- Use repository pattern for data access
-- Form validation in Request classes (not controllers)
-- Return Inertia responses: `Inertia::render('PageName', $data)`
-- Use EditorTrait on models for audit logging
-- ULIDs for primary keys (not integers)
-
-### Frontend
-- Use TypeScript strictly (no `any` types)
-- Import components from `@/components/ui/`
-- Use Inertia Link for navigation: `<Link href={route('...')}>`
-- Access routes with Ziggy: `route('tournaments.index')`
-- Follow shadcn/ui component patterns
-- Use `cn()` utility for conditional Tailwind classes
-- Dark mode via `use-appearance` hook
-
-### Code Style
-- Frontend: Prettier with Tailwind class sorting
-- Backend: Laravel Pint (PSR-12 style)
-- ESLint for React/TypeScript best practices
-- Strict TypeScript mode enabled
-
-### File Naming
-- Frontend: kebab-case for files, PascalCase for components
-- Backend: StudlyCase for classes, snake_case for files
-- Routes: dot notation (e.g., `tournaments.registrations.index`)
-
-## Current Development Status
-
-**Active Branch**: `feature/matches`
-
-**Recent Work**:
-- Tournament registration system refactored
-- Tournament detail page component breakdown
-- Player registration fixes
-- Tournament matches/bracket system (NEW - MatchesController added)
-
-**Staged Changes**:
-- MatchesController.php (new)
-- matches/index.tsx page (new)
-- Updated tournament routes
-- Updated tournament registrations UI
-
-## Important Notes
-
-### Inertia.js Integration
-- All pages are Inertia components (not traditional React SPA)
-- Props passed from Laravel controllers appear as component props
-- Use Inertia's `<Link>` for navigation (not React Router)
-- Form submissions use Inertia's form helper: `useForm()`
-
-### Dark Mode
-- Managed via `use-appearance` hook
-- Persisted in user settings
-- Uses Tailwind's dark mode classes
-- Toggle available in settings/appearance page
-
-### Data Tables
-- Use TanStack React Table for complex tables
-- Column definitions in separate files (e.g., `*-columns.tsx`)
-- Support sorting, filtering, pagination
-- Reusable DataTable component
-
-### Tournament Business Logic
-- Age calculated at registration time (not tournament time)
-- Weight checked at registration time
-- Gender filter applied to player list
-- Multiple clubs can register players
-- Players can be registered/unregistered
-
-### File Uploads
-- Player profile photos
-- Tournament logos
-- Handled via FileUploader component
-
-## Common Tasks
-
-### Adding a New Module
-1. Create module directory in `app/Modules/`
-2. Create Controller, Model, Repository, Request classes
-3. Define routes in `Routes/web.php`
-4. Create frontend pages in `resources/js/pages/module-name/`
-
-### Adding a New Page
-1. Create page component in `resources/js/pages/`
-2. Add route in module's `Routes/web.php`
-3. Create controller method returning Inertia response
-4. Add type definitions if needed
-
-### Adding a UI Component
-1. Use shadcn/ui CLI: `npx shadcn-ui@latest add [component]`
-2. Component appears in `resources/js/components/ui/`
-3. Customize as needed
-4. Import and use: `import { Button } from '@/components/ui/button'`
-
-### Adding a Database Table
-1. Create migration: `php artisan make:migration create_table_name`
-2. Define schema in migration file
-3. Run migration: `php artisan migrate`
-4. Create Eloquent model in appropriate module
-
-## Troubleshooting
-
-### Common Issues
-- **Vite not building**: Check `vite.config.ts` and ensure Vite dev server is running
-- **TypeScript errors**: Run `npm run types` to check, ensure imports use `@/` alias
-- **Route not found**: Check Ziggy routes with `route()` helper, verify route defined in web.php
-- **Inertia version mismatch**: Ensure backend and frontend Inertia versions match
-- **Dark mode not working**: Check `use-appearance` hook and middleware
-
-### Debug Tools
-- Laravel Debugbar (if installed)
-- React DevTools
-- Laravel Pail for logs: `php artisan pail`
-- Browser console for frontend errors
-- `dd()` and `dump()` in Laravel for backend debugging
+- Don't reference the System model directly from module code — always go through the module-level extension.
+- Don't put address/multi-table logic in the controller — repository methods own that lifecycle.
+- Don't use raw `DB::table(...)` — use Eloquent.
+- Don't add the `update` route via `Route::resource()` when the module uses POST-for-update — use `->except('update')` then register POST explicitly.
+- Don't eager-load only in `onBeforeResult` and forget to override `getById`.
+- Don't hard-delete (`forceDelete`) without auditing FK references first.
+- Don't bypass `<Link>` / `useForm` with raw `<a>` or `fetch()` — Inertia needs control of the navigation lifecycle.
+- Don't create wiki/docs files unless explicitly asked. Update existing ones in `wiki/` instead.
 
 ===
 
