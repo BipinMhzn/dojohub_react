@@ -48,8 +48,7 @@ const weightCategories = [
 export default function CreateCategory({ tournament }: Props) {
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Tournaments', href: '/manage/tournaments' },
-        { title: tournament.name, href: `/manage/tournaments/${tournament.id}/categories` },
-        { title: 'Categories', href: `/manage/tournaments/${tournament.id}/categories` },
+        { title: tournament.name, href: `/manage/tournaments/${tournament.id}` },
         { title: 'Add Category', href: `/manage/tournaments/${tournament.id}/categories/create` },
     ];
 
@@ -175,7 +174,7 @@ export default function CreateCategory({ tournament }: Props) {
                     <div className="flex gap-4 pt-2">
                         <Button type="submit" disabled={processing}>{processing ? 'Saving...' : 'Save Category'}</Button>
                         <Button type="button" variant="outline" asChild>
-                            <a href={`/manage/tournaments/${tournament.id}/categories`}>Cancel</a>
+                            <a href={`/manage/tournaments/${tournament.id}`}>Cancel</a>
                         </Button>
                     </div>
                 </form>

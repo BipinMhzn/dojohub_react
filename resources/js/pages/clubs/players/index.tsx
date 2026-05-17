@@ -1,4 +1,4 @@
-import Heading from '@/components/heading';
+import HeadingSmall from '@/components/heading-small';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -10,10 +10,11 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
+import ClubLayout from '@/layouts/club/layout';
 import { cn } from '@/lib/utils';
 import { Club } from '@/pages/clubs/index';
-import { Player } from '@/pages/players/index';
 import { getClubPlayerColumns } from '@/pages/clubs/players/partials/columns';
+import { Player } from '@/pages/players/index';
 import type { BreadcrumbItem, PageFilters, PaginationLink } from '@/types';
 import { Head, useForm } from '@inertiajs/react';
 import { format } from 'date-fns';
@@ -65,11 +66,10 @@ export default function ClubPlayers({ club, memberships, availablePlayers, filte
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Clubs', href: '/manage/clubs' },
-        { title: club.name, href: `/manage/clubs/${club.id}/edit` },
+        { title: club.name, href: `/manage/clubs/${club.id}` },
         { title: 'Players', href: `/manage/clubs/${club.id}/players` },
     ];
 
-    // ── Assign Player dialog ──────────────────────────────────────
     const [assignOpen, setAssignOpen] = useState(false);
     const [startDateOpen, setStartDateOpen] = useState(false);
     const today = new Date();
@@ -94,7 +94,6 @@ export default function ClubPlayers({ club, memberships, availablePlayers, filte
         });
     };
 
-    // ── End Membership dialog ─────────────────────────────────────
     const [membershipToEnd, setMembershipToEnd] = useState<ClubMembership | null>(null);
     const [endDate, setEndDate] = useState<Date | undefined>();
     const [endDateOpen, setEndDateOpen] = useState(false);
@@ -127,16 +126,16 @@ export default function ClubPlayers({ club, memberships, availablePlayers, filte
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`${club.name} — Players`} />
 
-            <div className="px-4 py-6">
-                <div className="flex items-center">
-                    <Heading title="Club Players" description={`Manage player memberships for ${club.name}`} />
-                    <Button variant="default" className="ml-auto" onClick={() => setAssignOpen(true)}>
+            <ClubLayout club={club} activeKey="players">
+                <div className="flex items-center justify-between">
+                    <HeadingSmall title="Players" description={`Manage player memberships for ${club.name}.`} />
+                    <Button variant="default" onClick={() => setAssignOpen(true)}>
                         <Plus className="mr-2 h-4 w-4" />
                         Assign Player
                     </Button>
                 </div>
 
-                <div className="mx-auto mt-4">
+                <div className="mt-4">
                     <DataTable columns={columns} data={membershipData} />
                     <DataTablePagination
                         links={links as PaginationLink[]}
@@ -145,9 +144,8 @@ export default function ClubPlayers({ club, memberships, availablePlayers, filte
                         onPerPageCountUpdated={() => {}}
                     />
                 </div>
-            </div>
+            </ClubLayout>
 
-            {/* ── Assign Player Dialog ───────────────────────────── */}
             <Dialog open={assignOpen} onOpenChange={(open) => !open && setAssignOpen(false)}>
                 <DialogContent onInteractOutside={(e) => e.preventDefault()}>
                     <DialogHeader>
@@ -257,7 +255,6 @@ export default function ClubPlayers({ club, memberships, availablePlayers, filte
                 </DialogContent>
             </Dialog>
 
-            {/* ── End Membership Dialog ──────────────────────────── */}
             <Dialog open={!!membershipToEnd} onOpenChange={(open) => !open && setMembershipToEnd(null)}>
                 <DialogContent onInteractOutside={(e) => e.preventDefault()}>
                     <DialogHeader>

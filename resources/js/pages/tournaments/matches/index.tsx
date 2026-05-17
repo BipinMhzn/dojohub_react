@@ -1,3 +1,4 @@
+import HeadingSmall from '@/components/heading-small';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -5,22 +6,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
-import { BracketMatch, BracketRound, BracketStructure, Gender, MatchStatus, Tournament, TournamentCategory } from '@/pages/tournaments';
+import CategoryLayout from '@/layouts/category/layout';
+import { BracketMatch, BracketRound, BracketStructure, MatchStatus, Tournament, TournamentCategory } from '@/pages/tournaments';
+import { getCategoryDisplayName } from '@/pages/tournaments/partials/category-columns';
 import type { BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
 import { Info, Trophy } from 'lucide-react';
 import { useState } from 'react';
-
-const ageCategoryLabel: Record<number, string> = {
-    0: 'Preparation', 1: 'Super Mini', 2: 'Mini', 3: 'Pupils', 4: 'Juveniles',
-    5: 'Cadets', 6: 'Juniors', 7: 'Under 23', 8: 'Seniors', 9: 'Veterans',
-};
-
-const weightCategoryLabel: Record<number, string> = {
-    0: '-48kg', 1: '-52kg', 2: '-57kg', 3: '-60kg', 4: '-63kg',
-    5: '-66kg', 6: '-70kg', 7: '-73kg', 8: '-78kg', 9: '-81kg',
-    10: '-90kg', 11: '-100kg', 12: '+100kg', 13: '+78kg',
-};
 
 interface TournamentBracket {
     id: string;
@@ -36,14 +28,13 @@ interface Props {
 }
 
 export default function TournamentMatches({ tournament, category, bracket, bracketStructure }: Props) {
-    const categoryName = category.name ?? `${Number(category.gender) === Gender.Male ? 'Male' : 'Female'} ${ageCategoryLabel[Number(category.age_category)]} ${weightCategoryLabel[Number(category.weight_category)]}`;
+    const categoryName = getCategoryDisplayName(category);
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Tournaments', href: '/manage/tournaments' },
-        { title: tournament.name, href: `/manage/tournaments/${tournament.id}/categories` },
-        { title: 'Categories', href: `/manage/tournaments/${tournament.id}/categories` },
-        { title: categoryName, href: `/manage/tournaments/${tournament.id}/categories/${category.id}/registrations` },
-        { title: 'Matches', href: '#' },
+        { title: tournament.name, href: `/manage/tournaments/${tournament.id}` },
+        { title: categoryName, href: `/manage/tournaments/${tournament.id}/categories/${category.id}/edit` },
+        { title: 'Matches', href: `/manage/tournaments/${tournament.id}/categories/${category.id}/matches` },
     ];
 
     const [generateType, setGenerateType] = useState('0');
@@ -84,31 +75,23 @@ export default function TournamentMatches({ tournament, category, bracket, brack
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Matches – ${categoryName}`} />
 
-            <div className="px-4 py-6">
-                <div className="mb-4 flex items-center justify-between">
-                    <div>
-                        <h1 className="text-xl font-bold">{categoryName} – Bracket</h1>
-                        <p className="text-sm text-muted-foreground">Age {category.min_age}–{category.max_age} · Weight {category.min_weight}–{category.max_weight} kg</p>
-                    </div>
-                    <div className="flex gap-2">
-                        {!bracket && (
-                            <Button onClick={() => setGenerateDialogOpen(true)}>Generate Bracket</Button>
-                        )}
-                        <Button variant="outline" asChild>
-                            <a href={`/manage/tournaments/${tournament.id}/categories`}>← Categories</a>
-                        </Button>
-                    </div>
+            <CategoryLayout tournament={tournament} category={category} activeKey="matches">
+                <div className="flex items-center justify-between">
+                    <HeadingSmall title="Bracket" description="Match-by-match bracket view for this category." />
+                    {!bracket && (
+                        <Button onClick={() => setGenerateDialogOpen(true)}>Generate Bracket</Button>
+                    )}
                 </div>
 
                 {!bracketStructure ? (
-                    <Alert>
+                    <Alert className="mt-4">
                         <Info className="size-4" />
                         <AlertDescription>
                             No bracket generated yet. Click "Generate Bracket" to create matches from registered players.
                         </AlertDescription>
                     </Alert>
                 ) : (
-                    <div className="space-y-8 overflow-x-auto">
+                    <div className="mt-4 space-y-8 overflow-x-auto">
                         {allRounds.map((round) => (
                             <div key={`${round.round_number}-${round.round_name}`}>
                                 <h3 className="mb-3 font-semibold text-muted-foreground uppercase text-xs tracking-wide">
@@ -161,7 +144,7 @@ export default function TournamentMatches({ tournament, category, bracket, brack
                         ))}
                     </div>
                 )}
-            </div>
+            </CategoryLayout>
 
             {/* Generate Bracket Dialog */}
             <Dialog open={generateDialogOpen} onOpenChange={setGenerateDialogOpen}>

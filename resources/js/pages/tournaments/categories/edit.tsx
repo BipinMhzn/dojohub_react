@@ -1,4 +1,4 @@
-import Heading from '@/components/heading';
+import HeadingSmall from '@/components/heading-small';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,7 +6,9 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
+import CategoryLayout from '@/layouts/category/layout';
 import { AgeCategory, Gender, Tournament, TournamentCategory, WeightCategory } from '@/pages/tournaments';
+import { getCategoryDisplayName } from '@/pages/tournaments/partials/category-columns';
 import type { BreadcrumbItem } from '@/types';
 import { Head, useForm } from '@inertiajs/react';
 import React from 'react';
@@ -47,11 +49,12 @@ const weightCategories = [
 ];
 
 export default function EditCategory({ tournament, category }: Props) {
+    const categoryName = getCategoryDisplayName(category);
+
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Tournaments', href: '/manage/tournaments' },
-        { title: tournament.name, href: `/manage/tournaments/${tournament.id}/categories` },
-        { title: 'Categories', href: `/manage/tournaments/${tournament.id}/categories` },
-        { title: 'Edit Category', href: `/manage/tournaments/${tournament.id}/categories/${category.id}/edit` },
+        { title: tournament.name, href: `/manage/tournaments/${tournament.id}` },
+        { title: categoryName, href: `/manage/tournaments/${tournament.id}/categories/${category.id}/edit` },
     ];
 
     const { data, setData, put, processing, errors } = useForm({
@@ -86,97 +89,98 @@ export default function EditCategory({ tournament, category }: Props) {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Edit Category" />
-            <div className="px-4 py-6">
-                <Heading title="Edit Category" description={`Update category for ${tournament.name}`} />
-                <form onSubmit={handleSubmit} className="mt-6 max-w-2xl space-y-6">
-                    <div>
-                        <Label htmlFor="name">Custom Name <span className="text-xs font-light">(Optional)</span></Label>
-                        <Input id="name" value={data.name} onChange={(e) => setData('name', e.target.value)} className="mt-1" />
-                        <InputError message={errors.name} />
-                    </div>
+            <Head title={`${categoryName} – Overview`} />
 
-                    <div>
-                        <Label>Gender</Label>
-                        <RadioGroup value={data.gender} onValueChange={(value) => setData('gender', value)} className="mt-2 flex gap-6">
-                            <div className="flex items-center gap-2">
-                                <RadioGroupItem value={Gender.Male.toString()} id="male" />
-                                <Label htmlFor="male" className="font-normal">Male</Label>
+            <CategoryLayout tournament={tournament} category={category} activeKey="overview">
+                <div className="max-w-2xl space-y-6">
+                    <HeadingSmall title="Category details" description="Update the gender, age and weight bounds for this category." />
+
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        <div>
+                            <Label htmlFor="name">Custom Name <span className="text-xs font-light">(Optional)</span></Label>
+                            <Input id="name" value={data.name} onChange={(e) => setData('name', e.target.value)} className="mt-1" />
+                            <InputError message={errors.name} />
+                        </div>
+
+                        <div>
+                            <Label>Gender</Label>
+                            <RadioGroup value={data.gender} onValueChange={(value) => setData('gender', value)} className="mt-2 flex gap-6">
+                                <div className="flex items-center gap-2">
+                                    <RadioGroupItem value={Gender.Male.toString()} id="male" />
+                                    <Label htmlFor="male" className="font-normal">Male</Label>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <RadioGroupItem value={Gender.Female.toString()} id="female" />
+                                    <Label htmlFor="female" className="font-normal">Female</Label>
+                                </div>
+                            </RadioGroup>
+                            <InputError message={errors.gender} />
+                        </div>
+
+                        <div className="flex flex-col gap-4 sm:flex-row">
+                            <div className="flex-1">
+                                <Label>Age Category</Label>
+                                <Select value={data.age_category} onValueChange={handleAgeCategoryChange}>
+                                    <SelectTrigger className="mt-1 w-full">
+                                        <SelectValue placeholder="Select age category" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {ageCategories.map((cat) => (
+                                            <SelectItem key={cat.value} value={cat.value.toString()}>
+                                                {cat.label} ({cat.min}–{cat.max} yrs)
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <InputError message={errors.age_category} />
                             </div>
-                            <div className="flex items-center gap-2">
-                                <RadioGroupItem value={Gender.Female.toString()} id="female" />
-                                <Label htmlFor="female" className="font-normal">Female</Label>
+                            <div className="w-full sm:w-1/4">
+                                <Label htmlFor="min_age">Min Age</Label>
+                                <Input type="number" id="min_age" value={data.min_age} onChange={(e) => setData('min_age', e.target.value)} className="mt-1" />
+                                <InputError message={errors.min_age} />
                             </div>
-                        </RadioGroup>
-                        <InputError message={errors.gender} />
-                    </div>
+                            <div className="w-full sm:w-1/4">
+                                <Label htmlFor="max_age">Max Age</Label>
+                                <Input type="number" id="max_age" value={data.max_age} onChange={(e) => setData('max_age', e.target.value)} className="mt-1" />
+                                <InputError message={errors.max_age} />
+                            </div>
+                        </div>
 
-                    <div className="flex flex-col gap-4 sm:flex-row">
-                        <div className="flex-1">
-                            <Label>Age Category</Label>
-                            <Select value={data.age_category} onValueChange={handleAgeCategoryChange}>
-                                <SelectTrigger className="mt-1 w-full">
-                                    <SelectValue placeholder="Select age category" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {ageCategories.map((cat) => (
-                                        <SelectItem key={cat.value} value={cat.value.toString()}>
-                                            {cat.label} ({cat.min}–{cat.max} yrs)
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <InputError message={errors.age_category} />
+                        <div className="flex flex-col gap-4 sm:flex-row">
+                            <div className="flex-1">
+                                <Label>Weight Category</Label>
+                                <Select value={data.weight_category} onValueChange={handleWeightCategoryChange}>
+                                    <SelectTrigger className="mt-1 w-full">
+                                        <SelectValue placeholder="Select weight category" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {weightCategories.map((cat) => (
+                                            <SelectItem key={cat.value} value={cat.value.toString()}>
+                                                {cat.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <InputError message={errors.weight_category} />
+                            </div>
+                            <div className="w-full sm:w-1/4">
+                                <Label htmlFor="min_weight">Min Weight (kg)</Label>
+                                <Input type="number" id="min_weight" value={data.min_weight} onChange={(e) => setData('min_weight', e.target.value)} className="mt-1" />
+                                <InputError message={errors.min_weight} />
+                            </div>
+                            <div className="w-full sm:w-1/4">
+                                <Label htmlFor="max_weight">Max Weight (kg)</Label>
+                                <Input type="number" id="max_weight" value={data.max_weight} onChange={(e) => setData('max_weight', e.target.value)} className="mt-1" />
+                                <InputError message={errors.max_weight} />
+                            </div>
                         </div>
-                        <div className="w-full sm:w-1/4">
-                            <Label htmlFor="min_age">Min Age</Label>
-                            <Input type="number" id="min_age" value={data.min_age} onChange={(e) => setData('min_age', e.target.value)} className="mt-1" />
-                            <InputError message={errors.min_age} />
-                        </div>
-                        <div className="w-full sm:w-1/4">
-                            <Label htmlFor="max_age">Max Age</Label>
-                            <Input type="number" id="max_age" value={data.max_age} onChange={(e) => setData('max_age', e.target.value)} className="mt-1" />
-                            <InputError message={errors.max_age} />
-                        </div>
-                    </div>
 
-                    <div className="flex flex-col gap-4 sm:flex-row">
-                        <div className="flex-1">
-                            <Label>Weight Category</Label>
-                            <Select value={data.weight_category} onValueChange={handleWeightCategoryChange}>
-                                <SelectTrigger className="mt-1 w-full">
-                                    <SelectValue placeholder="Select weight category" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {weightCategories.map((cat) => (
-                                        <SelectItem key={cat.value} value={cat.value.toString()}>
-                                            {cat.label}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <InputError message={errors.weight_category} />
+                        <div className="flex gap-4 pt-2">
+                            <Button type="submit" disabled={processing}>{processing ? 'Saving...' : 'Save Changes'}</Button>
                         </div>
-                        <div className="w-full sm:w-1/4">
-                            <Label htmlFor="min_weight">Min Weight (kg)</Label>
-                            <Input type="number" id="min_weight" value={data.min_weight} onChange={(e) => setData('min_weight', e.target.value)} className="mt-1" />
-                            <InputError message={errors.min_weight} />
-                        </div>
-                        <div className="w-full sm:w-1/4">
-                            <Label htmlFor="max_weight">Max Weight (kg)</Label>
-                            <Input type="number" id="max_weight" value={data.max_weight} onChange={(e) => setData('max_weight', e.target.value)} className="mt-1" />
-                            <InputError message={errors.max_weight} />
-                        </div>
-                    </div>
-
-                    <div className="flex gap-4 pt-2">
-                        <Button type="submit" disabled={processing}>{processing ? 'Saving...' : 'Save Changes'}</Button>
-                        <Button type="button" variant="outline" asChild>
-                            <a href={`/manage/tournaments/${tournament.id}/categories`}>Cancel</a>
-                        </Button>
-                    </div>
-                </form>
-            </div>
+                    </form>
+                </div>
+            </CategoryLayout>
         </AppLayout>
     );
 }

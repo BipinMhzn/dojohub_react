@@ -14,6 +14,7 @@ Route::group([
     Route::post('clubs/{club}', [ClubsController::class, 'update'])->name('clubs.update');
 
     Route::prefix('clubs/{club}/players')->name('clubs.players.')->group(function () {
+        Route::get('/', [ClubPlayersController::class, 'index'])->name('index');
         Route::post('/', [ClubPlayersController::class, 'store'])->name('store');
         Route::put('/{membership}', [ClubPlayersController::class, 'update'])->name('update');
         Route::patch('/{membership}', [ClubPlayersController::class, 'patch'])->name('patch');

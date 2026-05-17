@@ -3,7 +3,6 @@
 namespace App\Modules\Clubs\Controllers;
 
 use App\Modules\Clubs\Interfaces\ClubInterface;
-use App\Modules\Clubs\Interfaces\ClubPlayerInterface;
 use App\Modules\Clubs\Requests\ClubCreateRequest;
 use App\Modules\Clubs\Requests\ClubUpdateRequest;
 use App\System\Foundation\Traits\FileUpload;
@@ -21,12 +20,8 @@ final class ClubsController extends BaseWebController
 
     private string $uploadDirectory = '/images/clubs';
 
-    /**
-     * ClubsController constructor.
-     */
     public function __construct(
         private readonly ClubInterface $repository,
-        private readonly ClubPlayerInterface $clubPlayers,
     ) {}
 
     public function index(BaseWebListRequest $request): Response
@@ -51,16 +46,14 @@ final class ClubsController extends BaseWebController
             unset($inputs['logo']);
         }
 
-        $this->repository->createClub($inputs);
+        $club = $this->repository->createClub($inputs);
 
-        return to_route('clubs.index')->with('success', 'Club created successfully.');
+        return to_route('clubs.show', $club->id)->with('success', 'Club created successfully.');
     }
 
-    public function edit(string $club): Response
+    public function edit(string $club): RedirectResponse
     {
-        return $this->render('clubs/edit', [
-            'club' => $this->repository->getById($club),
-        ]);
+        return to_route('clubs.show', $club);
     }
 
     public function update(ClubUpdateRequest $request, string $club): RedirectResponse
@@ -73,7 +66,7 @@ final class ClubsController extends BaseWebController
         }
         $this->repository->updateClub($inputs, $club);
 
-        return to_route('clubs.index')->with('success', 'Club updated successfully.');
+        return to_route('clubs.show', $club)->with('success', 'Club updated successfully.');
     }
 
     public function destroy(string $club): RedirectResponse
@@ -87,8 +80,6 @@ final class ClubsController extends BaseWebController
     {
         return $this->render('clubs/show', [
             'club' => $this->repository->getById($club),
-            'memberships' => $this->clubPlayers->getAllClubPlayers($club),
-            'availablePlayers' => $this->clubPlayers->getAvailablePlayers($club),
         ]);
     }
 }

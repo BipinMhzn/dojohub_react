@@ -22,7 +22,7 @@ export const getTournamentColumns = ({ onDelete }: TournamentColumnsProps): Colu
         cell: ({ row }) => {
             const tournament = row.original;
             return (
-                <Link href={`/manage/tournaments/${tournament.id}/categories`} className="flex items-center gap-3">
+                <Link href={`/manage/tournaments/${tournament.id}`} className="flex items-center gap-3">
                     <Avatar className="h-8 w-8">
                         <AvatarImage src={tournament.logo_url ?? undefined} alt={tournament.name} />
                         <AvatarFallback>
@@ -84,10 +84,6 @@ export const getTournamentColumns = ({ onDelete }: TournamentColumnsProps): Colu
         cell: ({ row }) => {
             const tournament = row.original;
 
-            const handleEdit = () => {
-                router.visit(`/manage/tournaments/${tournament.id}/edit`);
-            };
-
             return (
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -97,7 +93,8 @@ export const getTournamentColumns = ({ onDelete }: TournamentColumnsProps): Colu
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={handleEdit}>Edit</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => router.visit(`/manage/tournaments/${tournament.id}`)}>Overview</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => router.visit(`/manage/tournaments/${tournament.id}/categories`)}>Categories</DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => onDelete(tournament)}>Delete</DropdownMenuItem>
                     </DropdownMenuContent>

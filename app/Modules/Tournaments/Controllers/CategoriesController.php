@@ -55,7 +55,7 @@ final class CategoriesController extends BaseWebController
     {
         $this->categoryRepository->updateCategory($categoryId, $request->validated());
 
-        return to_route('tournaments.categories.index', [$tournamentId])
+        return to_route('tournaments.categories.edit', [$tournamentId, $categoryId])
             ->with('success', 'Category updated successfully.');
     }
 

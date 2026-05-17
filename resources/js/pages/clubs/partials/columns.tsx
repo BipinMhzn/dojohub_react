@@ -89,29 +89,21 @@ export const getClubColumns = ({ onDelete }: ClubColumnsProps): ColumnDef<Club>[
         cell: ({ row }) => {
             const club = row.original;
 
-            const handleEdit = () => {
-                router.visit(`/manage/clubs/${club.id}/edit`);
-            };
-
             return (
-                <>
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                                <span className="sr-only">Open menu</span>
-                                <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => router.visit(`/manage/clubs/${club.id}`)}>
-                                View
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={handleEdit}>Edit</DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => onDelete(club)}>Delete</DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Open menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => router.visit(`/manage/clubs/${club.id}`)}>Overview</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => router.visit(`/manage/clubs/${club.id}/players`)}>Players</DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => onDelete(club)}>Delete</DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
             );
         },
     },

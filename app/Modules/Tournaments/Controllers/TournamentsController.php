@@ -34,6 +34,14 @@ final class TournamentsController extends BaseWebController
         ]);
     }
 
+    public function show(string $tournament): Response
+    {
+        return $this->render('tournaments/show', [
+            'tournament' => $this->repository->getById($tournament),
+            'venues' => Venue::all(['id', 'name']),
+        ]);
+    }
+
     public function create(): Response
     {
         return $this->render('tournaments/create', [
@@ -50,17 +58,14 @@ final class TournamentsController extends BaseWebController
             unset($inputs['logo']);
         }
         $inputs['status'] = TournamentStatusEnum::Scheduled;
-        $this->repository->create($inputs);
+        $tournament = $this->repository->create($inputs);
 
-        return to_route('tournaments.index')->with('success', 'Tournament created successfully.');
+        return to_route('tournaments.show', $tournament->id)->with('success', 'Tournament created successfully.');
     }
 
-    public function edit(string $tournament): Response
+    public function edit(string $tournament): RedirectResponse
     {
-        return $this->render('tournaments/edit', [
-            'tournament' => $this->repository->getById($tournament),
-            'venues' => Venue::all(['id', 'name']),
-        ]);
+        return to_route('tournaments.show', $tournament);
     }
 
     public function update(TournamentUpdateRequest $request, string $tournament): RedirectResponse
@@ -73,7 +78,7 @@ final class TournamentsController extends BaseWebController
         }
         $this->repository->update($tournament, $inputs);
 
-        return to_route('tournaments.index')->with('success', 'Tournament updated successfully.');
+        return to_route('tournaments.show', $tournament)->with('success', 'Tournament updated successfully.');
     }
 
     public function destroy(string $tournament): RedirectResponse
