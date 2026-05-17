@@ -6,22 +6,10 @@ use BaseSystem\Requests\BaseWebRequest;
 use Illuminate\Validation\Rule;
 
 /**
- * Class TournamentCreateRequest
+ * Class TournamentRegistrationCreateRequest
  */
 class TournamentRegistrationCreateRequest extends BaseWebRequest
 {
-    public function messages(): array
-    {
-        return [
-            'player_id' => [
-                'required' => 'The player is required',
-            ],
-            'club_id' => [
-                'required' => 'The club is required',
-            ],
-        ];
-    }
-
     public function rules(): array
     {
         return [

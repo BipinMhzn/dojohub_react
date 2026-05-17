@@ -4,7 +4,6 @@ namespace App\Modules\Tournaments\Repositories;
 
 use App\Modules\Tournaments\Interfaces\MatchInterface;
 use App\Modules\Tournaments\Models\TournamentMatch;
-use App\System\Tournament\Models\Tournament;
 use BaseSystem\Repositories\BaseRepository;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -14,63 +13,35 @@ use Illuminate\Support\Collection;
  */
 final class MatchRepository extends BaseRepository implements MatchInterface
 {
-    /**
-     * MatchRepository constructor.
-     */
-    public function __construct(
-        private readonly TournamentMatch $match,
-    ) {
-        parent::__construct($match);
+    public function __construct(TournamentMatch $model)
+    {
+        parent::__construct($model);
     }
 
-    public function getFilter(Builder $builder): void
-    {
-        // Add any filtering logic if needed
-    }
+    public function getFilter(Builder $builder): void {}
 
-    /**
-     * Get a single match by ID with relationships
-     */
-    public function getMatchById(string $matchId): \App\System\Tournament\Models\TournamentMatch
+    public function getMatchById(string $matchId): TournamentMatch
     {
-        return $this->match->newQuery()
-            ->with(['player1', 'player2', 'winner', 'tournament'])
+        return $this->model->newQuery()
+            ->with(['competitors.registration.player', 'competitors.registration.club'])
             ->findOrFail($matchId);
     }
 
-    /**
-     * Get all matches for a tournament
-     */
-    public function getTournamentMatches(Tournament $tournament): Collection
+    public function getBracketMatches(string $bracketId): Collection
     {
-        return $this->match->newQuery()
-            ->where('tournament_id', $tournament->id)
-            ->with(['player1', 'player2', 'winner'])
+        return $this->model->newQuery()
+            ->where('bracket_id', $bracketId)
+            ->with(['competitors.registration.player', 'competitors.registration.club', 'winner'])
+            ->orderBy('bracket_section')
             ->orderBy('round_number')
-            ->orderBy('match_order')
+            ->orderBy('match_number')
             ->get();
     }
 
-    /**
-     * Update match result
-     */
-    public function updateMatchResult(string $matchId, array $inputs): \App\System\Tournament\Models\TournamentMatch
+    public function updateMatchSchedule(string $matchId, string $scheduledAt): TournamentMatch
     {
-        $match = $this->getMatchById($matchId);
-        $match->fill($inputs);
-        $match->save();
-
-        return $match;
-    }
-
-    /**
-     * Update match schedule
-     */
-    public function updateMatchSchedule(string $matchId, string $scheduledAt): \App\System\Tournament\Models\TournamentMatch
-    {
-        $match = $this->getMatchById($matchId);
-        $match->scheduled_at = $scheduledAt;
-        $match->save();
+        $match = $this->model->newQuery()->findOrFail($matchId);
+        $match->update(['scheduled_at' => $scheduledAt]);
 
         return $match;
     }

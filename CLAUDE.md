@@ -10,6 +10,7 @@
 | Clubs module | [app/Modules/Clubs/ClubModuleWiki.md](app/Modules/Clubs/ClubModuleWiki.md) |
 | Club Players (membership management) | [app/Modules/Clubs/ClubPlayersWiki.md](app/Modules/Clubs/ClubPlayersWiki.md) |
 | Players module | [app/Modules/Players/PlayerModuleWiki.md](app/Modules/Players/PlayerModuleWiki.md) |
+| Tournaments module | [app/Modules/Tournaments/Wiki/TournamentModuleWiki.md](app/Modules/Tournaments/Wiki/TournamentModuleWiki.md) |
 
 ---
 

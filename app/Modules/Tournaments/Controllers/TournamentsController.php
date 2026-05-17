@@ -22,16 +22,10 @@ final class TournamentsController extends BaseWebController
 
     private string $uploadDirectory = '/images/tournaments';
 
-    /**
-     * TournamentsController constructor.
-     */
     public function __construct(
         private readonly TournamentInterface $repository,
     ) {}
 
-    /**
-     * @param  BaseListRequest  $request
-     */
     public function index(BaseWebListRequest $request): Response
     {
         return $this->render('tournaments/index', [
@@ -51,11 +45,11 @@ final class TournamentsController extends BaseWebController
     {
         $inputs = $request->validated();
         if ($request->file('logo')) {
-            $profilePhoto = $this->uploadFile($request->file('logo'), $this->uploadDirectory);
-            $inputs['logo_url'] = $profilePhoto['path'];
+            $upload = $this->uploadFile($request->file('logo'), $this->uploadDirectory);
+            $inputs['logo_url'] = $upload['path'];
             unset($inputs['logo']);
         }
-        $inputs['status'] = TournamentStatusEnum::SCHEDULED;
+        $inputs['status'] = TournamentStatusEnum::Scheduled;
         $this->repository->create($inputs);
 
         return to_route('tournaments.index')->with('success', 'Tournament created successfully.');
@@ -73,8 +67,8 @@ final class TournamentsController extends BaseWebController
     {
         $inputs = $request->validated();
         if ($request->file('logo')) {
-            $profilePhoto = $this->uploadFile($request->file('logo'), $this->uploadDirectory);
-            $inputs['logo_url'] = $profilePhoto['path'];
+            $upload = $this->uploadFile($request->file('logo'), $this->uploadDirectory);
+            $inputs['logo_url'] = $upload['path'];
             unset($inputs['logo']);
         }
         $this->repository->update($tournament, $inputs);
@@ -87,13 +81,5 @@ final class TournamentsController extends BaseWebController
         $this->repository->destroy($tournament);
 
         return to_route('tournaments.index')->with('success', 'Tournament deleted successfully.');
-    }
-
-    public function show(string $tournament): Response
-    {
-        return $this->render('tournaments/show', [
-            'tournament' => $this->repository->getById($tournament),
-            'venues' => Venue::all(['id', 'name']),
-        ]);
     }
 }

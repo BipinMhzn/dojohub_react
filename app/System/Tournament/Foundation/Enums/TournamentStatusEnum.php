@@ -4,8 +4,11 @@ namespace App\System\Tournament\Foundation\Enums;
 
 enum TournamentStatusEnum: int
 {
-    case SCHEDULED = 0;
-    case ONGOING = 1;
-    case COMPLETED = 2;
-    case CANCELLED = 3;
+    case Scheduled = 0;
+
+    case InProgress = 1;
+
+    case Completed = 2;
+
+    case Cancelled = 3;
 }

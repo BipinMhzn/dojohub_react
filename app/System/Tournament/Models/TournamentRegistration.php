@@ -5,17 +5,19 @@ namespace App\System\Tournament\Models;
 use App\System\AppBaseModel;
 use App\System\Club\Models\Club;
 use App\System\Player\Models\Player;
+use App\System\Tournament\Foundation\Enums\RegistrationStatusEnum;
 use Database\Factories\TournamentFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TournamentRegistration extends AppBaseModel
 {
     protected $fillable = [
-        'tournament_id',
+        'tournament_category_id',
         'club_id',
         'player_id',
         'player_age',
         'player_weight',
+        'status',
     ];
 
     protected array $sortableColumns = [
@@ -23,14 +25,21 @@ class TournamentRegistration extends AppBaseModel
         'updated_at',
     ];
 
+    protected function casts(): array
+    {
+        return [
+            'status' => RegistrationStatusEnum::class,
+        ];
+    }
+
     protected static function newFactory(): TournamentFactory
     {
         return TournamentFactory::new();
     }
 
-    public function tournament(): BelongsTo
+    public function category(): BelongsTo
     {
-        return $this->belongsTo(Tournament::class, 'tournament_id', 'id');
+        return $this->belongsTo(TournamentCategory::class, 'tournament_category_id', 'id');
     }
 
     public function club(): BelongsTo

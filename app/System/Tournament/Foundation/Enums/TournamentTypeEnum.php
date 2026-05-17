@@ -2,11 +2,16 @@
 
 namespace App\System\Tournament\Foundation\Enums;
 
+/**
+ * @deprecated Use BracketTypeEnum for tournament_brackets.type
+ */
 enum TournamentTypeEnum: int
 {
-    case SINGLE_ELIMINATION = 0;
+    case SingleElimination = 0;
 
-    case DOUBLE_ELIMINATION = 1;
+    case DoubleElimination = 1;
 
-    case ROUND_ROBIN = 2;
+    case PoolFinal = 2;
+
+    case Repechage = 3;
 }

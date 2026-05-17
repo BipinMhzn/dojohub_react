@@ -21,7 +21,7 @@ export const getClubColumns = ({ onDelete }: ClubColumnsProps): ColumnDef<Club>[
         cell: ({ row }) => {
             const club = row.original;
             return (
-                <Link href={`/manage/clubs/${club.id}`} className="flex items-center gap-3 hover:underline">
+                <div className="flex items-center gap-3">
                     <Avatar className="h-8 w-8">
                         <AvatarImage src={club.logo_url ?? undefined} alt={club.name} />
                         <AvatarFallback>
@@ -33,8 +33,10 @@ export const getClubColumns = ({ onDelete }: ClubColumnsProps): ColumnDef<Club>[
                                 .slice(0, 2)}
                         </AvatarFallback>
                     </Avatar>
-                    <span>{club.name}</span>
-                </Link>
+                    <Link href={`/manage/clubs/${club.id}`} className="flex items-center gap-3 hover:underline">
+                        <span>{club.name}</span>
+                    </Link>
+                </div>
             );
         },
     },

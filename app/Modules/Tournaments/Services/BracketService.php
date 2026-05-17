@@ -3,10 +3,17 @@
 namespace App\Modules\Tournaments\Services;
 
 use App\Modules\Tournaments\Interfaces\BracketServiceInterface;
+use App\Modules\Tournaments\Models\TournamentBracket;
+use App\Modules\Tournaments\Models\TournamentCategory;
 use App\Modules\Tournaments\Models\TournamentMatch;
+use App\Modules\Tournaments\Models\TournamentMatchCompetitor;
+use App\System\Tournament\Foundation\Enums\BracketSectionEnum;
+use App\System\Tournament\Foundation\Enums\BracketStatusEnum;
+use App\System\Tournament\Foundation\Enums\BracketTypeEnum;
+use App\System\Tournament\Foundation\Enums\CompetitorPositionEnum;
+use App\System\Tournament\Foundation\Enums\CompetitorResultEnum;
 use App\System\Tournament\Foundation\Enums\MatchStatusEnum;
-use App\System\Tournament\Foundation\Enums\TournamentTypeEnum;
-use App\System\Tournament\Models\Tournament;
+use App\System\Tournament\Foundation\Enums\RegistrationStatusEnum;
 use Exception;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -17,180 +24,356 @@ use Illuminate\Support\Facades\DB;
 class BracketService implements BracketServiceInterface
 {
     /**
-     * Generate bracket based on tournament type
-     *
      * @throws Exception
      */
-    public function generateBracket(Tournament $tournament): Collection
+    public function generateBracket(TournamentCategory $category, TournamentBracket $bracket): Collection
     {
-        $seededPlayers = $this->seedPlayers($tournament);
+        $seededRegistrations = $this->seedRegistrations($category);
 
-        return DB::transaction(function () use ($tournament, $seededPlayers) {
-            return match ($tournament->type) {
-                TournamentTypeEnum::SINGLE_ELIMINATION => $this->generateSingleEliminationBracket($tournament, $seededPlayers),
-                TournamentTypeEnum::DOUBLE_ELIMINATION => $this->generateDoubleEliminationBracket($tournament, $seededPlayers),
-                TournamentTypeEnum::ROUND_ROBIN => $this->generateRoundRobinBracket($tournament, $seededPlayers),
+        return DB::transaction(function () use ($bracket, $seededRegistrations) {
+            $matches = match ($bracket->type) {
+                BracketTypeEnum::SingleElimination => $this->generateSingleElimination($bracket, $seededRegistrations),
+                BracketTypeEnum::DoubleElimination => $this->generateSingleElimination($bracket, $seededRegistrations),
+                default => throw new Exception('Bracket type not yet implemented'),
             };
+
+            $bracket->update([
+                'competitor_count' => count($seededRegistrations),
+                'round_count' => (int) log($this->getNextPowerOfTwo(count($seededRegistrations)), 2),
+                'status' => BracketStatusEnum::Active,
+                'generated_at' => now(),
+            ]);
+
+            return $matches;
         });
     }
 
     /**
-     * Seed players with top 3 separated
-     *
      * @throws Exception
      */
-    public function seedPlayers(Tournament $tournament): array
+    public function seedRegistrations(TournamentCategory $category): array
     {
-        $registrations = $tournament->registrations()->with('player')->get();
-        $playerCount = $registrations->count();
+        $registrations = $category->registrations()
+            ->where('status', '!=', RegistrationStatusEnum::Withdrawn)
+            ->with('player')
+            ->get();
 
-        if ($playerCount < 2) {
-            throw new Exception('At least 2 players required for bracket generation');
+        $count = $registrations->count();
+
+        if ($count < 2) {
+            throw new Exception('At least 2 active registrations are required for bracket generation');
         }
 
-        // Take first 3 registrations as top seeds (in the order they registered)
         $topSeeds = $registrations->take(3)->values();
+        $remainingRegistrations = $registrations->skip(3)->shuffle()->values();
 
-        // Shuffle remaining players randomly
-        $remainingPlayers = $registrations->skip(3)->shuffle()->values();
-
-        // Build seeded array
         $seeded = [];
-        if ($topSeeds->has(0)) {
-            $seeded[1] = $topSeeds->get(0); // Seed 1
-        }
-        if ($topSeeds->has(1)) {
-            $seeded[2] = $topSeeds->get(1); // Seed 2
-        }
-        if ($topSeeds->has(2)) {
-            $seeded[3] = $topSeeds->get(2); // Seed 3
+        foreach ($topSeeds as $index => $registration) {
+            $seeded[$index + 1] = $registration;
         }
 
-        // Fill remaining seeds randomly
-        $currentSeed = 4;
-        foreach ($remainingPlayers as $player) {
-            $seeded[$currentSeed++] = $player;
+        $currentSeed = count($topSeeds) + 1;
+        foreach ($remainingRegistrations as $registration) {
+            $seeded[$currentSeed++] = $registration;
         }
 
         return $seeded;
     }
 
-    /**
-     * Generate Single Elimination bracket
-     */
-    private function generateSingleEliminationBracket(Tournament $tournament, array $seededPlayers): Collection
+    private function generateSingleElimination(TournamentBracket $bracket, array $seededRegistrations): Collection
     {
-        $playerCount = count($seededPlayers);
+        $playerCount = count($seededRegistrations);
         $bracketSize = $this->getNextPowerOfTwo($playerCount);
         $totalRounds = (int) log($bracketSize, 2);
-
-        // Generate standard seeding pairs for first round
         $firstRoundPairs = $this->generateStandardSeeding($bracketSize);
 
-        // Create all matches
         $matches = collect();
-
-        // Create first round with actual players
         $roundMatches = [];
+
         foreach ($firstRoundPairs as $index => $pair) {
             [$seed1, $seed2] = $pair;
 
+            $reg1 = $seededRegistrations[$seed1] ?? null;
+            $reg2 = isset($seededRegistrations[$seed2]) ? $seededRegistrations[$seed2] : null;
+
             $match = TournamentMatch::create([
-                'tournament_id' => $tournament->id,
-                'bracket_type' => 'main',
+                'bracket_id' => $bracket->id,
+                'bracket_section' => BracketSectionEnum::Main,
                 'round_number' => 1,
                 'round_name' => $this->getRoundName(1, $totalRounds, $bracketSize),
-                'match_order' => $index + 1,
-                'player1_id' => $seededPlayers[$seed1]->player_id ?? null,
-                'player2_id' => isset($seededPlayers[$seed2]) ? $seededPlayers[$seed2]->player_id : null,
-                'player1_seed' => $seed1,
-                'player2_seed' => isset($seededPlayers[$seed2]) ? $seed2 : null,
-                'status' => MatchStatusEnum::PENDING,
+                'match_number' => $index + 1,
+                'status' => MatchStatusEnum::Pending,
             ]);
 
-            // Auto-complete bye matches
-            if ($match->has_bye) {
-                $match->winner_id = $match->player1_id;
-                $match->status = MatchStatusEnum::COMPLETED;
-                $match->completed_at = now();
-                $match->save();
+            if ($reg1) {
+                TournamentMatchCompetitor::create([
+                    'match_id' => $match->id,
+                    'registration_id' => $reg1->id,
+                    'position' => CompetitorPositionEnum::White,
+                    'seed' => $seed1,
+                    'result' => CompetitorResultEnum::Pending,
+                ]);
+            }
+
+            if ($reg2) {
+                TournamentMatchCompetitor::create([
+                    'match_id' => $match->id,
+                    'registration_id' => $reg2->id,
+                    'position' => CompetitorPositionEnum::Blue,
+                    'seed' => $seed2,
+                    'result' => CompetitorResultEnum::Pending,
+                ]);
+            }
+
+            // Auto-complete bye: only White (reg1) exists, no opponent
+            if ($reg1 && ! $reg2) {
+                $match->update([
+                    'winner_id' => $reg1->player_id,
+                    'status' => MatchStatusEnum::Completed,
+                    'completed_at' => now(),
+                ]);
+                TournamentMatchCompetitor::where('match_id', $match->id)
+                    ->where('position', CompetitorPositionEnum::White)
+                    ->update(['result' => CompetitorResultEnum::WalkoverWin]);
             }
 
             $roundMatches[] = $match;
             $matches->push($match);
         }
 
-        // Create subsequent rounds (TBD matches)
         $previousRoundMatches = $roundMatches;
         for ($round = 2; $round <= $totalRounds; $round++) {
             $currentRoundMatches = [];
             $matchesInRound = count($previousRoundMatches) / 2;
+            $section = ($round === $totalRounds) ? BracketSectionEnum::Final : BracketSectionEnum::Main;
 
             for ($i = 0; $i < $matchesInRound; $i++) {
                 $match1 = $previousRoundMatches[$i * 2];
                 $match2 = $previousRoundMatches[$i * 2 + 1];
 
                 $match = TournamentMatch::create([
-                    'tournament_id' => $tournament->id,
-                    'bracket_type' => 'main',
+                    'bracket_id' => $bracket->id,
+                    'bracket_section' => $section,
                     'round_number' => $round,
                     'round_name' => $this->getRoundName($round, $totalRounds, $bracketSize),
-                    'match_order' => $i + 1,
-                    'status' => MatchStatusEnum::PENDING,
+                    'match_number' => $i + 1,
+                    'status' => MatchStatusEnum::Pending,
                 ]);
 
-                // Link previous matches to this match
                 $match1->update([
                     'winner_next_match_id' => $match->id,
-                    'winner_position' => 1,
+                    'winner_next_position' => 1,
                 ]);
                 $match2->update([
                     'winner_next_match_id' => $match->id,
-                    'winner_position' => 2,
+                    'winner_next_position' => 2,
                 ]);
 
-                // If both previous matches were byes, advance the winner
-                if ($match1->has_bye && $match1->winner_id) {
-                    $match->player1_id = $match1->winner_id;
-                    $match->save();
-                }
-                if ($match2->has_bye && $match2->winner_id) {
-                    $match->player2_id = $match2->winner_id;
-                    $match->save();
-                }
+                // Advance bye winners automatically
+                $this->advanceByeWinner($match1, $match, 1);
+                $this->advanceByeWinner($match2, $match, 2);
 
                 $currentRoundMatches[] = $match;
                 $matches->push($match);
             }
+
             $previousRoundMatches = $currentRoundMatches;
         }
 
         return $matches;
     }
 
-    /**
-     * Generate Double Elimination bracket (placeholder for future implementation)
-     */
-    private function generateDoubleEliminationBracket(Tournament $tournament, array $seededPlayers): Collection
+    private function advanceByeWinner(TournamentMatch $byeMatch, TournamentMatch $nextMatch, int $position): void
     {
-        // TODO: Implement double elimination logic
-        // For now, generate single elimination
-        return $this->generateSingleEliminationBracket($tournament, $seededPlayers);
+        if ($byeMatch->status !== MatchStatusEnum::Completed || ! $byeMatch->winner_id) {
+            return;
+        }
+
+        // Find the registration for the winner
+        $winnerCompetitor = TournamentMatchCompetitor::where('match_id', $byeMatch->id)
+            ->where('result', CompetitorResultEnum::WalkoverWin)
+            ->first();
+
+        if (! $winnerCompetitor) {
+            return;
+        }
+
+        $competitorPosition = $position === 1 ? CompetitorPositionEnum::White : CompetitorPositionEnum::Blue;
+
+        TournamentMatchCompetitor::create([
+            'match_id' => $nextMatch->id,
+            'registration_id' => $winnerCompetitor->registration_id,
+            'position' => $competitorPosition,
+            'seed' => $winnerCompetitor->seed,
+            'result' => CompetitorResultEnum::Pending,
+        ]);
     }
 
     /**
-     * Generate Round Robin bracket (placeholder for future implementation)
+     * @throws Exception
      */
-    private function generateRoundRobinBracket(Tournament $tournament, array $seededPlayers): Collection
-    {
-        // TODO: Implement round robin logic
-        throw new Exception('Round Robin bracket generation not yet implemented');
+    public function recordMatchResult(
+        string $matchId,
+        int $winnerPosition,
+        ?int $whiteScore,
+        ?int $whitePenalties,
+        ?int $blueScore,
+        ?int $bluePenalties,
+        ?string $notes
+    ): void {
+        DB::transaction(function () use ($matchId, $winnerPosition, $whiteScore, $whitePenalties, $blueScore, $bluePenalties, $notes) {
+            $match = TournamentMatch::with('competitors.registration')->findOrFail($matchId);
+
+            $whiteCompetitor = $match->competitors->firstWhere('position', CompetitorPositionEnum::White);
+            $blueCompetitor = $match->competitors->firstWhere('position', CompetitorPositionEnum::Blue);
+
+            if (! $whiteCompetitor || ! $blueCompetitor) {
+                throw new Exception('Match must have both competitors before recording a result');
+            }
+
+            $winnerCompetitor = $winnerPosition === CompetitorPositionEnum::White->value ? $whiteCompetitor : $blueCompetitor;
+            $loserCompetitor = $winnerPosition === CompetitorPositionEnum::White->value ? $blueCompetitor : $whiteCompetitor;
+
+            $whiteCompetitor->update([
+                'score' => $whiteScore,
+                'penalties' => $whitePenalties,
+                'result' => $winnerCompetitor->id === $whiteCompetitor->id
+                    ? CompetitorResultEnum::Win
+                    : CompetitorResultEnum::Loss,
+            ]);
+
+            $blueCompetitor->update([
+                'score' => $blueScore,
+                'penalties' => $bluePenalties,
+                'result' => $winnerCompetitor->id === $blueCompetitor->id
+                    ? CompetitorResultEnum::Win
+                    : CompetitorResultEnum::Loss,
+            ]);
+
+            $match->update([
+                'winner_id' => $winnerCompetitor->registration->player_id,
+                'status' => MatchStatusEnum::Completed,
+                'completed_at' => now(),
+                'notes' => $notes,
+            ]);
+
+            // Advance winner to next match
+            if ($match->winner_next_match_id) {
+                $nextMatch = TournamentMatch::find($match->winner_next_match_id);
+                if ($nextMatch) {
+                    $nextPosition = $match->winner_next_position === 1
+                        ? CompetitorPositionEnum::White
+                        : CompetitorPositionEnum::Blue;
+
+                    TournamentMatchCompetitor::create([
+                        'match_id' => $nextMatch->id,
+                        'registration_id' => $winnerCompetitor->registration_id,
+                        'position' => $nextPosition,
+                        'seed' => $winnerCompetitor->seed,
+                        'result' => CompetitorResultEnum::Pending,
+                    ]);
+                }
+            }
+
+            // Advance loser to repechage if applicable
+            if ($match->loser_next_match_id) {
+                $loserNextMatch = TournamentMatch::find($match->loser_next_match_id);
+                if ($loserNextMatch) {
+                    $loserPosition = $match->loser_next_position === 1
+                        ? CompetitorPositionEnum::White
+                        : CompetitorPositionEnum::Blue;
+
+                    TournamentMatchCompetitor::create([
+                        'match_id' => $loserNextMatch->id,
+                        'registration_id' => $loserCompetitor->registration_id,
+                        'position' => $loserPosition,
+                        'seed' => $loserCompetitor->seed,
+                        'result' => CompetitorResultEnum::Pending,
+                    ]);
+                }
+            }
+        });
     }
 
-    /**
-     * Generate standard bracket seeding pairs
-     * This ensures seeds 1, 2, 3 are separated
-     */
+    public function scheduleMatch(string $matchId, string $scheduledAt): void
+    {
+        $match = TournamentMatch::findOrFail($matchId);
+        $match->update(['scheduled_at' => $scheduledAt]);
+    }
+
+    public function getBracketStructure(TournamentBracket $bracket): array
+    {
+        $matches = $bracket->matches()
+            ->with(['competitors.registration.player', 'competitors.registration.club', 'winner'])
+            ->orderBy('bracket_section')
+            ->orderBy('round_number')
+            ->orderBy('match_number')
+            ->get();
+
+        $structure = [];
+
+        foreach ($matches as $match) {
+            $section = $match->bracket_section->name;
+            $round = $match->round_number;
+
+            if (! isset($structure[$section])) {
+                $structure[$section] = [];
+            }
+
+            if (! isset($structure[$section][$round])) {
+                $structure[$section][$round] = [
+                    'round_number' => $round,
+                    'round_name' => $match->round_name,
+                    'matches' => [],
+                ];
+            }
+
+            $white = $match->competitors->firstWhere('position', CompetitorPositionEnum::White);
+            $blue = $match->competitors->firstWhere('position', CompetitorPositionEnum::Blue);
+
+            $structure[$section][$round]['matches'][] = [
+                'id' => $match->id,
+                'match_number' => $match->match_number,
+                'white' => $white ? [
+                    'registration_id' => $white->registration_id,
+                    'player_id' => $white->registration->player_id,
+                    'name' => $white->registration->player->name,
+                    'seed' => $white->seed,
+                    'score' => $white->score,
+                    'penalties' => $white->penalties,
+                    'result' => $white->result->value,
+                    'profile_photo_url' => $white->registration->player->profile_photo_url,
+                ] : null,
+                'blue' => $blue ? [
+                    'registration_id' => $blue->registration_id,
+                    'player_id' => $blue->registration->player_id,
+                    'name' => $blue->registration->player->name,
+                    'seed' => $blue->seed,
+                    'score' => $blue->score,
+                    'penalties' => $blue->penalties,
+                    'result' => $blue->result->value,
+                    'profile_photo_url' => $blue->registration->player->profile_photo_url,
+                ] : null,
+                'winner_id' => $match->winner_id,
+                'status' => $match->status->value,
+                'scheduled_at' => $match->scheduled_at?->toISOString(),
+                'notes' => $match->notes,
+            ];
+        }
+
+        // Flatten round arrays to sequential arrays
+        foreach ($structure as $section => $rounds) {
+            $structure[$section] = array_values($rounds);
+        }
+
+        return [
+            'id' => $bracket->id,
+            'type' => $bracket->type->value,
+            'status' => $bracket->status->value,
+            'sections' => $structure,
+        ];
+    }
+
     private function generateStandardSeeding(int $bracketSize): array
     {
         $seeds = range(1, $bracketSize);
@@ -205,156 +388,27 @@ class BracketService implements BracketServiceInterface
         return $pairs;
     }
 
-    /**
-     * Calculate next power of 2 for bracket size
-     */
     private function getNextPowerOfTwo(int $number): int
     {
+        if ($number <= 1) {
+            return 2;
+        }
+
         return (int) pow(2, ceil(log($number, 2)));
     }
 
-    /**
-     * Get round name based on position in bracket
-     */
     private function getRoundName(int $roundNumber, int $totalRounds, int $bracketSize): string
     {
-        $matchesInRound = $bracketSize / pow(2, $roundNumber);
-
         if ($roundNumber === $totalRounds) {
-            return 'Finals';
+            return 'Final';
         } elseif ($roundNumber === $totalRounds - 1) {
-            return 'Semifinals';
+            return 'Semifinal';
         } elseif ($roundNumber === $totalRounds - 2) {
-            return 'Quarterfinals';
+            return 'Quarterfinal';
         } else {
-            return 'Round of '.((int) $matchesInRound * 2);
+            $matchesInRound = (int) ($bracketSize / pow(2, $roundNumber));
+
+            return 'Round of '.($matchesInRound * 2);
         }
-    }
-
-    /**
-     * Record match result and advance winner
-     *
-     * @throws Exception
-     */
-    public function recordMatchResult(string $matchId, string $winnerId, ?int $player1Score, ?int $player2Score): void
-    {
-        DB::transaction(function () use ($matchId, $winnerId, $player1Score, $player2Score) {
-            $match = TournamentMatch::findOrFail($matchId);
-
-            // Validate winner is a participant
-            if ($winnerId !== $match->player1_id && $winnerId !== $match->player2_id) {
-                throw new Exception('Winner must be one of the match participants');
-            }
-
-            // Update match result
-            $match->update([
-                'winner_id' => $winnerId,
-                'player1_score' => $player1Score,
-                'player2_score' => $player2Score,
-                'status' => MatchStatusEnum::COMPLETED,
-                'completed_at' => now(),
-            ]);
-
-            // Advance winner to next match
-            if ($match->winner_next_match_id) {
-                $nextMatch = TournamentMatch::find($match->winner_next_match_id);
-                if ($nextMatch) {
-                    if ($match->winner_position === 1) {
-                        $nextMatch->update(['player1_id' => $winnerId]);
-                    } else {
-                        $nextMatch->update(['player2_id' => $winnerId]);
-                    }
-                }
-            }
-
-            // For double elimination, advance loser if applicable
-            if ($match->loser_next_match_id) {
-                $loserId = $winnerId === $match->player1_id ? $match->player2_id : $match->player1_id;
-                $loserNextMatch = TournamentMatch::find($match->loser_next_match_id);
-                if ($loserNextMatch && $loserId) {
-                    if ($match->loser_position === 1) {
-                        $loserNextMatch->update(['player1_id' => $loserId]);
-                    } else {
-                        $loserNextMatch->update(['player2_id' => $loserId]);
-                    }
-                }
-            }
-        });
-    }
-
-    /**
-     * Schedule a match
-     */
-    public function scheduleMatch(string $matchId, string $scheduledAt): void
-    {
-        $match = TournamentMatch::findOrFail($matchId);
-        $match->update([
-            'scheduled_at' => $scheduledAt,
-        ]);
-    }
-
-    /**
-     * Get bracket structure for frontend
-     */
-    public function getBracketStructure(Tournament $tournament): array
-    {
-        $matches = $tournament->matches()
-            ->with(['player1', 'player2', 'winner'])
-            ->orderBy('round_number')
-            ->orderBy('match_order')
-            ->get();
-
-        // Group by bracket type and round
-        $structure = [
-            'main' => [],
-            'losers' => [],
-        ];
-
-        foreach ($matches as $match) {
-            $bracketType = $match->bracket_type;
-            $roundNumber = $match->round_number;
-
-            if (! isset($structure[$bracketType][$roundNumber])) {
-                $structure[$bracketType][$roundNumber] = [
-                    'round_number' => $roundNumber,
-                    'round_name' => $match->round_name,
-                    'matches' => [],
-                ];
-            }
-
-            $structure[$bracketType][$roundNumber]['matches'][] = [
-                'id' => $match->id,
-                'match_order' => $match->match_order,
-                'player1' => $match->player1 ? [
-                    'id' => $match->player1->id,
-                    'name' => $match->player1->name,
-                    'seed' => $match->player1_seed,
-                    'score' => $match->player1_score,
-                    'profile_photo' => $match->player1->profile_photo,
-                ] : null,
-                'player2' => $match->player2 ? [
-                    'id' => $match->player2->id,
-                    'name' => $match->player2->name,
-                    'seed' => $match->player2_seed,
-                    'score' => $match->player2_score,
-                    'profile_photo' => $match->player2->profile_photo,
-                ] : null,
-                'winner_id' => $match->winner_id,
-                'status' => $match->status->value,
-                'scheduled_at' => $match->scheduled_at?->toISOString(),
-                'has_bye' => $match->has_bye,
-            ];
-        }
-
-        // Remove empty brackets and convert to arrays
-        $structure = array_filter($structure, fn ($bracket) => ! empty($bracket));
-        foreach ($structure as $key => $bracket) {
-            $structure[$key] = array_values($bracket);
-        }
-
-        return [
-            'type' => $tournament->type->value,
-            'brackets' => $structure,
-        ];
     }
 }

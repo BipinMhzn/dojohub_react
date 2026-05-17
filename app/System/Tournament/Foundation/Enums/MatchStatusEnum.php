@@ -4,11 +4,9 @@ namespace App\System\Tournament\Foundation\Enums;
 
 enum MatchStatusEnum: int
 {
-    case PENDING = 0;
+    case Pending = 0;
 
-    case ONGOING = 1;
+    case Active = 1;
 
-    case COMPLETED = 2;
-
-    case CANCELLED = 3;
+    case Completed = 2;
 }
