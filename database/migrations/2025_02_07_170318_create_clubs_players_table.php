@@ -8,9 +8,6 @@ return new class extends Migration
 {
     use \Database\Traits\EditorTrait;
 
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('clubs_players', function (Blueprint $table) {
@@ -19,13 +16,17 @@ return new class extends Migration
             $table->ulid('player_id');
             $table->dateTime('started_at');
             $table->dateTime('ended_at')->nullable();
+            $table->tinyInteger('belt_rank')->unsigned()->nullable();
+            $table->string('grade', 50)->nullable();
             $this->editorLogs($table);
+
+            $table->foreign('club_id')->references('id')->on('clubs')->onDelete('restrict')->onUpdate('cascade');
+            $table->foreign('player_id')->references('id')->on('players')->onDelete('restrict')->onUpdate('cascade');
+
+            $table->index(['club_id', 'player_id']);
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('clubs_players');

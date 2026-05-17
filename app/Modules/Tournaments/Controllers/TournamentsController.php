@@ -2,46 +2,33 @@
 
 namespace App\Modules\Tournaments\Controllers;
 
-use App\Modules\Tournaments\Database\Models\Venue;
 use App\Modules\Tournaments\Interfaces\TournamentInterface;
+use App\Modules\Tournaments\Models\Venue;
 use App\Modules\Tournaments\Requests\TournamentCreateRequest;
 use App\Modules\Tournaments\Requests\TournamentUpdateRequest;
 use App\System\Foundation\Traits\FileUpload;
 use App\System\Tournament\Foundation\Enums\TournamentStatusEnum;
-use BaseSystem\Controllers\BaseController;
-use BaseSystem\Requests\BaseListRequest;
-use BaseSystem\Requests\BaseRequest;
+use BaseSystem\Controllers\BaseWebController;
+use BaseSystem\Requests\BaseWebListRequest;
 use Illuminate\Http\RedirectResponse;
-use Inertia\Inertia;
 use Inertia\Response;
 
 /**
  * Class TournamentsController
- * @package App\Modules\Tournaments\Controllers
  */
-final class TournamentsController extends BaseController
+final class TournamentsController extends BaseWebController
 {
     use FileUpload;
 
     private string $uploadDirectory = '/images/tournaments';
 
-    /**
-     * TournamentsController constructor.
-     * @param TournamentInterface $repository
-     */
     public function __construct(
         private readonly TournamentInterface $repository,
-    )
-    {
-    }
+    ) {}
 
-    /**
-     * @param BaseListRequest $request
-     * @return Response
-     */
-    public function index(BaseListRequest $request): Response
+    public function index(BaseWebListRequest $request): Response
     {
-        return Inertia::render('tournaments/index', [
+        return $this->render('tournaments/index', [
             'tournaments' => $this->repository->getList($request->validated()),
             'filters' => $request->validated(),
         ]);
@@ -49,24 +36,20 @@ final class TournamentsController extends BaseController
 
     public function create(): Response
     {
-        return Inertia::render('tournaments/create', [
+        return $this->render('tournaments/create', [
             'venues' => Venue::all(['id', 'name']),
         ]);
     }
 
-    /**
-     * @param TournamentCreateRequest $request
-     * @return RedirectResponse
-     */
     public function store(TournamentCreateRequest $request): RedirectResponse
     {
         $inputs = $request->validated();
         if ($request->file('logo')) {
-            $profilePhoto = $this->uploadFile($request->file('logo'), $this->uploadDirectory);
-            $inputs['logo_url'] = $profilePhoto['path'];
+            $upload = $this->uploadFile($request->file('logo'), $this->uploadDirectory);
+            $inputs['logo_url'] = $upload['path'];
             unset($inputs['logo']);
         }
-        $inputs['status'] = TournamentStatusEnum::SCHEDULED;
+        $inputs['status'] = TournamentStatusEnum::Scheduled;
         $this->repository->create($inputs);
 
         return to_route('tournaments.index')->with('success', 'Tournament created successfully.');
@@ -74,23 +57,18 @@ final class TournamentsController extends BaseController
 
     public function edit(string $tournament): Response
     {
-        return Inertia::render('tournaments/edit', [
+        return $this->render('tournaments/edit', [
             'tournament' => $this->repository->getById($tournament),
             'venues' => Venue::all(['id', 'name']),
         ]);
     }
 
-    /**
-     * @param TournamentUpdateRequest $request
-     * @param string $tournament
-     * @return RedirectResponse
-     */
     public function update(TournamentUpdateRequest $request, string $tournament): RedirectResponse
     {
         $inputs = $request->validated();
         if ($request->file('logo')) {
-            $profilePhoto = $this->uploadFile($request->file('logo'), $this->uploadDirectory);
-            $inputs['logo_url'] = $profilePhoto['path'];
+            $upload = $this->uploadFile($request->file('logo'), $this->uploadDirectory);
+            $inputs['logo_url'] = $upload['path'];
             unset($inputs['logo']);
         }
         $this->repository->update($tournament, $inputs);
@@ -98,28 +76,10 @@ final class TournamentsController extends BaseController
         return to_route('tournaments.index')->with('success', 'Tournament updated successfully.');
     }
 
-    /**
-     * @param BaseRequest $request
-     * @param string $tournament
-     * @return RedirectResponse
-     */
-    public function destroy(BaseRequest $request, string $tournament): RedirectResponse
+    public function destroy(string $tournament): RedirectResponse
     {
         $this->repository->destroy($tournament);
 
         return to_route('tournaments.index')->with('success', 'Tournament deleted successfully.');
-    }
-
-    /**
-     * @param BaseRequest $request
-     * @param string $tournament
-     * @return Response
-     */
-    public function show(BaseRequest $request, string $tournament): Response
-    {
-        return Inertia::render('tournaments/show', [
-            'tournament' => $this->repository->getById($tournament),
-            'venues' => Venue::all(['id', 'name']),
-        ]);
     }
 }

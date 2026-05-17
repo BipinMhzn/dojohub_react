@@ -2,6 +2,7 @@
 
 namespace App\Modules\Clubs\Interfaces;
 
+use App\Modules\Clubs\Models\Club;
 use BaseSystem\Interfaces\BaseInterface;
 
 /**
@@ -10,5 +11,9 @@ use BaseSystem\Interfaces\BaseInterface;
  */
 interface ClubInterface extends BaseInterface
 {
+    public function createClub(array $validated): Club;
 
+    public function updateClub(array $validated, string $clubId): Club;
+
+    public function deleteClub(string $clubId): true;
 }

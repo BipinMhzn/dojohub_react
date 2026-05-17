@@ -28,6 +28,8 @@ export type Player = {
     gender: PlayerGender;
     dob: string;
     weight: number;
+    nationality: string | null;
+    email: string | null;
     profile_photo_url: string | null;
     phone_number: string | null;
     created_at: string;

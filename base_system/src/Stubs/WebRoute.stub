@@ -1,0 +1,12 @@
+<?php
+
+use App\{moduleContainer}\{{module}}\Controllers\{{module}}Controller;
+use Illuminate\Support\Facades\Route;
+
+Route::group(['middleware' => ['auth', 'verified'], 'prefix' => 'manage'], function () {
+    Route::resource('{{routemodule}}', {{module}}Controller::class)
+        ->except('update')
+        ->names('{{routemodule}}');
+    Route::post('{{routemodule}}/{{{routemodule_singular}}}', [{{module}}Controller::class, 'update'])
+        ->name('{{routemodule}}.update');
+});

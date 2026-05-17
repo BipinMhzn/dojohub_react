@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Club } from '@/pages/clubs';
 import { formatUTCDate } from '@/utils/date';
-import { router } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 
 type ClubColumnsProps = {
     onDelete: (player: Club) => void;
@@ -33,7 +33,9 @@ export const getClubColumns = ({ onDelete }: ClubColumnsProps): ColumnDef<Club>[
                                 .slice(0, 2)}
                         </AvatarFallback>
                     </Avatar>
-                    <span>{club.name}</span>
+                    <Link href={`/manage/clubs/${club.id}`} className="flex items-center gap-3 hover:underline">
+                        <span>{club.name}</span>
+                    </Link>
                 </div>
             );
         },
@@ -43,19 +45,24 @@ export const getClubColumns = ({ onDelete }: ClubColumnsProps): ColumnDef<Club>[
         header: 'Abbreviation',
     },
     {
-        accessorKey: 'address',
+        id: 'address',
         header: 'Address',
-        cell: ({ row }) => {
-            const club = row.original;
-            if (!club.address) {
-                return '-';
-            }
-            return (
-                <a href={`tel:${club.address}`}>
-                    <span>{club.address}</span>
-                </a>
-            );
-        },
+        cell: ({ row }) => row.original.address?.address ?? '—',
+    },
+    {
+        id: 'city',
+        header: 'City',
+        cell: ({ row }) => row.original.address?.city ?? '—',
+    },
+    {
+        id: 'state',
+        header: 'State',
+        cell: ({ row }) => row.original.address?.state ?? '—',
+    },
+    {
+        id: 'country',
+        header: 'Country',
+        cell: ({ row }) => row.original.address?.country ?? '—',
     },
     {
         accessorKey: 'phone_number',
@@ -63,7 +70,7 @@ export const getClubColumns = ({ onDelete }: ClubColumnsProps): ColumnDef<Club>[
         cell: ({ row }) => {
             const club = row.original;
             if (!club.phone_number) {
-                return '-';
+                return '—';
             }
             return (
                 <a href={`tel:${club.phone_number}`}>
@@ -96,6 +103,9 @@ export const getClubColumns = ({ onDelete }: ClubColumnsProps): ColumnDef<Club>[
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => router.visit(`/manage/clubs/${club.id}`)}>
+                                View
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={handleEdit}>Edit</DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => onDelete(club)}>Delete</DropdownMenuItem>

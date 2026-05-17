@@ -8,9 +8,6 @@ return new class extends Migration
 {
     use \Database\Traits\EditorTrait;
 
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('clubs', function (Blueprint $table) {
@@ -18,15 +15,14 @@ return new class extends Migration
             $table->string('name');
             $table->string('abbreviation', 10);
             $table->string('logo_url')->nullable();
-            $table->string('address')->nullable();
+            $table->ulid('address_id');
             $table->string('phone_number', 20)->nullable();
             $this->editorLogs($table);
+
+            $table->foreign('address_id')->references('id')->on('addresses')->onDelete('restrict')->onUpdate('cascade');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('clubs');

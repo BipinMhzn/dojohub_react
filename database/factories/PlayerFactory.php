@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
-use App\System\Player\Database\Models\Player;
 use App\System\Player\Foundation\Enums\PlayerGenderEnum;
+use App\System\Player\Models\Player;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -24,8 +24,10 @@ class PlayerFactory extends Factory
             'name' => $this->faker->name,
             'gender' => $this->faker->randomElement(PlayerGenderEnum::class),
             'dob' => $this->faker->date(),
-            'weight' => $this->faker->randomFloat(2, 1, 1000),
-            'phone_number' => $this->faker->phoneNumber(),
+            'weight' => $this->faker->randomFloat(2, 30, 150),
+            'nationality' => 'Nepal',
+            'email' => $this->faker->optional()->safeEmail(),
+            'phone_number' => $this->faker->optional()->numerify('+977 ##########'),
         ];
     }
 }

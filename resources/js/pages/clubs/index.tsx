@@ -17,12 +17,20 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
+export type ClubAddress = {
+    id: string;
+    address: string;
+    city: string;
+    state: string;
+    country: string;
+};
+
 export type Club = {
     id: string;
     name: string;
     abbreviation: string;
     logo_url: string | null;
-    address: string | null;
+    address: ClubAddress;
     phone_number: string | null;
     created_at: string;
     updated_at: string;

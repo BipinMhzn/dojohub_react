@@ -10,7 +10,7 @@ import { formatUTCDate } from '@/utils/date';
 import { router } from '@inertiajs/react';
 
 type VenueColumnsProps = {
-    onDelete: (player: Venue) => void;
+    onDelete: (venue: Venue) => void;
 };
 
 export const getVenueColumns = ({ onDelete }: VenueColumnsProps): ColumnDef<Venue>[] => [
@@ -19,20 +19,28 @@ export const getVenueColumns = ({ onDelete }: VenueColumnsProps): ColumnDef<Venu
         header: 'Name',
     },
     {
-        accessorKey: 'address',
+        id: 'address',
         header: 'Address',
+        cell: ({ row }) => row.original.address?.address ?? '—',
     },
     {
-        accessorKey: 'city',
+        id: 'city',
         header: 'City',
+        cell: ({ row }) => row.original.address?.city ?? '—',
     },
     {
-        accessorKey: 'state',
+        id: 'state',
         header: 'State',
+        cell: ({ row }) => row.original.address?.state ?? '—',
     },
     {
-        accessorKey: 'country',
+        id: 'country',
         header: 'Country',
+        cell: ({ row }) => row.original.address?.country ?? '—',
+    },
+    {
+        accessorKey: 'mat_count',
+        header: 'Mats',
     },
     {
         accessorKey: 'updated_at',
@@ -49,21 +57,19 @@ export const getVenueColumns = ({ onDelete }: VenueColumnsProps): ColumnDef<Venu
             };
 
             return (
-                <>
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                                <span className="sr-only">Open menu</span>
-                                <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={handleEdit}>Edit</DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => onDelete(venue)}>Delete</DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Open menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={handleEdit}>Edit</DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => onDelete(venue)}>Delete</DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
             );
         },
     },

@@ -25,3 +25,9 @@ yarn-error.log
 
 package-lock.json
 composer.lock
+
+.junie
+.mcp.json
+.ai
+.ai/*
+.DS_Store

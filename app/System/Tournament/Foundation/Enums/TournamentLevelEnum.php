@@ -4,9 +4,11 @@ namespace App\System\Tournament\Foundation\Enums;
 
 enum TournamentLevelEnum: int
 {
-    case LOCAL = 0;
+    case Local = 1;
 
-    case REGIONAL = 1;
+    case Regional = 2;
 
-    case NATIONAL = 2;
+    case National = 3;
+
+    case International = 4;
 }

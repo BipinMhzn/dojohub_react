@@ -24,6 +24,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 export default function CreateVenue() {
     const { data, setData, post, processing, errors, reset } = useForm({
         name: '',
+        mat_count: 1,
         address: '',
         city: '',
         state: '',
@@ -162,6 +163,21 @@ export default function CreateVenue() {
                             disabled={processing}
                         />
                         <InputError message={errors.address} />
+                    </div>
+
+                    <div>
+                        <Label htmlFor="mat_count">Number of Mats</Label>
+                        <Input
+                            id="mat_count"
+                            type="number"
+                            min={1}
+                            max={99}
+                            value={data.mat_count}
+                            className="mt-1 block w-full"
+                            onChange={(e) => setData('mat_count', Number(e.target.value))}
+                            disabled={processing}
+                        />
+                        <InputError message={errors.mat_count} />
                     </div>
 
                     <div className="flex gap-4">

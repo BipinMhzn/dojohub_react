@@ -17,23 +17,110 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
+// ── Enums ──────────────────────────────────────────────────────────────────
+
 export enum TournamentStatus {
-    SCHEDULED = 0,
-    ONGOING = 1,
-    COMPLETED = 2,
-    CANCELLED = 3,
+    Scheduled = 0,
+    InProgress = 1,
+    Completed = 2,
+    Cancelled = 3,
 }
 
 export enum TournamentLevel {
-    LOCAL = 0,
-    REGIONAL = 1,
-    NATIONAL = 2,
+    Local = 1,
+    Regional = 2,
+    National = 3,
+    International = 4,
 }
 
-export enum TournamentGender {
-    MALE = 0,
-    FEMALE = 1,
+export enum CategoryStatus {
+    Pending = 0,
+    Seeding = 1,
+    Active = 2,
+    Completed = 3,
 }
+
+export enum RegistrationStatus {
+    Registered = 0,
+    Confirmed = 1,
+    Withdrawn = 2,
+}
+
+export enum Gender {
+    Male = 0,
+    Female = 1,
+}
+
+export enum AgeCategory {
+    Preparation = 0,
+    SuperMini = 1,
+    Mini = 2,
+    Pupils = 3,
+    Juveniles = 4,
+    Cadets = 5,
+    Juniors = 6,
+    Under23 = 7,
+    Seniors = 8,
+    Veterans = 9,
+}
+
+export enum WeightCategory {
+    Female48 = 0,
+    Female52 = 1,
+    Female57 = 2,
+    Male60 = 3,
+    Female63 = 4,
+    Male66 = 5,
+    Female70 = 6,
+    Male73 = 7,
+    Female78 = 8,
+    Male81 = 9,
+    Male90 = 10,
+    Male100 = 11,
+    Male100Plus = 12,
+    Female78Plus = 13,
+}
+
+export enum BracketType {
+    SingleElimination = 0,
+    DoubleElimination = 1,
+    PoolFinal = 2,
+    Repechage = 3,
+}
+
+export enum BracketStatus {
+    Pending = 0,
+    Active = 1,
+    Completed = 2,
+}
+
+export enum BracketSection {
+    Main = 0,
+    Repechage = 1,
+    Bronze = 2,
+    Final = 3,
+}
+
+export enum MatchStatus {
+    Pending = 0,
+    Active = 1,
+    Completed = 2,
+}
+
+export enum CompetitorPosition {
+    White = 0,
+    Blue = 1,
+}
+
+export enum CompetitorResult {
+    Pending = 0,
+    Win = 1,
+    Loss = 2,
+    WalkoverWin = 3,
+    Disqualified = 4,
+}
+
+// ── Types ──────────────────────────────────────────────────────────────────
 
 export type Tournament = {
     id: string;
@@ -41,20 +128,91 @@ export type Tournament = {
     description: string | null;
     logo_url: string | null;
     level: TournamentLevel;
-    start_at: Date;
+    start_at: string;
     end_at: string | null;
-    weight_category: string;
-    min_weight: number;
-    max_weight: number;
-    age_category: string;
-    min_age: number;
-    max_age: number;
-    gender: TournamentGender;
     status: TournamentStatus;
     venue_id: string;
     created_at: string;
     updated_at: string;
 };
+
+export type TournamentCategory = {
+    id: string;
+    tournament_id: string;
+    name: string | null;
+    gender: Gender;
+    age_category: AgeCategory;
+    min_age: number;
+    max_age: number;
+    weight_category: WeightCategory;
+    min_weight: number;
+    max_weight: number;
+    status: CategoryStatus;
+    registrations_count?: number;
+    created_at: string;
+    updated_at: string;
+};
+
+export type TournamentRegistration = {
+    id: string;
+    tournament_category_id: string;
+    club_id: string;
+    player_id: string;
+    player_age: number;
+    player_weight: number;
+    status: RegistrationStatus;
+    player?: {
+        id: string;
+        name: string;
+        profile_photo_url: string | null;
+    };
+    club?: {
+        id: string;
+        name: string;
+    };
+};
+
+export type MatchCompetitor = {
+    registration_id: string;
+    player_id: string;
+    name: string;
+    seed: number | null;
+    score: number | null;
+    penalties: number | null;
+    result: CompetitorResult;
+    profile_photo_url: string | null;
+};
+
+export type BracketMatch = {
+    id: string;
+    match_number: number;
+    white: MatchCompetitor | null;
+    blue: MatchCompetitor | null;
+    winner_id: string | null;
+    status: MatchStatus;
+    scheduled_at: string | null;
+    notes: string | null;
+};
+
+export type BracketRound = {
+    round_number: number;
+    round_name: string;
+    matches: BracketMatch[];
+};
+
+export type BracketStructure = {
+    id: string;
+    type: BracketType;
+    status: BracketStatus;
+    sections: {
+        Main?: BracketRound[];
+        Repechage?: BracketRound[];
+        Bronze?: BracketRound[];
+        Final?: BracketRound[];
+    };
+};
+
+// ── Page ───────────────────────────────────────────────────────────────────
 
 type TournamentsProps = {
     tournaments: {

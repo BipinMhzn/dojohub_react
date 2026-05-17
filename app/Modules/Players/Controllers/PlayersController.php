@@ -6,36 +6,29 @@ use App\Modules\Players\Interfaces\PlayerInterface;
 use App\Modules\Players\Requests\PlayerCreateRequest;
 use App\Modules\Players\Requests\PlayerUpdateRequest;
 use App\System\Foundation\Traits\FileUpload;
-use BaseSystem\Controllers\BaseController;
-use BaseSystem\Requests\BaseListRequest;
-use BaseSystem\Requests\BaseRequest;
+use BaseSystem\Controllers\BaseWebController;
+use BaseSystem\Requests\BaseWebListRequest;
 use Illuminate\Http\RedirectResponse;
-use Inertia\Inertia;
 use Inertia\Response;
 
 /**
  * Class PlayersController
- * @package App\Modules\Players\Controllers
  */
-final class PlayersController extends BaseController
+final class PlayersController extends BaseWebController
 {
     use FileUpload;
 
     /**
      * PlayersController constructor.
-     * @param PlayerInterface $repository
      */
-    public function __construct(private readonly PlayerInterface $repository)
-    {
-    }
+    public function __construct(private readonly PlayerInterface $repository) {}
 
     /**
-     * @param BaseListRequest $request
-     * @return Response
+     * @param  BaseListRequest  $request
      */
-    public function index(BaseListRequest $request): Response
+    public function index(BaseWebListRequest $request): Response
     {
-        return Inertia::render('players/index', [
+        return $this->render('players/index', [
             'players' => $this->repository->getList($request->validated()),
             'filters' => $request->validated(),
         ]);
@@ -43,13 +36,9 @@ final class PlayersController extends BaseController
 
     public function create(): Response
     {
-        return Inertia::render('players/create');
+        return $this->render('players/create');
     }
 
-    /**
-     * @param PlayerCreateRequest $request
-     * @return RedirectResponse
-     */
     public function store(PlayerCreateRequest $request): RedirectResponse
     {
         $inputs = $request->validated();
@@ -66,16 +55,11 @@ final class PlayersController extends BaseController
 
     public function edit(string $player): Response
     {
-        return Inertia::render('players/edit', [
+        return $this->render('players/edit', [
             'player' => $this->repository->getById($player),
         ]);
     }
 
-    /**
-     * @param PlayerUpdateRequest $request
-     * @param string $player
-     * @return RedirectResponse
-     */
     public function update(PlayerUpdateRequest $request, string $player): RedirectResponse
     {
         $inputs = $request->validated();
@@ -89,26 +73,16 @@ final class PlayersController extends BaseController
         return to_route('players.index')->with('success', 'Player updated successfully.');
     }
 
-    /**
-     * @param BaseRequest $request
-     * @param string $player
-     * @return RedirectResponse
-     */
-    public function destroy(BaseRequest $request, string $player): RedirectResponse
+    public function destroy(string $player): RedirectResponse
     {
         $this->repository->destroy($player);
 
         return to_route('players.index')->with('success', 'Player deleted successfully.');
     }
 
-    /**
-     * @param BaseRequest $request
-     * @param string $player
-     * @return Response
-     */
-    public function show(BaseRequest $request, string $player): Response
+    public function show(string $player): Response
     {
-        return Inertia::render('players/show', [
+        return $this->render('players/show', [
             'player' => $this->repository->getById($player),
         ]);
     }

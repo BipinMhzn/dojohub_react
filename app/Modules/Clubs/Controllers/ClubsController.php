@@ -3,21 +3,19 @@
 namespace App\Modules\Clubs\Controllers;
 
 use App\Modules\Clubs\Interfaces\ClubInterface;
+use App\Modules\Clubs\Interfaces\ClubPlayerInterface;
 use App\Modules\Clubs\Requests\ClubCreateRequest;
 use App\Modules\Clubs\Requests\ClubUpdateRequest;
 use App\System\Foundation\Traits\FileUpload;
-use BaseSystem\Requests\BaseListRequest;
-use BaseSystem\Requests\BaseRequest;
-use BaseSystem\Controllers\BaseController;
+use BaseSystem\Controllers\BaseWebController;
+use BaseSystem\Requests\BaseWebListRequest;
 use Illuminate\Http\RedirectResponse;
-use Inertia\Inertia;
 use Inertia\Response;
 
 /**
  * Class ClubsController
- * @package App\Modules\Clubs\Controllers
  */
-final class ClubsController extends BaseController
+final class ClubsController extends BaseWebController
 {
     use FileUpload;
 
@@ -25,19 +23,15 @@ final class ClubsController extends BaseController
 
     /**
      * ClubsController constructor.
-     * @param ClubInterface $repository
      */
-    public function __construct(private readonly ClubInterface $repository)
-    {
-    }
+    public function __construct(
+        private readonly ClubInterface $repository,
+        private readonly ClubPlayerInterface $clubPlayers,
+    ) {}
 
-    /**
-     * @param BaseListRequest $request
-     * @return Response
-     */
-    public function index(BaseListRequest $request): Response
+    public function index(BaseWebListRequest $request): Response
     {
-        return Inertia::render('clubs/index', [
+        return $this->render('clubs/index', [
             'clubs' => $this->repository->getList($request->validated()),
             'filters' => $request->validated(),
         ]);
@@ -45,13 +39,9 @@ final class ClubsController extends BaseController
 
     public function create(): Response
     {
-        return Inertia::render('clubs/create');
+        return $this->render('clubs/create');
     }
 
-    /**
-     * @param ClubCreateRequest $request
-     * @return RedirectResponse
-     */
     public function store(ClubCreateRequest $request): RedirectResponse
     {
         $inputs = $request->validated();
@@ -61,23 +51,18 @@ final class ClubsController extends BaseController
             unset($inputs['logo']);
         }
 
-        $this->repository->create($inputs);
+        $this->repository->createClub($inputs);
 
         return to_route('clubs.index')->with('success', 'Club created successfully.');
     }
 
     public function edit(string $club): Response
     {
-        return Inertia::render('clubs/edit', [
+        return $this->render('clubs/edit', [
             'club' => $this->repository->getById($club),
         ]);
     }
 
-    /**
-     * @param ClubUpdateRequest $request
-     * @param string $club
-     * @return RedirectResponse
-     */
     public function update(ClubUpdateRequest $request, string $club): RedirectResponse
     {
         $inputs = $request->validated();
@@ -86,32 +71,24 @@ final class ClubsController extends BaseController
             $inputs['logo_url'] = $profilePhoto['path'];
             unset($inputs['logo']);
         }
-        $this->repository->update($club, $inputs);
+        $this->repository->updateClub($inputs, $club);
 
         return to_route('clubs.index')->with('success', 'Club updated successfully.');
     }
 
-    /**
-     * @param BaseRequest $request
-     * @param string $club
-     * @return RedirectResponse
-     */
-    public function destroy(BaseRequest $request, string $club): RedirectResponse
+    public function destroy(string $club): RedirectResponse
     {
-        $this->repository->destroy($club);
+        $this->repository->deleteClub($club);
 
         return to_route('clubs.index')->with('success', 'Club deleted successfully.');
     }
 
-    /**
-     * @param BaseRequest $request
-     * @param string $club
-     * @return Response
-     */
-    public function show(BaseRequest $request, string $club): Response
+    public function show(string $club): Response
     {
-        return Inertia::render('clubs/show', [
+        return $this->render('clubs/show', [
             'club' => $this->repository->getById($club),
+            'memberships' => $this->clubPlayers->getAllClubPlayers($club),
+            'availablePlayers' => $this->clubPlayers->getAvailablePlayers($club),
         ]);
     }
 }

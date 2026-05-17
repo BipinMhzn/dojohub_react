@@ -4,107 +4,59 @@ namespace App\Modules\Tournaments\Controllers;
 
 use App\Modules\Tournaments\Interfaces\RegistrationInterface;
 use App\Modules\Tournaments\Requests\TournamentRegistrationCreateRequest;
-use App\Modules\Tournaments\Requests\TournamentRegistrationUpdateRequest;
-use App\System\Tournament\Foundation\Enums\TournamentStatusEnum;
-use BaseSystem\Controllers\BaseController;
-use BaseSystem\Requests\BaseListRequest;
-use BaseSystem\Requests\BaseRequest;
+use App\System\Tournament\Foundation\Enums\CategoryStatusEnum;
+use App\System\Tournament\Foundation\Enums\RegistrationStatusEnum;
+use BaseSystem\Controllers\BaseWebController;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Carbon;
-use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * Class TournamentsController
- * @package App\Modules\Tournaments\Controllers
+ * Class RegistrationsController
  */
-final class RegistrationsController extends BaseController
+final class RegistrationsController extends BaseWebController
 {
-    /**
-     * TournamentsController constructor.
-     * @param RegistrationInterface $repository
-     */
     public function __construct(
         private readonly RegistrationInterface $repository,
-    )
+    ) {}
+
+    public function index(string $tournamentId, string $categoryId): Response
     {
-    }
+        $category = $this->repository->getCategoryById($categoryId);
+        $canRegister = $category->status === CategoryStatusEnum::Pending;
 
-    /**
-     * @param BaseListRequest $request
-     * @param string $tournamentId
-     * @return Response
-     */
-    public function index(BaseListRequest $request, string $tournamentId): Response
-    {
-        $tournament = $this->repository->getTournamentById($tournamentId);
-
-        if ($tournament->status === TournamentStatusEnum::SCHEDULED) {
-            $players = $this->repository->getPlayerList($tournament);
-            $clubs = $this->repository->getClubList();
-        } else {
-            $players = [];
-            $clubs = [];
-        }
-
-        return Inertia::render('tournaments/registrations/index', [
-            'tournament' => $tournament,
-            'registrations' => $this->repository->getTournamentRegistrations($tournament),
-            'players' => $players,
-            'clubs' => $clubs,
+        return $this->render('tournaments/registrations/index', [
+            'tournament' => $this->repository->getTournamentById($tournamentId),
+            'category' => $category,
+            'registrations' => $this->repository->getCategoryRegistrations($category),
+            'players' => $canRegister ? $this->repository->getPlayerList($category) : [],
+            'clubs' => $canRegister ? $this->repository->getClubList() : [],
         ]);
     }
 
-    /**
-     * @param TournamentRegistrationCreateRequest $request
-     * @param string $tournamentId
-     * @return RedirectResponse
-     */
-    public function store(TournamentRegistrationCreateRequest $request, string $tournamentId): RedirectResponse
+    public function store(TournamentRegistrationCreateRequest $request, string $tournamentId, string $categoryId): RedirectResponse
     {
         $inputs = $request->validated();
-        $tournament = $this->repository->getScheduledTournamentById($tournamentId);
-        $player = $this->repository->getRegisteringPlayerById($tournament, $inputs['player_id']);
+        $category = $this->repository->getCategoryById($categoryId);
+        $player = $this->repository->getRegisteringPlayerById($category, $inputs['player_id']);
+
         $inputs['player_age'] = Carbon::parse($player->dob)->age;
         $inputs['player_weight'] = $player->weight;
-        $inputs['tournament_id'] = $tournamentId;
+        $inputs['tournament_category_id'] = $categoryId;
+        $inputs['status'] = RegistrationStatusEnum::Registered;
 
         $this->repository->create($inputs);
 
-        return to_route('tournaments.registrations.index', [$tournamentId])->with('success', 'Player registered successfully.');
+        return to_route('tournaments.categories.registrations.index', [$tournamentId, $categoryId])
+            ->with('success', 'Player registered successfully.');
     }
 
-    /**
-     * @param TournamentRegistrationUpdateRequest $request
-     * @param string $tournamentId
-     * @param string $registrationId
-     * @return RedirectResponse
-     */
-    public function update(TournamentRegistrationUpdateRequest $request, string $tournamentId, string $registrationId): RedirectResponse
+    public function destroy(string $tournamentId, string $categoryId, string $registrationId): RedirectResponse
     {
-        $inputs = $request->validated();
-        $tournament = $this->repository->getScheduledTournamentById($tournamentId);
-        $player = $this->repository->getRegisteringPlayerById($tournament, $inputs['player_id'], $registrationId);
-        $inputs['player_age'] = Carbon::parse($player->dob)->age;
-        $inputs['player_weight'] = $player->weight;
-        $inputs['tournament_id'] = $tournamentId;
+        $category = $this->repository->getCategoryById($categoryId);
+        $this->repository->destroyTournamentRegistration($category, $registrationId);
 
-        $this->repository->updateTournamentRegistration($tournament, $registrationId, $inputs);
-
-        return to_route('tournaments.registrations.index', [$tournamentId])->with('success', 'Player registration updated successfully.');
-    }
-
-    /**
-     * @param BaseRequest $request
-     * @param string $tournamentId
-     * @param string $registrationId
-     * @return RedirectResponse
-     */
-    public function destroy(BaseRequest $request, string $tournamentId, string $registrationId): RedirectResponse
-    {
-        $tournament = $this->repository->getScheduledTournamentById($tournamentId);
-        $this->repository->destroyTournamentRegistration($tournament, $registrationId);
-
-        return to_route('tournaments.registrations.index', [$tournamentId])->with('success', 'Player registration deleted successfully.');
+        return to_route('tournaments.categories.registrations.index', [$tournamentId, $categoryId])
+            ->with('success', 'Player registration removed successfully.');
     }
 }

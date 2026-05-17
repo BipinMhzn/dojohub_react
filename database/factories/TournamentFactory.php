@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\System\Tournament\Database\Models\Tournament;
+use App\System\Tournament\Models\Tournament;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
