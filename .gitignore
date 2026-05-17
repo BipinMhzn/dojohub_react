@@ -29,3 +29,5 @@ composer.lock
 .junie
 .mcp.json
 .ai
+.ai/*
+.DS_Store
