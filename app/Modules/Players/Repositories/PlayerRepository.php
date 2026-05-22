@@ -8,14 +8,8 @@ use App\Modules\Players\Models\Player;
 use BaseSystem\Repositories\BaseRepository;
 use Illuminate\Database\Eloquent\Builder;
 
-/**
- * Class PlayerRepository
- */
 final class PlayerRepository extends BaseRepository implements PlayerInterface
 {
-    /**
-     * PlayerRepository constructor.
-     */
     public function __construct(Player $model)
     {
         parent::__construct($model);
@@ -24,5 +18,17 @@ final class PlayerRepository extends BaseRepository implements PlayerInterface
     public function getFilter(Builder $builder): PlayersFilter
     {
         return new PlayersFilter($builder);
+    }
+
+    public function onBeforeResult(Builder $builder): void
+    {
+        $builder->with('country', 'currentBeltRank');
+    }
+
+    public function getById(string $id, array $attributes = []): Player
+    {
+        return $this->model->newQuery()
+            ->with('country', 'currentBeltRank', 'address.country')
+            ->findOrFail($id);
     }
 }

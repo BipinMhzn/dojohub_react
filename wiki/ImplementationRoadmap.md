@@ -16,7 +16,7 @@
 3. [Global Phase 3 — RBAC Setup ✅](#global-phase-3--rbac-setup-)
 4. [Module: Venues ✅](#module-venues-)
 5. [Module: Clubs ✅](#module-clubs-)
-6. [Module: Players](#module-players)
+6. [Module: Players ✅](#module-players-)
 7. [Module: Referees (New)](#module-referees-new)
 8. [Module: Coaches (New)](#module-coaches-new)
 9. [Module: Tournaments](#module-tournaments)
@@ -281,7 +281,7 @@ Update `wiki/ClubPlayers.md`.
 
 ---
 
-## Module: Players
+## Module: Players ✅
 
 **Existing module. Depends on**: Global Phase 2 (countries, belt_ranks seeded), Phase V1 (Address model updated).
 

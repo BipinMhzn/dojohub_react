@@ -10,33 +10,33 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
-import countries from '@/utils/countries';
+import { BeltRankOption, CountryOption, PlayerGender } from '@/pages/players/index';
+import type { BreadcrumbItem } from '@/types';
 import { Head, useForm } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
 import React, { useState } from 'react';
-import { PlayerGender } from './index';
 
-const breadcrumbs = [
-    {
-        title: 'Players',
-        href: '/manage/players',
-    },
-    {
-        title: 'New Player',
-        href: '/manage/players/create',
-    },
+const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Players', href: '/manage/players' },
+    { title: 'New Player', href: '/manage/players/create' },
 ];
 
-export default function CreatePlayer() {
+interface Props {
+    countries: CountryOption[];
+    beltRanks: BeltRankOption[];
+}
+
+export default function CreatePlayer({ countries, beltRanks }: Props) {
     const [date, setDate] = useState<Date>();
 
     const { data, setData, post, processing, errors } = useForm({
         name: '',
-        gender: PlayerGender.MALE,
+        gender: PlayerGender.Male,
         dob: '',
         weight: '',
-        nationality: '',
+        nationality_code: '',
+        current_belt_rank_id: '',
         email: '',
         phone_number: '',
         profile_photo: null as File | null,
@@ -50,43 +50,31 @@ export default function CreatePlayer() {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="New Player" />
-
             <div className="px-4 py-6">
                 <Heading title="New Player" description="Create a new player" />
 
                 <form onSubmit={handleSubmit} className="mt-6 max-w-xl space-y-4">
                     <div>
-                        <Label>
-                            Photo <span className="text-xs font-light">(Optional)</span>
-                        </Label>
-                        <FileUploader
-                            accept="image/*"
-                            maxSize={1024 * 1024 * 5} // 5MB
-                            onFileSelect={(file) => setData('profile_photo', file)}
-                            className="mt-1 block w-full"
-                        />
+                        <Label>Photo <span className="text-xs font-light">(Optional)</span></Label>
+                        <FileUploader accept="image/*" maxSize={1024 * 1024 * 5} onFileSelect={(file) => setData('profile_photo', file)} className="mt-1 block w-full" />
                         <InputError message={errors.profile_photo} />
                     </div>
 
                     <div>
                         <Label htmlFor="name">Name</Label>
-                        <Input id="name" value={data.name} onChange={(e) => setData('name', e.target.value)} className="mt-1 block w-full" />
+                        <Input id="name" value={data.name} onChange={(e) => setData('name', e.target.value)} className="mt-1 block w-full" disabled={processing} />
                         <InputError message={errors.name} />
                     </div>
 
                     <div>
                         <Label>Gender</Label>
-                        <RadioGroup
-                            value={data.gender.toString()}
-                            onValueChange={(value) => setData('gender', parseInt(value))}
-                            className="mt-1 flex w-full gap-4"
-                        >
+                        <RadioGroup value={data.gender.toString()} onValueChange={(v) => setData('gender', parseInt(v))} className="mt-1 flex gap-4">
                             <div className="flex items-center space-x-2">
-                                <RadioGroupItem value={PlayerGender.MALE.toString()} id="male" />
+                                <RadioGroupItem value={PlayerGender.Male.toString()} id="male" />
                                 <Label htmlFor="male">Male</Label>
                             </div>
                             <div className="flex items-center space-x-2">
-                                <RadioGroupItem value={PlayerGender.FEMALE.toString()} id="female" />
+                                <RadioGroupItem value={PlayerGender.Female.toString()} id="female" />
                                 <Label htmlFor="female">Female</Label>
                             </div>
                         </RadioGroup>
@@ -97,94 +85,61 @@ export default function CreatePlayer() {
                         <Label>Date of Birth</Label>
                         <Popover>
                             <PopoverTrigger asChild>
-                                <Button
-                                    variant="outline"
-                                    className={cn('mt-1 w-full justify-start text-left font-normal', !date && 'text-muted-foreground')}
-                                >
+                                <Button variant="outline" className={cn('mt-1 w-full justify-start text-left font-normal', !date && 'text-muted-foreground')}>
                                     <CalendarIcon className="mr-2 h-4 w-4" />
                                     {date ? format(date, 'PPP') : <span>Pick a date</span>}
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0">
-                                <Calendar
-                                    mode="single"
-                                    selected={date}
-                                    onSelect={(newDate) => {
-                                        setDate(newDate);
-                                        setData('dob', newDate ? format(newDate, 'yyyy-MM-dd') : '');
-                                    }}
-                                    disabled={(date) => date > new Date() || date < new Date('1900-01-01')}
-                                    initialFocus
-                                />
+                                <Calendar mode="single" selected={date} onSelect={(d) => { setDate(d); setData('dob', d ? format(d, 'yyyy-MM-dd') : ''); }} disabled={(d) => d > new Date() || d < new Date('1900-01-01')} initialFocus />
                             </PopoverContent>
                         </Popover>
                         <InputError message={errors.dob} />
                     </div>
 
                     <div>
-                        <Label htmlFor="weight">Weight in Kg</Label>
-                        <Input
-                            id="weight"
-                            type="number"
-                            step="0.01"
-                            value={data.weight}
-                            onChange={(e) => setData('weight', e.target.value)}
-                            className="mt-1 block w-full"
-                        />
+                        <Label htmlFor="weight">Weight (kg)</Label>
+                        <Input id="weight" type="number" step="0.01" value={data.weight} onChange={(e) => setData('weight', e.target.value)} className="mt-1 block w-full" disabled={processing} />
                         <InputError message={errors.weight} />
                     </div>
 
                     <div>
-                        <Label htmlFor="nationality">Nationality</Label>
-                        <Select value={data.nationality} onValueChange={(value) => setData('nationality', value)}>
-                            <SelectTrigger className="mt-1 w-full">
-                                <SelectValue placeholder="Select a country" />
-                            </SelectTrigger>
+                        <Label htmlFor="nationality_code">Nationality <span className="text-xs font-light">(Optional)</span></Label>
+                        <Select value={data.nationality_code} onValueChange={(v) => setData('nationality_code', v)} disabled={processing}>
+                            <SelectTrigger className="mt-1 w-full"><SelectValue placeholder="Select nationality" /></SelectTrigger>
                             <SelectContent>
-                                {countries.map((country) => (
-                                    <SelectItem key={country.name} value={country.name}>
-                                        {country.name}
-                                    </SelectItem>
-                                ))}
+                                {countries.map((c) => <SelectItem key={c.code} value={c.code}>{c.name}</SelectItem>)}
                             </SelectContent>
                         </Select>
-                        <InputError message={errors.nationality} />
+                        <InputError message={errors.nationality_code} />
                     </div>
 
                     <div>
-                        <Label htmlFor="email">
-                            Email <span className="text-xs font-light">(Optional)</span>
-                        </Label>
-                        <Input
-                            id="email"
-                            type="email"
-                            value={data.email}
-                            onChange={(e) => setData('email', e.target.value)}
-                            className="mt-1 block w-full"
-                        />
+                        <Label htmlFor="current_belt_rank_id">Belt Rank <span className="text-xs font-light">(Optional)</span></Label>
+                        <Select value={data.current_belt_rank_id} onValueChange={(v) => setData('current_belt_rank_id', v)} disabled={processing}>
+                            <SelectTrigger className="mt-1 w-full"><SelectValue placeholder="Select belt rank" /></SelectTrigger>
+                            <SelectContent>
+                                {beltRanks.map((b) => <SelectItem key={b.id} value={b.id}>{b.code} — {b.name}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                        <InputError message={errors.current_belt_rank_id} />
+                    </div>
+
+                    <div>
+                        <Label htmlFor="email">Email <span className="text-xs font-light">(Optional)</span></Label>
+                        <Input id="email" type="email" value={data.email} onChange={(e) => setData('email', e.target.value)} className="mt-1 block w-full" disabled={processing} />
                         <InputError message={errors.email} />
                     </div>
 
                     <div>
-                        <Label htmlFor="phone">
-                            Phone Number <span className="text-xs font-light">(Optional)</span>
-                        </Label>
-                        <Input
-                            id="phone"
-                            value={data.phone_number}
-                            onChange={(e) => setData('phone_number', e.target.value)}
-                            className="mt-1 block w-full"
-                        />
+                        <Label htmlFor="phone_number">Phone Number <span className="text-xs font-light">(Optional)</span></Label>
+                        <Input id="phone_number" value={data.phone_number} onChange={(e) => setData('phone_number', e.target.value)} className="mt-1 block w-full" disabled={processing} />
                         <InputError message={errors.phone_number} />
                     </div>
 
                     <div className="flex gap-4">
-                        <Button type="submit" disabled={processing}>
-                            {processing ? 'Saving...' : 'Save'}
-                        </Button>
-                        <Button type="button" variant="outline" asChild>
-                            <a href="/manage/players">Cancel</a>
-                        </Button>
+                        <Button type="submit" disabled={processing}>{processing ? 'Saving...' : 'Save'}</Button>
+                        <Button type="button" variant="outline" asChild><a href="/manage/players">Cancel</a></Button>
                     </div>
                 </form>
             </div>

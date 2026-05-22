@@ -55,7 +55,7 @@ export const getPlayerColumns = ({ onDelete }: PlayerColumnsProps): ColumnDef<Pl
         accessorKey: 'gender',
         header: 'Gender',
         cell: ({ row }) => {
-            return row.original.gender === PlayerGender.MALE ? 'Male' : 'Female';
+            return row.original.gender === PlayerGender.Male ? 'Male' : 'Female';
         },
     },
     {

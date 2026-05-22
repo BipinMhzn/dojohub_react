@@ -18,9 +18,21 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export enum PlayerGender {
-    MALE = 0,
-    FEMALE = 1,
+    Male = 0,
+    Female = 1,
 }
+
+export type BeltRankOption = {
+    id: string;
+    code: string;
+    name: string;
+    color: string | null;
+};
+
+export type CountryOption = {
+    code: string;
+    name: string;
+};
 
 export type Player = {
     id: string;
@@ -28,7 +40,10 @@ export type Player = {
     gender: PlayerGender;
     dob: string;
     weight: number;
-    nationality: string | null;
+    nationality_code: string | null;
+    current_belt_rank_id: string | null;
+    country?: CountryOption;
+    current_belt_rank?: BeltRankOption;
     email: string | null;
     profile_photo_url: string | null;
     phone_number: string | null;

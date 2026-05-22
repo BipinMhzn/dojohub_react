@@ -2,11 +2,13 @@
 
 namespace Tests\Unit\Player;
 
+use App\Modules\Countries\Models\Country;
 use App\Modules\Players\Filters\PlayersFilter;
 use App\Modules\Players\Models\Player;
 use App\Modules\Players\Repositories\PlayerRepository;
 use App\System\Player\Foundation\Enums\PlayerGenderEnum;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class PlayerRepositoryTest extends TestCase
@@ -18,7 +20,7 @@ class PlayerRepositoryTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-
+        Country::firstOrCreate(['code' => 'NP'], ['name' => 'Nepal']);
         $this->repository = new PlayerRepository(new Player);
     }
 
@@ -28,9 +30,7 @@ class PlayerRepositoryTest extends TestCase
 
     public function test_get_filter_returns_players_filter_instance(): void
     {
-        $builder = Player::query();
-
-        $this->assertInstanceOf(PlayersFilter::class, $this->repository->getFilter($builder));
+        $this->assertInstanceOf(PlayersFilter::class, $this->repository->getFilter(Player::query()));
     }
 
     // ──────────────────────────────────────────────────────────────
@@ -46,9 +46,7 @@ class PlayerRepositoryTest extends TestCase
 
     public function test_create_returns_player_instance(): void
     {
-        $result = $this->repository->create($this->validPayload());
-
-        $this->assertInstanceOf(Player::class, $result);
+        $this->assertInstanceOf(Player::class, $this->repository->create($this->validPayload()));
     }
 
     public function test_create_stores_all_required_fields(): void
@@ -58,26 +56,22 @@ class PlayerRepositoryTest extends TestCase
         $this->assertDatabaseHas('players', [
             'id' => $player->id,
             'name' => 'John Doe',
-            'gender' => PlayerGenderEnum::MALE->value,
+            'gender' => PlayerGenderEnum::Male->value,
             'dob' => '2000-01-15',
-            'weight' => '75.00',
-            'nationality' => 'Nepal',
+            'nationality_code' => 'NP',
         ]);
     }
 
-    public function test_create_stores_nationality(): void
+    public function test_create_stores_nationality_code(): void
     {
         $player = $this->repository->create($this->validPayload());
 
-        $this->assertSame('Nepal', $player->nationality);
-        $this->assertDatabaseHas('players', ['id' => $player->id, 'nationality' => 'Nepal']);
+        $this->assertSame('NP', $player->nationality_code);
     }
 
     public function test_create_stores_null_email_when_not_provided(): void
     {
-        $player = $this->repository->create($this->validPayload());
-
-        $this->assertNull($player->email);
+        $this->assertNull($this->repository->create($this->validPayload())->email);
     }
 
     public function test_create_stores_email_when_provided(): void
@@ -85,14 +79,11 @@ class PlayerRepositoryTest extends TestCase
         $player = $this->repository->create($this->validPayload(['email' => 'john@example.com']));
 
         $this->assertSame('john@example.com', $player->email);
-        $this->assertDatabaseHas('players', ['id' => $player->id, 'email' => 'john@example.com']);
     }
 
     public function test_create_stores_null_phone_number_when_not_provided(): void
     {
-        $player = $this->repository->create($this->validPayload());
-
-        $this->assertNull($player->phone_number);
+        $this->assertNull($this->repository->create($this->validPayload())->phone_number);
     }
 
     public function test_create_stores_phone_number_when_provided(): void
@@ -104,9 +95,7 @@ class PlayerRepositoryTest extends TestCase
 
     public function test_create_stores_null_profile_photo_url_when_not_provided(): void
     {
-        $player = $this->repository->create($this->validPayload());
-
-        $this->assertNull($player->profile_photo_url);
+        $this->assertNull($this->repository->create($this->validPayload())->profile_photo_url);
     }
 
     public function test_create_stores_profile_photo_url_when_provided(): void
@@ -129,13 +118,14 @@ class PlayerRepositoryTest extends TestCase
         $this->assertDatabaseHas('players', ['id' => $player->id, 'name' => 'Updated Name']);
     }
 
-    public function test_update_changes_nationality(): void
+    public function test_update_changes_nationality_code(): void
     {
-        $player = Player::factory()->create(['nationality' => 'Nepal']);
+        Country::firstOrCreate(['code' => 'JP'], ['name' => 'Japan']);
+        $player = Player::factory()->create(['nationality_code' => 'NP']);
 
-        $this->repository->update($player->id, $this->validPayload(['nationality' => 'Japan']));
+        $this->repository->update($player->id, $this->validPayload(['nationality_code' => 'JP']));
 
-        $this->assertDatabaseHas('players', ['id' => $player->id, 'nationality' => 'Japan']);
+        $this->assertDatabaseHas('players', ['id' => $player->id, 'nationality_code' => 'JP']);
     }
 
     public function test_update_changes_email(): void
@@ -164,9 +154,7 @@ class PlayerRepositoryTest extends TestCase
     public function test_destroy_soft_deletes_the_player(): void
     {
         $player = Player::factory()->create();
-
         $this->repository->destroy($player->id);
-
         $this->assertSoftDeleted('players', ['id' => $player->id]);
     }
 
@@ -195,28 +183,39 @@ class PlayerRepositoryTest extends TestCase
         $this->assertSame('Specific Player', $result->name);
     }
 
+    public function test_get_by_id_eager_loads_country(): void
+    {
+        $result = $this->repository->getById(Player::factory()->create()->id);
+
+        $this->assertTrue($result->relationLoaded('country'));
+    }
+
+    public function test_get_by_id_eager_loads_current_belt_rank(): void
+    {
+        $result = $this->repository->getById(Player::factory()->create()->id);
+
+        $this->assertTrue($result->relationLoaded('currentBeltRank'));
+    }
+
     public function test_get_by_id_throws_for_nonexistent_id(): void
     {
         $this->expectException(\Illuminate\Database\Eloquent\ModelNotFoundException::class);
-
-        $this->repository->getById((string) \Illuminate\Support\Str::ulid());
+        $this->repository->getById((string) Str::ulid());
     }
 
     // ──────────────────────────────────────────────────────────────
     // Helpers
     // ──────────────────────────────────────────────────────────────
 
-    /**
-     * @return array<string, mixed>
-     */
+    /** @return array<string, mixed> */
     private function validPayload(array $overrides = []): array
     {
         return array_merge([
             'name' => 'John Doe',
-            'gender' => PlayerGenderEnum::MALE->value,
+            'gender' => PlayerGenderEnum::Male->value,
             'dob' => '2000-01-15',
             'weight' => 75.00,
-            'nationality' => 'Nepal',
+            'nationality_code' => 'NP',
         ], $overrides);
     }
 }

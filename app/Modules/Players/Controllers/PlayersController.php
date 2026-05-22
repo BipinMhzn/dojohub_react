@@ -2,6 +2,8 @@
 
 namespace App\Modules\Players\Controllers;
 
+use App\Modules\BeltRanks\Models\BeltRank;
+use App\Modules\Countries\Models\Country;
 use App\Modules\Players\Interfaces\PlayerInterface;
 use App\Modules\Players\Requests\PlayerCreateRequest;
 use App\Modules\Players\Requests\PlayerUpdateRequest;
@@ -11,21 +13,12 @@ use BaseSystem\Requests\BaseWebListRequest;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Response;
 
-/**
- * Class PlayersController
- */
 final class PlayersController extends BaseWebController
 {
     use FileUpload;
 
-    /**
-     * PlayersController constructor.
-     */
     public function __construct(private readonly PlayerInterface $repository) {}
 
-    /**
-     * @param  BaseListRequest  $request
-     */
     public function index(BaseWebListRequest $request): Response
     {
         return $this->render('players/index', [
@@ -36,15 +29,18 @@ final class PlayersController extends BaseWebController
 
     public function create(): Response
     {
-        return $this->render('players/create');
+        return $this->render('players/create', [
+            'countries' => Country::orderBy('name')->get(['code', 'name']),
+            'beltRanks' => BeltRank::orderBy('sort_order')->get(['id', 'code', 'name', 'color']),
+        ]);
     }
 
     public function store(PlayerCreateRequest $request): RedirectResponse
     {
         $inputs = $request->validated();
         if ($request->file('profile_photo')) {
-            $profilePhoto = $this->uploadFile($request->file('profile_photo'), '/images/players');
-            $inputs['profile_photo_url'] = $profilePhoto['path'];
+            $photo = $this->uploadFile($request->file('profile_photo'), '/images/players');
+            $inputs['profile_photo_url'] = $photo['path'];
             unset($inputs['profile_photo']);
         }
 
@@ -57,6 +53,8 @@ final class PlayersController extends BaseWebController
     {
         return $this->render('players/edit', [
             'player' => $this->repository->getById($player),
+            'countries' => Country::orderBy('name')->get(['code', 'name']),
+            'beltRanks' => BeltRank::orderBy('sort_order')->get(['id', 'code', 'name', 'color']),
         ]);
     }
 
@@ -64,10 +62,11 @@ final class PlayersController extends BaseWebController
     {
         $inputs = $request->validated();
         if ($request->file('profile_photo')) {
-            $profilePhoto = $this->uploadFile($request->file('profile_photo'), '/images/players');
-            $inputs['profile_photo_url'] = $profilePhoto['path'];
+            $photo = $this->uploadFile($request->file('profile_photo'), '/images/players');
+            $inputs['profile_photo_url'] = $photo['path'];
             unset($inputs['profile_photo']);
         }
+
         $this->repository->update($player, $inputs);
 
         return to_route('players.index')->with('success', 'Player updated successfully.');
