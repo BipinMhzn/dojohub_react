@@ -17,7 +17,7 @@
 4. [Module: Venues ✅](#module-venues-)
 5. [Module: Clubs ✅](#module-clubs-)
 6. [Module: Players ✅](#module-players-)
-7. [Module: Referees (New)](#module-referees-new)
+7. [Module: Referees (New) ✅](#module-referees-new)
 8. [Module: Coaches (New)](#module-coaches-new)
 9. [Module: Tournaments](#module-tournaments)
 10. [Module: Tournament Categories](#module-tournament-categories)
@@ -317,7 +317,7 @@ Update `wiki/PlayersModule.md`.
 
 ---
 
-## Module: Referees (New)
+## Module: Referees (New) ✅
 
 **Depends on**: Global Phase 1 (RefereeCertificationLevelEnum, RefereeRoleEnum created), Global Phase 2 (countries seeded).
 
