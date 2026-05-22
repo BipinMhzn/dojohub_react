@@ -10,18 +10,18 @@ return new class extends Migration
 
     public function up(): void
     {
-        Schema::create('addresses', function (Blueprint $table) {
+        Schema::create('tournament_pools', function (Blueprint $table) {
             $table->ulid('id')->primary();
-            $table->string('address');
-            $table->string('city', 100);
-            $table->string('state', 100);
-            $table->string('country', 100);
+            $table->ulid('bracket_id');
+            $table->string('name', 50);     // e.g. "Pool A", "Pool B"
             $this->editorLogs($table);
+
+            $table->foreign('bracket_id')->references('id')->on('tournament_brackets')->onDelete('restrict')->onUpdate('cascade');
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('addresses');
+        Schema::dropIfExists('tournament_pools');
     }
 };

@@ -10,9 +10,12 @@ use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
+use OwenIt\Auditing\Auditing;
+use OwenIt\Auditing\Contracts\Auditable;
 
-abstract class AppBaseModel extends BaseModel
+abstract class AppBaseModel extends BaseModel implements Auditable
 {
+    use Auditing;
     use EditorLogs;
     use HasFactory;
     use HasUlids;
@@ -23,6 +26,13 @@ abstract class AppBaseModel extends BaseModel
         'updated_by',
         'deleted_by',
         'deleted_at',
+    ];
+
+    // Exclude EditorLogs columns — redundant with audits.user_id / audits.event
+    protected $auditExclude = [
+        'created_by',
+        'updated_by',
+        'deleted_by',
     ];
 
     public function editorProvider(): ?Authenticatable

@@ -14,7 +14,6 @@ return new class extends Migration
             $table->ulid('id')->primary();
             $table->string('name');
             $table->ulid('address_id');
-            $table->tinyInteger('mat_count')->unsigned()->default(1);
             $this->editorLogs($table);
 
             $table->foreign('address_id')->references('id')->on('addresses')->onDelete('restrict')->onUpdate('cascade');

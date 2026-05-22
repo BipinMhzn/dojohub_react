@@ -12,6 +12,7 @@ Authoritative project documentation. CLAUDE.md (project root) is the entry point
 | [Frontend.md](Frontend.md) | Pages structure, Inertia conventions, TypeScript types, dark mode, data tables |
 | [Enums.md](Enums.md) | All backend enums and their integer values |
 | [Database.md](Database.md) | Authoritative schema reference — every table, FK, index, migration |
+| [DatabaseImprovementPlan.md](DatabaseImprovementPlan.md) | Phased plan for upcoming schema improvements (reconciliations, indexes, new tables) |
 
 ### Modules
 | Doc | Purpose |

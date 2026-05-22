@@ -16,7 +16,7 @@ return new class extends Migration
             $table->ulid('club_id');
             $table->ulid('player_id');
             $table->tinyInteger('player_age')->unsigned();
-            $table->decimal('player_weight', 5, 2)->unsigned();
+            $table->decimal('player_weight', 5, 2);
             $table->tinyInteger('status')->unsigned()->default(0); // 0=Registered, 1=Confirmed, 2=Withdrawn
             $this->editorLogs($table);
 
@@ -24,7 +24,10 @@ return new class extends Migration
             $table->foreign('club_id')->references('id')->on('clubs')->onDelete('restrict')->onUpdate('cascade');
             $table->foreign('player_id')->references('id')->on('players')->onDelete('restrict')->onUpdate('cascade');
 
-            $table->unique(['tournament_category_id', 'player_id']);
+            $table->index('player_id');
+            $table->index('club_id');
+            $table->index('status');
+            $table->unique(['tournament_category_id', 'player_id', 'deleted_at'], 'tr_category_player_unique');
         });
     }
 

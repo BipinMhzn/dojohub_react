@@ -10,20 +10,21 @@ return new class extends Migration
 
     public function up(): void
     {
-        Schema::create('tournament_results', function (Blueprint $table) {
+        Schema::create('tournament_registration_coaches', function (Blueprint $table) {
             $table->ulid('id')->primary();
             $table->ulid('registration_id');
-            $table->tinyInteger('position')->unsigned(); // 1=Gold, 2=Silver, 3=Bronze, 5=5th, 7=7th, etc.
+            $table->ulid('coach_id');
             $this->editorLogs($table);
 
             $table->foreign('registration_id')->references('id')->on('tournament_registrations')->onDelete('restrict')->onUpdate('cascade');
+            $table->foreign('coach_id')->references('id')->on('coaches')->onDelete('restrict')->onUpdate('cascade');
 
-            $table->unique('registration_id');
+            $table->unique(['registration_id', 'coach_id', 'deleted_at'], 'trc_registration_coach_unique');
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('tournament_results');
+        Schema::dropIfExists('tournament_registration_coaches');
     }
 };
