@@ -19,10 +19,18 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 export type ClubAddress = {
     id: string;
-    address: string;
-    city: string;
-    state: string;
-    country: string;
+    address_line_1: string;
+    address_line_2: string | null;
+    city: string | null;
+    state: string | null;
+    postal_code: string | null;
+    country_code: string;
+    country?: { code: string; name: string };
+};
+
+export type Country = {
+    code: string;
+    name: string;
 };
 
 export type Club = {
@@ -30,7 +38,7 @@ export type Club = {
     name: string;
     abbreviation: string;
     logo_url: string | null;
-    address: ClubAddress;
+    address: ClubAddress | null;
     phone_number: string | null;
     created_at: string;
     updated_at: string;

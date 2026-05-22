@@ -21,17 +21,12 @@ import { format } from 'date-fns';
 import { CalendarIcon, Plus } from 'lucide-react';
 import { useState } from 'react';
 
-export type BeltRank = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
-
-export const BELT_RANK_LABELS: Record<BeltRank, string> = {
-    0: 'White',
-    1: 'Yellow',
-    2: 'Orange',
-    3: 'Green',
-    4: 'Blue',
-    5: 'Purple',
-    6: 'Brown',
-    7: 'Black',
+export type BeltRankModel = {
+    id: string;
+    code: string;
+    name: string;
+    color: string | null;
+    sort_order: number;
 };
 
 export type ClubMembership = {
@@ -45,8 +40,9 @@ export type ClubMembership = {
     };
     started_at: string;
     ended_at: string | null;
-    belt_rank: BeltRank | null;
-    grade: string | null;
+    belt_rank_id: string | null;
+    belt_rank: BeltRankModel | null;
+    grade_certificate: string | null;
     created_at: string;
     updated_at: string;
 };

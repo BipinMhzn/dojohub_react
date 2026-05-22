@@ -25,9 +25,10 @@ final class ClubPlayerRepository extends BaseRepository implements ClubPlayerInt
     public function getClubPlayers(string $clubId, array $filters): LengthAwarePaginator
     {
         $query = $this->model->newQuery()
-            ->with(['player' => function ($query) {
-                $query->select('id', 'name', 'profile_photo_url');
-            }])
+            ->with([
+                'player' => fn ($q) => $q->select('id', 'name', 'profile_photo_url'),
+                'beltRank',
+            ])
             ->where('club_id', $clubId);
 
         if (($filters['status'] ?? 'all') === 'active') {
@@ -40,9 +41,10 @@ final class ClubPlayerRepository extends BaseRepository implements ClubPlayerInt
     public function getAllClubPlayers(string $clubId): Collection
     {
         return $this->model->newQuery()
-            ->with(['player' => function ($query) {
-                $query->select('id', 'name', 'profile_photo_url');
-            }])
+            ->with([
+                'player' => fn ($q) => $q->select('id', 'name', 'profile_photo_url'),
+                'beltRank',
+            ])
             ->where('club_id', $clubId)
             ->orderByRaw('ended_at IS NOT NULL')
             ->orderBy('started_at', 'desc')
@@ -79,8 +81,8 @@ final class ClubPlayerRepository extends BaseRepository implements ClubPlayerInt
             'club_id' => $clubId,
             'player_id' => $validated['player_id'],
             'started_at' => $validated['started_at'],
-            'belt_rank' => $validated['belt_rank'] ?? null,
-            'grade' => $validated['grade'] ?? null,
+            'belt_rank_id' => $validated['belt_rank_id'] ?? null,
+            'grade_certificate' => $validated['grade_certificate'] ?? null,
         ]);
     }
 
@@ -102,8 +104,8 @@ final class ClubPlayerRepository extends BaseRepository implements ClubPlayerInt
             ->findOrFail($membershipId);
 
         $membership->update([
-            'belt_rank' => $validated['belt_rank'] ?? null,
-            'grade' => $validated['grade'] ?? null,
+            'belt_rank_id' => $validated['belt_rank_id'] ?? null,
+            'grade_certificate' => $validated['grade_certificate'] ?? null,
         ]);
 
         return $membership;

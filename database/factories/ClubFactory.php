@@ -18,15 +18,16 @@ class ClubFactory extends Factory
      */
     public function definition(): array
     {
-        $address = Address::factory()->create();
-
         return [
-            'name'         => $this->faker->company(),
-            'abbreviation' => strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $this->faker->word()), 0, 3)),
-            'address_id'   => $address->id,
-            'phone_number' => $this->faker->phoneNumber(),
+            'name' => $this->faker->company(),
+            'abbreviation' => strtoupper($this->faker->bothify('???')),
+            'address_id' => Address::factory(),
+            'phone_number' => null,
         ];
     }
+
+    public function withoutAddress(): static
+    {
+        return $this->state(fn () => ['address_id' => null]);
+    }
 }
-
-

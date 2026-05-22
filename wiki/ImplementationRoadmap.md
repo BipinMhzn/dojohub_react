@@ -15,7 +15,7 @@
 2. [Global Phase 2 — Reference Data Models & Seeders ✅](#global-phase-2--reference-data-models--seeders-)
 3. [Global Phase 3 — RBAC Setup ✅](#global-phase-3--rbac-setup-)
 4. [Module: Venues ✅](#module-venues-)
-5. [Module: Clubs](#module-clubs)
+5. [Module: Clubs ✅](#module-clubs-)
 6. [Module: Players](#module-players)
 7. [Module: Referees (New)](#module-referees-new)
 8. [Module: Coaches (New)](#module-coaches-new)
@@ -237,7 +237,7 @@ Update `wiki/VenuesModule.md` to reflect all changes.
 
 ---
 
-## Module: Clubs
+## Module: Clubs ✅
 
 **Existing module. Depends on**: Phase V1 (Address model updated), Global Phase 2 (BeltRankEnum removed).
 

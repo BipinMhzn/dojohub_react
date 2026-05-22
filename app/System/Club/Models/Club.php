@@ -50,6 +50,6 @@ class Club extends AppBaseModel
     public function players(): BelongsToMany
     {
         return $this->belongsToMany(Player::class, 'clubs_players', 'club_id', 'player_id')
-            ->withPivot(['id', 'started_at', 'ended_at', 'belt_rank', 'grade']);
+            ->withPivot(['id', 'started_at', 'ended_at', 'belt_rank_id', 'grade_certificate']);
     }
 }

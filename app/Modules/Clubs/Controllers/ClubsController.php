@@ -5,24 +5,20 @@ namespace App\Modules\Clubs\Controllers;
 use App\Modules\Clubs\Interfaces\ClubInterface;
 use App\Modules\Clubs\Requests\ClubCreateRequest;
 use App\Modules\Clubs\Requests\ClubUpdateRequest;
+use App\Modules\Countries\Models\Country;
 use App\System\Foundation\Traits\FileUpload;
 use BaseSystem\Controllers\BaseWebController;
 use BaseSystem\Requests\BaseWebListRequest;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Response;
 
-/**
- * Class ClubsController
- */
 final class ClubsController extends BaseWebController
 {
     use FileUpload;
 
     private string $uploadDirectory = '/images/clubs';
 
-    public function __construct(
-        private readonly ClubInterface $repository,
-    ) {}
+    public function __construct(private readonly ClubInterface $repository) {}
 
     public function index(BaseWebListRequest $request): Response
     {
@@ -34,7 +30,9 @@ final class ClubsController extends BaseWebController
 
     public function create(): Response
     {
-        return $this->render('clubs/create');
+        return $this->render('clubs/create', [
+            'countries' => Country::orderBy('name')->get(['code', 'name']),
+        ]);
     }
 
     public function store(ClubCreateRequest $request): RedirectResponse
@@ -64,6 +62,7 @@ final class ClubsController extends BaseWebController
             $inputs['logo_url'] = $profilePhoto['path'];
             unset($inputs['logo']);
         }
+
         $this->repository->updateClub($inputs, $club);
 
         return to_route('clubs.show', $club)->with('success', 'Club updated successfully.');
@@ -80,6 +79,7 @@ final class ClubsController extends BaseWebController
     {
         return $this->render('clubs/show', [
             'club' => $this->repository->getById($club),
+            'countries' => Country::orderBy('name')->get(['code', 'name']),
         ]);
     }
 }

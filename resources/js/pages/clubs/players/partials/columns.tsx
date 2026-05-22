@@ -4,8 +4,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ColumnDef } from '@tanstack/react-table';
+import { ClubMembership } from '@/pages/clubs/players/index';
 import { formatUTCDate } from '@/utils/date';
-import { BeltRank, BELT_RANK_LABELS, ClubMembership } from '@/pages/clubs/players/index';
 
 type ClubPlayerColumnsProps = {
     onEndMembership: (membership: ClubMembership) => void;
@@ -40,16 +40,14 @@ export const getClubPlayerColumns = ({ onEndMembership }: ClubPlayerColumnsProps
         header: 'Belt Rank',
         cell: ({ row }) => {
             const rank = row.original.belt_rank;
-            if (rank === null || rank === undefined) {
-                return <span className="text-muted-foreground">—</span>;
-            }
-            return <span>{BELT_RANK_LABELS[rank as BeltRank]}</span>;
+            if (!rank) return <span className="text-muted-foreground">—</span>;
+            return <span>{rank.name}</span>;
         },
     },
     {
-        accessorKey: 'grade',
-        header: 'Grade',
-        cell: ({ row }) => row.original.grade ?? <span className="text-muted-foreground">—</span>,
+        id: 'grade_certificate',
+        header: 'Grade Certificate',
+        cell: ({ row }) => row.original.grade_certificate ?? <span className="text-muted-foreground">—</span>,
     },
     {
         accessorKey: 'started_at',

@@ -47,7 +47,7 @@ export const getClubColumns = ({ onDelete }: ClubColumnsProps): ColumnDef<Club>[
     {
         id: 'address',
         header: 'Address',
-        cell: ({ row }) => row.original.address?.address ?? '—',
+        cell: ({ row }) => row.original.address?.address_line_1 ?? '—',
     },
     {
         id: 'city',
@@ -55,14 +55,9 @@ export const getClubColumns = ({ onDelete }: ClubColumnsProps): ColumnDef<Club>[
         cell: ({ row }) => row.original.address?.city ?? '—',
     },
     {
-        id: 'state',
-        header: 'State',
-        cell: ({ row }) => row.original.address?.state ?? '—',
-    },
-    {
         id: 'country',
         header: 'Country',
-        cell: ({ row }) => row.original.address?.country ?? '—',
+        cell: ({ row }) => row.original.address?.country?.name ?? row.original.address?.country_code ?? '—',
     },
     {
         accessorKey: 'phone_number',

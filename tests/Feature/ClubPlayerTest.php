@@ -2,8 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Modules\BeltRanks\Models\BeltRank;
+use App\Modules\Countries\Models\Country;
 use App\System\Club\Models\Club;
-use App\System\ClubPlayer\Foundation\Enums\BeltRankEnum;
 use App\System\ClubPlayer\Models\ClubPlayer;
 use App\System\Player\Models\Player;
 use App\System\User\Models\User;
@@ -15,28 +16,36 @@ class ClubPlayerTest extends TestCase
 {
     use RefreshDatabase;
 
-    // ──────────────────────────────────────────────────────────────
-    // Helpers
-    // ──────────────────────────────────────────────────────────────
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Country::firstOrCreate(['code' => 'NP'], ['name' => 'Nepal']);
+    }
 
-    private function createUser(): User
+    private function user(): User
     {
         return User::factory()->create();
     }
 
-    private function createClub(): Club
+    private function club(): Club
     {
         return Club::factory()->create();
     }
 
-    private function createPlayer(): Player
+    private function player(): Player
     {
         return Player::factory()->create();
     }
 
-    /**
-     * @return array<string, mixed>
-     */
+    private function beltRank(): BeltRank
+    {
+        return BeltRank::firstOrCreate(
+            ['code' => '1D'],
+            ['name' => 'Shodan', 'kind' => 1, 'color' => 'Black', 'sort_order' => 7]
+        );
+    }
+
+    /** @return array<string, mixed> */
     private function validAssignPayload(array $overrides = []): array
     {
         return array_merge([
@@ -51,16 +60,12 @@ class ClubPlayerTest extends TestCase
 
     public function test_guests_are_redirected_from_club_show(): void
     {
-        $club = $this->createClub();
-
-        $this->get("/manage/clubs/{$club->id}")->assertRedirect('/login');
+        $this->get("/manage/clubs/{$this->club()->id}")->assertRedirect('/login');
     }
 
     public function test_guests_cannot_assign_a_player(): void
     {
-        $club = $this->createClub();
-
-        $this->post("/manage/clubs/{$club->id}/players", $this->validAssignPayload())
+        $this->post("/manage/clubs/{$this->club()->id}/players", $this->validAssignPayload())
             ->assertRedirect('/login');
     }
 
@@ -74,23 +79,17 @@ class ClubPlayerTest extends TestCase
     }
 
     // ──────────────────────────────────────────────────────────────
-    // Index
+    // Show
     // ──────────────────────────────────────────────────────────────
 
     public function test_authenticated_user_can_view_club_show(): void
     {
-        $club = $this->createClub();
-
-        $this->actingAs($this->createUser())
-            ->get("/manage/clubs/{$club->id}")
-            ->assertOk();
+        $this->actingAs($this->user())->get("/manage/clubs/{$this->club()->id}")->assertOk();
     }
 
     public function test_club_show_returns_404_for_nonexistent_club(): void
     {
-        $this->actingAs($this->createUser())
-            ->get('/manage/clubs/'.Str::ulid())
-            ->assertNotFound();
+        $this->actingAs($this->user())->get('/manage/clubs/'.Str::ulid())->assertNotFound();
     }
 
     // ──────────────────────────────────────────────────────────────
@@ -99,11 +98,11 @@ class ClubPlayerTest extends TestCase
 
     public function test_authenticated_user_can_assign_a_player_to_a_club(): void
     {
-        $club = $this->createClub();
-        $player = $this->createPlayer();
+        $club = $this->club();
+        $player = $this->player();
         $date = now()->subMonth()->format('Y-m-d');
 
-        $response = $this->actingAs($this->createUser())
+        $response = $this->actingAs($this->user())
             ->post("/manage/clubs/{$club->id}/players", [
                 'player_id' => $player->id,
                 'started_at' => $date,
@@ -119,32 +118,33 @@ class ClubPlayerTest extends TestCase
         ]);
     }
 
-    public function test_can_assign_player_with_belt_rank_and_grade(): void
+    public function test_can_assign_player_with_belt_rank_and_grade_certificate(): void
     {
-        $club = $this->createClub();
-        $player = $this->createPlayer();
+        $club = $this->club();
+        $player = $this->player();
+        $beltRank = $this->beltRank();
 
-        $this->actingAs($this->createUser())
+        $this->actingAs($this->user())
             ->post("/manage/clubs/{$club->id}/players", [
                 'player_id' => $player->id,
                 'started_at' => now()->subMonth()->format('Y-m-d'),
-                'belt_rank' => BeltRankEnum::BLACK->value,
-                'grade' => '2nd dan',
+                'belt_rank_id' => $beltRank->id,
+                'grade_certificate' => 'Shodan Certificate',
             ])
             ->assertSessionHasNoErrors();
 
         $this->assertDatabaseHas('clubs_players', [
             'club_id' => $club->id,
             'player_id' => $player->id,
-            'belt_rank' => BeltRankEnum::BLACK->value,
-            'grade' => '2nd dan',
+            'belt_rank_id' => $beltRank->id,
+            'grade_certificate' => 'Shodan Certificate',
         ]);
     }
 
     public function test_cannot_assign_player_who_already_has_active_membership(): void
     {
-        $club = $this->createClub();
-        $player = $this->createPlayer();
+        $club = $this->club();
+        $player = $this->player();
 
         ClubPlayer::factory()->create([
             'club_id' => $club->id,
@@ -152,7 +152,7 @@ class ClubPlayerTest extends TestCase
             'ended_at' => null,
         ]);
 
-        $this->actingAs($this->createUser())
+        $this->actingAs($this->user())
             ->post("/manage/clubs/{$club->id}/players", [
                 'player_id' => $player->id,
                 'started_at' => now()->subWeek()->format('Y-m-d'),
@@ -162,10 +162,8 @@ class ClubPlayerTest extends TestCase
 
     public function test_store_requires_player_id(): void
     {
-        $club = $this->createClub();
-
-        $this->actingAs($this->createUser())
-            ->post("/manage/clubs/{$club->id}/players", [
+        $this->actingAs($this->user())
+            ->post("/manage/clubs/{$this->club()->id}/players", [
                 'started_at' => now()->subMonth()->format('Y-m-d'),
             ])
             ->assertSessionHasErrors('player_id');
@@ -173,55 +171,43 @@ class ClubPlayerTest extends TestCase
 
     public function test_store_requires_started_at(): void
     {
-        $club = $this->createClub();
-        $player = $this->createPlayer();
-
-        $this->actingAs($this->createUser())
-            ->post("/manage/clubs/{$club->id}/players", [
-                'player_id' => $player->id,
+        $this->actingAs($this->user())
+            ->post("/manage/clubs/{$this->club()->id}/players", [
+                'player_id' => $this->player()->id,
             ])
             ->assertSessionHasErrors('started_at');
     }
 
     public function test_store_rejects_future_started_at(): void
     {
-        $club = $this->createClub();
-        $player = $this->createPlayer();
-
-        $this->actingAs($this->createUser())
-            ->post("/manage/clubs/{$club->id}/players", [
-                'player_id' => $player->id,
+        $this->actingAs($this->user())
+            ->post("/manage/clubs/{$this->club()->id}/players", [
+                'player_id' => $this->player()->id,
                 'started_at' => now()->addDay()->format('Y-m-d'),
             ])
             ->assertSessionHasErrors('started_at');
     }
 
-    public function test_store_rejects_invalid_belt_rank(): void
+    public function test_store_rejects_invalid_belt_rank_id(): void
     {
-        $club = $this->createClub();
-        $player = $this->createPlayer();
-
-        $this->actingAs($this->createUser())
-            ->post("/manage/clubs/{$club->id}/players", [
-                'player_id' => $player->id,
+        $this->actingAs($this->user())
+            ->post("/manage/clubs/{$this->club()->id}/players", [
+                'player_id' => $this->player()->id,
                 'started_at' => now()->subMonth()->format('Y-m-d'),
-                'belt_rank' => 99,
+                'belt_rank_id' => 'non-existent-id',
             ])
-            ->assertSessionHasErrors('belt_rank');
+            ->assertSessionHasErrors('belt_rank_id');
     }
 
-    public function test_store_rejects_grade_exceeding_max_length(): void
+    public function test_store_rejects_grade_certificate_exceeding_max_length(): void
     {
-        $club = $this->createClub();
-        $player = $this->createPlayer();
-
-        $this->actingAs($this->createUser())
-            ->post("/manage/clubs/{$club->id}/players", [
-                'player_id' => $player->id,
+        $this->actingAs($this->user())
+            ->post("/manage/clubs/{$this->club()->id}/players", [
+                'player_id' => $this->player()->id,
                 'started_at' => now()->subMonth()->format('Y-m-d'),
-                'grade' => str_repeat('a', 51),
+                'grade_certificate' => str_repeat('a', 101),
             ])
-            ->assertSessionHasErrors('grade');
+            ->assertSessionHasErrors('grade_certificate');
     }
 
     // ──────────────────────────────────────────────────────────────
@@ -230,8 +216,8 @@ class ClubPlayerTest extends TestCase
 
     public function test_authenticated_user_can_end_a_membership(): void
     {
-        $club = $this->createClub();
-        $player = $this->createPlayer();
+        $club = $this->club();
+        $player = $this->player();
         $startDate = now()->subMonths(3);
 
         $membership = ClubPlayer::factory()->create([
@@ -243,25 +229,19 @@ class ClubPlayerTest extends TestCase
 
         $endDate = now()->subMonth()->format('Y-m-d');
 
-        $response = $this->actingAs($this->createUser())
-            ->put("/manage/clubs/{$club->id}/players/{$membership->id}", [
-                'ended_at' => $endDate,
-            ]);
+        $response = $this->actingAs($this->user())
+            ->put("/manage/clubs/{$club->id}/players/{$membership->id}", ['ended_at' => $endDate]);
 
         $response->assertRedirect();
         $response->assertSessionHasNoErrors();
-
-        $this->assertDatabaseHas('clubs_players', [
-            'id' => $membership->id,
-            'ended_at' => $endDate.' 00:00:00',
-        ]);
+        $this->assertDatabaseHas('clubs_players', ['id' => $membership->id, 'ended_at' => $endDate.' 00:00:00']);
     }
 
     public function test_update_requires_ended_at(): void
     {
         $membership = ClubPlayer::factory()->create(['ended_at' => null]);
 
-        $this->actingAs($this->createUser())
+        $this->actingAs($this->user())
             ->put("/manage/clubs/{$membership->club_id}/players/{$membership->id}", [])
             ->assertSessionHasErrors('ended_at');
     }
@@ -270,12 +250,9 @@ class ClubPlayerTest extends TestCase
     {
         $startDate = now()->subMonths(2);
 
-        $membership = ClubPlayer::factory()->create([
-            'started_at' => $startDate,
-            'ended_at' => null,
-        ]);
+        $membership = ClubPlayer::factory()->create(['started_at' => $startDate, 'ended_at' => null]);
 
-        $this->actingAs($this->createUser())
+        $this->actingAs($this->user())
             ->put("/manage/clubs/{$membership->club_id}/players/{$membership->id}", [
                 'ended_at' => $startDate->copy()->subDay()->format('Y-m-d'),
             ])
@@ -284,23 +261,21 @@ class ClubPlayerTest extends TestCase
 
     public function test_update_returns_404_for_nonexistent_membership(): void
     {
-        $club = $this->createClub();
-
-        $this->actingAs($this->createUser())
-            ->put("/manage/clubs/{$club->id}/players/".Str::ulid(), [
+        $this->actingAs($this->user())
+            ->put("/manage/clubs/{$this->club()->id}/players/".Str::ulid(), [
                 'ended_at' => now()->format('Y-m-d'),
             ])
             ->assertNotFound();
     }
 
     // ──────────────────────────────────────────────────────────────
-    // Re-join: same player can be assigned again after membership ends
+    // Re-join
     // ──────────────────────────────────────────────────────────────
 
     public function test_player_can_rejoin_same_club_after_membership_ends(): void
     {
-        $club = $this->createClub();
-        $player = $this->createPlayer();
+        $club = $this->club();
+        $player = $this->player();
 
         ClubPlayer::factory()->create([
             'club_id' => $club->id,
@@ -309,7 +284,7 @@ class ClubPlayerTest extends TestCase
             'ended_at' => now()->subYear(),
         ]);
 
-        $this->actingAs($this->createUser())
+        $this->actingAs($this->user())
             ->post("/manage/clubs/{$club->id}/players", [
                 'player_id' => $player->id,
                 'started_at' => now()->subMonth()->format('Y-m-d'),

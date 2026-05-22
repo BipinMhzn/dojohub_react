@@ -3,6 +3,7 @@
 namespace App\System\ClubPlayer\Models;
 
 use App\System\AppBaseModel;
+use App\System\BeltRank\Models\BeltRank;
 use App\System\Club\Models\Club;
 use App\System\Player\Models\Player;
 use Database\Factories\ClubPlayerFactory;
@@ -42,5 +43,10 @@ class ClubPlayer extends AppBaseModel
     public function player(): BelongsTo
     {
         return $this->belongsTo(Player::class, 'player_id', 'id');
+    }
+
+    public function beltRank(): BelongsTo
+    {
+        return $this->belongsTo(BeltRank::class, 'belt_rank_id', 'id');
     }
 }
