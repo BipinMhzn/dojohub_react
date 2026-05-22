@@ -18,12 +18,9 @@ class VenueFactory extends Factory
      */
     public function definition(): array
     {
-        $address = Address::factory()->create();
-
         return [
             'name' => $this->faker->company(),
-            'address_id' => $address->id,
-            'mat_count' => $this->faker->numberBetween(1, 10),
+            'address_id' => Address::factory(),
         ];
     }
 }

@@ -30,7 +30,9 @@ return new class extends Migration
             $table->index('club_id');
         });
 
-        DB::statement('ALTER TABLE clubs_players ADD CONSTRAINT chk_cp_dates CHECK (ended_at IS NULL OR started_at <= ended_at)');
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement('ALTER TABLE clubs_players ADD CONSTRAINT chk_cp_dates CHECK (ended_at IS NULL OR started_at <= ended_at)');
+        }
     }
 
     public function down(): void

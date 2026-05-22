@@ -41,8 +41,10 @@ return new class extends Migration
             $table->index('mat_id');
         });
 
-        DB::statement('ALTER TABLE tournament_matches ADD CONSTRAINT chk_tm_winner_pos CHECK (winner_next_position IS NULL OR winner_next_position IN (0,1))');
-        DB::statement('ALTER TABLE tournament_matches ADD CONSTRAINT chk_tm_loser_pos CHECK (loser_next_position IS NULL OR loser_next_position IN (0,1))');
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement('ALTER TABLE tournament_matches ADD CONSTRAINT chk_tm_winner_pos CHECK (winner_next_position IS NULL OR winner_next_position IN (0,1))');
+            DB::statement('ALTER TABLE tournament_matches ADD CONSTRAINT chk_tm_loser_pos CHECK (loser_next_position IS NULL OR loser_next_position IN (0,1))');
+        }
     }
 
     public function down(): void

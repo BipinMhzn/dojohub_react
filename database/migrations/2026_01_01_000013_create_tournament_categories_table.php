@@ -32,8 +32,10 @@ return new class extends Migration
             $table->unique(['tournament_id', 'gender', 'age_category', 'weight_category', 'deleted_at'], 'tc_division_unique');
         });
 
-        DB::statement('ALTER TABLE tournament_categories ADD CONSTRAINT chk_tc_age CHECK (min_age <= max_age)');
-        DB::statement('ALTER TABLE tournament_categories ADD CONSTRAINT chk_tc_weight CHECK (min_weight <= max_weight)');
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement('ALTER TABLE tournament_categories ADD CONSTRAINT chk_tc_age CHECK (min_age <= max_age)');
+            DB::statement('ALTER TABLE tournament_categories ADD CONSTRAINT chk_tc_weight CHECK (min_weight <= max_weight)');
+        }
     }
 
     public function down(): void

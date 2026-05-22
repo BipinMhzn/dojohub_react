@@ -33,7 +33,9 @@ return new class extends Migration
             $table->index('start_at');
         });
 
-        DB::statement('ALTER TABLE tournaments ADD CONSTRAINT chk_tournament_dates CHECK (end_at IS NULL OR start_at <= end_at)');
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement('ALTER TABLE tournaments ADD CONSTRAINT chk_tournament_dates CHECK (end_at IS NULL OR start_at <= end_at)');
+        }
     }
 
     public function down(): void

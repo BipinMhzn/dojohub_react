@@ -1,27 +1,21 @@
 'use client';
 
-import { ColumnDef } from '@tanstack/react-table';
-import { MoreHorizontal } from 'lucide-react';
-
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Venue } from '@/pages/venues';
 import { formatUTCDate } from '@/utils/date';
 import { router } from '@inertiajs/react';
+import { ColumnDef } from '@tanstack/react-table';
+import { MoreHorizontal } from 'lucide-react';
 
-type VenueColumnsProps = {
-    onDelete: (venue: Venue) => void;
-};
+type VenueColumnsProps = { onDelete: (venue: Venue) => void };
 
 export const getVenueColumns = ({ onDelete }: VenueColumnsProps): ColumnDef<Venue>[] => [
-    {
-        accessorKey: 'name',
-        header: 'Name',
-    },
+    { accessorKey: 'name', header: 'Name' },
     {
         id: 'address',
         header: 'Address',
-        cell: ({ row }) => row.original.address?.address ?? '—',
+        cell: ({ row }) => row.original.address?.address_line_1 ?? '—',
     },
     {
         id: 'city',
@@ -29,18 +23,14 @@ export const getVenueColumns = ({ onDelete }: VenueColumnsProps): ColumnDef<Venu
         cell: ({ row }) => row.original.address?.city ?? '—',
     },
     {
-        id: 'state',
-        header: 'State',
-        cell: ({ row }) => row.original.address?.state ?? '—',
-    },
-    {
         id: 'country',
         header: 'Country',
-        cell: ({ row }) => row.original.address?.country ?? '—',
+        cell: ({ row }) => row.original.address?.country?.name ?? row.original.address?.country_code ?? '—',
     },
     {
-        accessorKey: 'mat_count',
+        id: 'mats',
         header: 'Mats',
+        cell: ({ row }) => row.original.mats_count ?? 0,
     },
     {
         accessorKey: 'updated_at',
@@ -51,11 +41,6 @@ export const getVenueColumns = ({ onDelete }: VenueColumnsProps): ColumnDef<Venu
         id: 'actions',
         cell: ({ row }) => {
             const venue = row.original;
-
-            const handleEdit = () => {
-                router.visit(`/manage/venues/${venue.id}/edit`);
-            };
-
             return (
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -65,7 +50,7 @@ export const getVenueColumns = ({ onDelete }: VenueColumnsProps): ColumnDef<Venu
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={handleEdit}>Edit</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => router.visit(`/manage/venues/${venue.id}/edit`)}>Edit</DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => onDelete(venue)}>Delete</DropdownMenuItem>
                     </DropdownMenuContent>

@@ -1,26 +1,29 @@
 <?php
+
 namespace App\Modules\Venues;
 
-use \Illuminate\Support\ServiceProvider as BaseServiceProvider;
 use App\Modules\Venues\Interfaces\VenueInterface;
+use App\Modules\Venues\Interfaces\VenueMatInterface;
+use App\Modules\Venues\Models\Address;
+use App\Modules\Venues\Models\Venue;
+use App\Modules\Venues\Models\VenueMat;
+use App\Modules\Venues\Repositories\VenueMatRepository;
 use App\Modules\Venues\Repositories\VenueRepository;
+use Illuminate\Support\ServiceProvider as BaseServiceProvider;
 
-/**
- * Class ServiceProvider
- * @package App\Modules\Venues
- */
 class ServiceProvider extends BaseServiceProvider
 {
-    /**
-     * @type bool
-     */
     protected bool $defer = true;
 
-    /**
-     * Register your binding
-     */
     public function register(): void
     {
-        $this->app->bind(VenueInterface::class, VenueRepository::class);
+        $this->app->bind(VenueInterface::class, fn () => new VenueRepository(
+            new Venue,
+            new Address,
+        ));
+
+        $this->app->bind(VenueMatInterface::class, fn () => new VenueMatRepository(
+            new VenueMat,
+        ));
     }
 }

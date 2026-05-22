@@ -10,5 +10,5 @@ enum BracketSectionEnum: int
 
     case Bronze = 2;
 
-    case Final = 3;
+    case GoldFinal = 3;
 }

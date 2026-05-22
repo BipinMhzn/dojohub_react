@@ -4,20 +4,20 @@ namespace App\Modules\Venues\Requests;
 
 use BaseSystem\Requests\BaseWebRequest;
 
-/**
- * Class VenueCreateRequest
- */
 class VenueCreateRequest extends BaseWebRequest
 {
     public function rules(): array
     {
         return [
             'name' => ['required', 'string', 'max:250'],
-            'mat_count' => ['required', 'integer', 'min:1', 'max:99'],
-            'country' => ['required', 'string', 'max:100'],
-            'state' => ['required', 'string', 'max:100'],
+            'address_line_1' => ['required', 'string', 'max:250'],
+            'address_line_2' => ['nullable', 'string', 'max:250'],
             'city' => ['required', 'string', 'max:100'],
-            'address' => ['required', 'string', 'max:250'],
+            'state' => ['nullable', 'string', 'max:100'],
+            'postal_code' => ['nullable', 'string', 'max:20'],
+            'country_code' => ['required', 'string', 'size:2', 'exists:countries,code'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
         ];
     }
 }

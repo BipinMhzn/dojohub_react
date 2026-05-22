@@ -8,16 +8,16 @@ use Illuminate\Support\Facades\Hash;
 
 class DefaultAdminSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        User::query()->firstOrCreate([
-            'email' => 'superuser@dojohub.com',
-        ], [
-            'name' => 'Superuser',
-            'password' => Hash::make('password'),
-        ]);
+        $admin = User::query()->firstOrCreate(
+            ['email' => 'superuser@dojohub.com'],
+            [
+                'name' => 'Superuser',
+                'password' => Hash::make('password'),
+            ]
+        );
+
+        $admin->assignRole('super_admin');
     }
 }

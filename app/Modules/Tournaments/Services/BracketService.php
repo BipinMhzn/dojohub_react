@@ -145,7 +145,7 @@ class BracketService implements BracketServiceInterface
         for ($round = 2; $round <= $totalRounds; $round++) {
             $currentRoundMatches = [];
             $matchesInRound = count($previousRoundMatches) / 2;
-            $section = ($round === $totalRounds) ? BracketSectionEnum::Final : BracketSectionEnum::Main;
+            $section = ($round === $totalRounds) ? BracketSectionEnum::GoldFinal : BracketSectionEnum::Main;
 
             for ($i = 0; $i < $matchesInRound; $i++) {
                 $match1 = $previousRoundMatches[$i * 2];

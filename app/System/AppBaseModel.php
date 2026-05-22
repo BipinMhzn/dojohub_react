@@ -10,12 +10,12 @@ use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
-use OwenIt\Auditing\Auditing;
+use OwenIt\Auditing\Auditable as AuditableTrait;
 use OwenIt\Auditing\Contracts\Auditable;
 
 abstract class AppBaseModel extends BaseModel implements Auditable
 {
-    use Auditing;
+    use AuditableTrait;
     use EditorLogs;
     use HasFactory;
     use HasUlids;

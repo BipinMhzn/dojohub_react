@@ -3,7 +3,6 @@
 namespace Database\Factories;
 
 use App\System\Club\Models\Club;
-use App\System\ClubPlayer\Foundation\Enums\BeltRankEnum;
 use App\System\ClubPlayer\Models\ClubPlayer;
 use App\System\Player\Models\Player;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -23,14 +22,13 @@ class ClubPlayerFactory extends Factory
         return [
             'club_id' => Club::factory(),
             'player_id' => Player::factory(),
+            'belt_rank_id' => null,
+            'grade_certificate' => null,
             'started_at' => fake()->dateTimeBetween('-3 years', '-1 month'),
             'ended_at' => null,
-            'belt_rank' => fake()->boolean() ? fake()->randomElement(BeltRankEnum::cases())->value : null,
-            'grade' => null,
         ];
     }
 
-    /** State: membership already ended. */
     public function ended(): static
     {
         return $this->state(fn (array $attributes) => [

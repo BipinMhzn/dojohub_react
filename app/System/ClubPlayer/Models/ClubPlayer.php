@@ -4,7 +4,6 @@ namespace App\System\ClubPlayer\Models;
 
 use App\System\AppBaseModel;
 use App\System\Club\Models\Club;
-use App\System\ClubPlayer\Foundation\Enums\BeltRankEnum;
 use App\System\Player\Models\Player;
 use Database\Factories\ClubPlayerFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,10 +15,10 @@ class ClubPlayer extends AppBaseModel
     protected $fillable = [
         'club_id',
         'player_id',
+        'belt_rank_id',
+        'grade_certificate',
         'started_at',
         'ended_at',
-        'belt_rank',
-        'grade',
     ];
 
     protected function casts(): array
@@ -27,7 +26,6 @@ class ClubPlayer extends AppBaseModel
         return [
             'started_at' => 'datetime',
             'ended_at' => 'datetime',
-            'belt_rank' => BeltRankEnum::class,
         ];
     }
 
