@@ -8,7 +8,7 @@ import { type PropsWithChildren } from 'react';
 
 interface ClubLayoutProps {
     club: Club;
-    activeKey: 'overview' | 'players';
+    activeKey: 'overview' | 'players' | 'coaches';
 }
 
 export default function ClubLayout({ club, activeKey, children }: PropsWithChildren<ClubLayoutProps>) {
@@ -19,6 +19,7 @@ export default function ClubLayout({ club, activeKey, children }: PropsWithChild
     const sidebarNavItems = [
         { key: 'overview', title: 'Overview', href: `/manage/clubs/${club.id}` },
         { key: 'players', title: 'Players', href: `/manage/clubs/${club.id}/players` },
+        { key: 'coaches', title: 'Coaches', href: `/manage/clubs/${club.id}/coaches` },
     ];
 
     return (

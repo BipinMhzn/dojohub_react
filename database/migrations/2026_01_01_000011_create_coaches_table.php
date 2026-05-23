@@ -14,11 +14,11 @@ return new class extends Migration
             $table->ulid('id')->primary();
             $table->unsignedBigInteger('user_id')->nullable();
             $table->string('full_name');
-            $table->ulid('club_id')->nullable();
+            $table->string('email')->nullable();
+            $table->string('phone_number', 20)->nullable();
             $this->editorLogs($table);
 
             $table->foreign('user_id')->references('id')->on('users')->onDelete('restrict')->onUpdate('cascade');
-            $table->foreign('club_id')->references('id')->on('clubs')->onDelete('restrict')->onUpdate('cascade');
         });
     }
 

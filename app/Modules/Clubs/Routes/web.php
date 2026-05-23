@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Clubs\Controllers\ClubCoachesController;
 use App\Modules\Clubs\Controllers\ClubPlayersController;
 use App\Modules\Clubs\Controllers\ClubsController;
 use Illuminate\Support\Facades\Route;
@@ -18,5 +19,11 @@ Route::group([
         Route::post('/', [ClubPlayersController::class, 'store'])->name('store');
         Route::put('/{membership}', [ClubPlayersController::class, 'update'])->name('update');
         Route::patch('/{membership}', [ClubPlayersController::class, 'patch'])->name('patch');
+    });
+
+    Route::prefix('clubs/{club}/coaches')->name('clubs.coaches.')->group(function () {
+        Route::get('/', [ClubCoachesController::class, 'index'])->name('index');
+        Route::post('/', [ClubCoachesController::class, 'store'])->name('store');
+        Route::put('/{membership}', [ClubCoachesController::class, 'update'])->name('update');
     });
 });
