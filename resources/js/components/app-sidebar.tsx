@@ -4,7 +4,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { LayoutGrid, MapPinHouse, Shield, Trophy, User } from 'lucide-react';
+import { Gavel, LayoutGrid, MapPinHouse, Shield, Trophy, User } from 'lucide-react';
 import AppLogo from './app-logo';
 
 const mainNavItems: NavItem[] = [
@@ -27,6 +27,11 @@ const mainNavItems: NavItem[] = [
         title: 'Players',
         href: '/manage/players',
         icon: User,
+    },
+    {
+        title: 'Referees',
+        href: '/manage/referees',
+        icon: Gavel,
     },
     {
         title: 'Venues',

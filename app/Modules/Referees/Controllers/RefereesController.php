@@ -6,7 +6,6 @@ use App\Modules\Countries\Models\Country;
 use App\Modules\Referees\Interfaces\RefereeInterface;
 use App\Modules\Referees\Requests\RefereeCreateRequest;
 use App\Modules\Referees\Requests\RefereeUpdateRequest;
-use App\System\Referee\Foundation\Enums\RefereeCertificationLevelEnum;
 use BaseSystem\Controllers\BaseWebController;
 use BaseSystem\Requests\BaseWebListRequest;
 use Illuminate\Http\RedirectResponse;
@@ -28,7 +27,6 @@ final class RefereesController extends BaseWebController
     {
         return $this->render('referees/create', [
             'countries' => Country::orderBy('name')->get(['code', 'name']),
-            'certificationLevels' => RefereeCertificationLevelEnum::cases(),
         ]);
     }
 
@@ -44,7 +42,6 @@ final class RefereesController extends BaseWebController
         return $this->render('referees/edit', [
             'referee' => $this->repository->getById($referee),
             'countries' => Country::orderBy('name')->get(['code', 'name']),
-            'certificationLevels' => RefereeCertificationLevelEnum::cases(),
         ]);
     }
 

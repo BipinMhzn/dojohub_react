@@ -18,6 +18,15 @@ class Referee extends AppBaseModel
         'certification_level',
     ];
 
+    protected string $defaultSortColumn = 'full_name';
+
+    protected array $sortableColumns = [
+        'full_name',
+        'certification_level',
+        'created_at',
+        'updated_at',
+    ];
+
     protected function casts(): array
     {
         return [

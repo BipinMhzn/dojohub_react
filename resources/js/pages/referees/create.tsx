@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
-import { CertificationLevelOption, CountryOption } from '@/pages/referees/index';
+import { CountryOption, RefereeCertificationLevel, certificationLevelLabels } from '@/pages/referees/index';
 import type { BreadcrumbItem } from '@/types';
 import { Head, useForm } from '@inertiajs/react';
 import React from 'react';
@@ -17,10 +17,9 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 interface Props {
     countries: CountryOption[];
-    certificationLevels: CertificationLevelOption[];
 }
 
-export default function CreateReferee({ countries, certificationLevels }: Props) {
+export default function CreateReferee({ countries }: Props) {
     const { data, setData, post, processing, errors } = useForm({
         full_name: '',
         nationality_code: '',
@@ -79,11 +78,13 @@ export default function CreateReferee({ countries, certificationLevels }: Props)
                                 <SelectValue placeholder="Select certification level" />
                             </SelectTrigger>
                             <SelectContent>
-                                {certificationLevels.map((level) => (
-                                    <SelectItem key={level.value} value={String(level.value)}>
-                                        {level.name}
-                                    </SelectItem>
-                                ))}
+                                {Object.entries(RefereeCertificationLevel)
+                                    .filter(([, value]) => typeof value === 'number')
+                                    .map(([key, value]) => (
+                                        <SelectItem key={key} value={String(value)}>
+                                            {certificationLevelLabels[value as RefereeCertificationLevel]}
+                                        </SelectItem>
+                                    ))}
                             </SelectContent>
                         </Select>
                         <InputError message={errors.certification_level} />

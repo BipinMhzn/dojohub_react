@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
-import { CertificationLevelOption, CountryOption, Referee } from '@/pages/referees/index';
+import { CountryOption, Referee, RefereeCertificationLevel, certificationLevelLabels } from '@/pages/referees/index';
 import type { BreadcrumbItem } from '@/types';
 import { Head, useForm } from '@inertiajs/react';
 import React from 'react';
@@ -13,10 +13,9 @@ import React from 'react';
 interface Props {
     referee: Referee;
     countries: CountryOption[];
-    certificationLevels: CertificationLevelOption[];
 }
 
-export default function EditReferee({ referee, countries, certificationLevels }: Props) {
+export default function EditReferee({ referee, countries }: Props) {
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Referees', href: '/manage/referees' },
         { title: referee.full_name, href: `/manage/referees/${referee.id}/edit` },
@@ -80,11 +79,13 @@ export default function EditReferee({ referee, countries, certificationLevels }:
                                 <SelectValue placeholder="Select certification level" />
                             </SelectTrigger>
                             <SelectContent>
-                                {certificationLevels.map((level) => (
-                                    <SelectItem key={level.value} value={String(level.value)}>
-                                        {level.name}
-                                    </SelectItem>
-                                ))}
+                                {Object.entries(RefereeCertificationLevel)
+                                    .filter(([, value]) => typeof value === 'number')
+                                    .map(([key, value]) => (
+                                        <SelectItem key={key} value={String(value)}>
+                                            {certificationLevelLabels[value as RefereeCertificationLevel]}
+                                        </SelectItem>
+                                    ))}
                             </SelectContent>
                         </Select>
                         <InputError message={errors.certification_level} />
