@@ -9,11 +9,12 @@ import {
     DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import SortAscendingIcon from '@/components/svg/sort-ascending';
 import SortDescendingIcon from '@/components/svg/sort-descending';
 import { ChevronDown } from 'lucide-react';
 
-type SortOptions = Record<string, string>;
+type Options = Record<string, string>;
 
 interface DataTableControlsProps {
     search: string;
@@ -22,34 +23,45 @@ interface DataTableControlsProps {
     sortOrder: string;
     onSortByChange: (value: string) => void;
     onSortOrderChange: (value: string) => void;
-    sortOptions: SortOptions;
+    sortOptions: Options;
+    statusOptions?: Options;
+    statusValue?: string;
+    onStatusChange?: (value: string) => void;
 }
 
 export function DataTableControls({
-                                      search,
-                                      onSearchChange,
-                                      sortBy,
-                                      sortOrder,
-                                      onSortByChange,
-                                      onSortOrderChange,
-                                      sortOptions
-                                  }: DataTableControlsProps) {
+    search,
+    onSearchChange,
+    sortBy,
+    sortOrder,
+    onSortByChange,
+    onSortOrderChange,
+    sortOptions,
+    statusOptions,
+    statusValue,
+    onStatusChange,
+}: DataTableControlsProps) {
     return (
-        <div className="flex items-center pb-4">
+        <div className="flex items-center gap-2 pb-4">
             <Input
                 placeholder="Search..."
                 value={search}
                 onChange={(e) => onSearchChange(e.target.value)}
-                className="mr-2 block max-w-sm"
+                className="block max-w-sm"
             />
 
             <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="mr-2 ml-auto">
-                        {sortOptions[sortBy] ?? 'Sort By'}
-                        <ChevronDown className="ml-2 h-4 w-4" />
-                    </Button>
-                </DropdownMenuTrigger>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" className="ml-auto">
+                                {sortOptions[sortBy] ?? 'Sort By'}
+                                <ChevronDown className="ml-2 h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent>Sort by</TooltipContent>
+                </Tooltip>
                 <DropdownMenuContent align="end">
                     {Object.entries(sortOptions).map(([key, label], idx) => (
                         <div key={key}>
@@ -68,13 +80,41 @@ export function DataTableControls({
                 value={sortOrder}
                 onValueChange={(value) => value && onSortOrderChange(value)}
             >
-                <ToggleGroupItem value="asc" aria-label="Ascending order">
-                    <SortAscendingIcon />
-                </ToggleGroupItem>
-                <ToggleGroupItem value="desc" aria-label="Descending order">
-                    <SortDescendingIcon />
-                </ToggleGroupItem>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <ToggleGroupItem value="asc" aria-label="Ascending order">
+                            <SortAscendingIcon />
+                        </ToggleGroupItem>
+                    </TooltipTrigger>
+                    <TooltipContent>Ascending</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <ToggleGroupItem value="desc" aria-label="Descending order">
+                            <SortDescendingIcon />
+                        </ToggleGroupItem>
+                    </TooltipTrigger>
+                    <TooltipContent>Descending</TooltipContent>
+                </Tooltip>
             </ToggleGroup>
+
+            {statusOptions && statusValue !== undefined && onStatusChange && (
+                <>
+                    <div className="bg-border h-6 w-px" />
+                    <ToggleGroup
+                        type="single"
+                        variant="outline"
+                        value={statusValue}
+                        onValueChange={onStatusChange}
+                    >
+                        {Object.entries(statusOptions).map(([value, label]) => (
+                            <ToggleGroupItem key={value} value={value} className="text-xs">
+                                {label}
+                            </ToggleGroupItem>
+                        ))}
+                    </ToggleGroup>
+                </>
+            )}
         </div>
     );
 }

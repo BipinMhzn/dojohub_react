@@ -62,6 +62,7 @@ export interface PageFilters {
     sort_order?: string;
     page?: number;
     per_page?: number;
+    status?: string;
 }
 
 export interface Country {

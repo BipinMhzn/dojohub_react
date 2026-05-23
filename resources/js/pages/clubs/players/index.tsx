@@ -3,6 +3,7 @@ import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { DataTable } from '@/components/ui/data-table';
+import { DataTableControls } from '@/components/ui/data-table-controls';
 import DataTablePagination from '@/components/ui/data-table-pagination';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -11,15 +12,14 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
 import ClubLayout from '@/layouts/club/layout';
-import { cn } from '@/lib/utils';
 import { Club } from '@/pages/clubs/index';
 import { getClubPlayerColumns } from '@/pages/clubs/players/partials/columns';
 import { Player } from '@/pages/players/index';
 import type { BreadcrumbItem, PageFilters, PaginationLink } from '@/types';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, router, useForm } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { CalendarIcon, Plus } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export type BeltRankModel = {
     id: string;
@@ -54,10 +54,11 @@ type ClubPlayersProps = {
         links: PaginationLink[];
     };
     availablePlayers: Pick<Player, 'id' | 'name'>[];
+    beltRanks: BeltRankModel[];
     filters: PageFilters;
 };
 
-export default function ClubPlayers({ club, memberships, availablePlayers, filters }: ClubPlayersProps) {
+export default function ClubPlayers({ club, memberships, availablePlayers, beltRanks, filters }: ClubPlayersProps) {
     const { data: membershipData, links } = memberships;
 
     const breadcrumbs: BreadcrumbItem[] = [
@@ -65,6 +66,45 @@ export default function ClubPlayers({ club, memberships, availablePlayers, filte
         { title: club.name, href: `/manage/clubs/${club.id}` },
         { title: 'Players', href: `/manage/clubs/${club.id}/players` },
     ];
+
+    const hasMounted = useRef(false);
+    const sortOptions: Record<string, string> = { started_at: 'Joined Date', ended_at: 'Ended Date' };
+    const statusOptions: Record<string, string> = { active: 'Active', ended: 'Ended', all: 'All' };
+
+    const [status, setStatus] = useState<'active' | 'ended' | 'all'>((filters.status ?? 'active') as 'active' | 'ended' | 'all');
+    const [search, setSearch] = useState(filters.keyword ?? '');
+    const [debouncedSearch, setDebouncedSearch] = useState(search);
+    const [sortBy, setSortBy] = useState(filters.sort_by ?? 'started_at');
+    const [sortOrder, setSortOrder] = useState(filters.sort_order ?? 'desc');
+    const [pageNumber, setPageNumber] = useState(filters.page ? Number(filters.page) : 1);
+    const [perPage, setPerPage] = useState(filters.per_page ? Number(filters.per_page) : 15);
+
+    useEffect(() => {
+        const handler = setTimeout(() => setDebouncedSearch(search), 500);
+        return () => clearTimeout(handler);
+    }, [search]);
+
+    useEffect(() => {
+        if (!hasMounted.current) {
+            hasMounted.current = true;
+            return;
+        }
+        router.get(
+            `/manage/clubs/${club.id}/players`,
+            { keyword: debouncedSearch, status, sort_by: sortBy, sort_order: sortOrder, page: pageNumber, per_page: perPage },
+            { only: ['memberships', 'filters'], preserveState: true, preserveScroll: true, replace: true },
+        );
+    }, [debouncedSearch, status, sortBy, sortOrder, pageNumber, perPage]);
+
+    const handleSearchChange = (val: string) => { setSearch(val); setPageNumber(1); };
+    const handleSortByChange = (val: string) => { setSortBy(val); setPageNumber(1); };
+    const handleStatusChange = (val: string) => {
+        // Empty = clicked the already-selected item; clicking a specific status clears to 'all',
+        // clicking 'all' when already 'all' returns to 'active' (the default).
+        const next = (val || (status !== 'all' ? 'all' : 'active')) as 'active' | 'ended' | 'all';
+        setStatus(next);
+        setPageNumber(1);
+    };
 
     const [assignOpen, setAssignOpen] = useState(false);
     const [startDateOpen, setStartDateOpen] = useState(false);
@@ -74,19 +114,22 @@ export default function ClubPlayers({ club, memberships, availablePlayers, filte
     const assignForm = useForm({
         player_id: '',
         started_at: format(today, 'yyyy-MM-dd'),
-        belt_rank: '' as BeltRank | '',
-        grade: '',
+        belt_rank_id: '',
+        grade_certificate: '',
     });
+
+    const closeAssignDialog = () => {
+        setAssignOpen(false);
+        const now = new Date();
+        setStartDate(now);
+        assignForm.reset();
+        assignForm.setData('started_at', format(now, 'yyyy-MM-dd'));
+    };
 
     const handleAssign = (e: React.FormEvent) => {
         e.preventDefault();
         assignForm.post(`/manage/clubs/${club.id}/players`, {
-            onSuccess: () => {
-                setAssignOpen(false);
-                setStartDate(today);
-                assignForm.reset();
-                assignForm.setData('started_at', format(today, 'yyyy-MM-dd'));
-            },
+            onSuccess: () => closeAssignDialog(),
         });
     };
 
@@ -96,17 +139,19 @@ export default function ClubPlayers({ club, memberships, availablePlayers, filte
 
     const endForm = useForm({ ended_at: '' });
 
+    const closeEndMembershipDialog = () => {
+        setMembershipToEnd(null);
+        setEndDate(undefined);
+        endForm.reset();
+    };
+
     const handleEndMembership = (e: React.FormEvent) => {
         e.preventDefault();
         if (!membershipToEnd) {
             return;
         }
         endForm.put(`/manage/clubs/${club.id}/players/${membershipToEnd.id}`, {
-            onSuccess: () => {
-                setMembershipToEnd(null);
-                setEndDate(undefined);
-                endForm.reset();
-            },
+            onSuccess: () => closeEndMembershipDialog(),
         });
     };
 
@@ -123,26 +168,39 @@ export default function ClubPlayers({ club, memberships, availablePlayers, filte
             <Head title={`${club.name} — Players`} />
 
             <ClubLayout club={club} activeKey="players">
-                <div className="flex items-center justify-between">
-                    <HeadingSmall title="Players" description={`Manage player memberships for ${club.name}.`} />
-                    <Button variant="default" onClick={() => setAssignOpen(true)}>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Assign Player
-                    </Button>
-                </div>
+                <div>
+                    <div className="flex items-center justify-between pb-4">
+                        <HeadingSmall title="Players" description={`Manage player memberships for ${club.name}.`} />
+                        <Button variant="default" onClick={() => setAssignOpen(true)}>
+                            <Plus className="mr-2 h-4 w-4" />
+                            Assign Player
+                        </Button>
+                    </div>
 
-                <div className="mt-4">
+                    <DataTableControls
+                        search={search}
+                        onSearchChange={handleSearchChange}
+                        sortBy={sortBy}
+                        sortOrder={sortOrder}
+                        onSortByChange={handleSortByChange}
+                        onSortOrderChange={setSortOrder}
+                        sortOptions={sortOptions}
+                        statusOptions={statusOptions}
+                        statusValue={status}
+                        onStatusChange={handleStatusChange}
+                    />
+
                     <DataTable columns={columns} data={membershipData} />
                     <DataTablePagination
                         links={links as PaginationLink[]}
-                        perPage={filters.per_page ?? 15}
-                        onPageChange={() => {}}
-                        onPerPageCountUpdated={() => {}}
+                        perPage={perPage}
+                        onPageChange={setPageNumber}
+                        onPerPageCountUpdated={(val) => { setPerPage(val); setPageNumber(1); }}
                     />
                 </div>
             </ClubLayout>
 
-            <Dialog open={assignOpen} onOpenChange={(open) => !open && setAssignOpen(false)}>
+            <Dialog open={assignOpen} onOpenChange={(open) => !open && closeAssignDialog()}>
                 <DialogContent onInteractOutside={(e) => e.preventDefault()}>
                     <DialogHeader>
                         <DialogTitle>Assign Player</DialogTitle>
@@ -160,11 +218,17 @@ export default function ClubPlayers({ club, memberships, availablePlayers, filte
                                     <SelectValue placeholder="Select a player" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {availablePlayers.map((player) => (
-                                        <SelectItem key={player.id} value={player.id}>
-                                            {player.name}
-                                        </SelectItem>
-                                    ))}
+                                    {availablePlayers.length === 0 ? (
+                                        <div className="px-3 py-6 text-center text-sm text-muted-foreground">
+                                            No players available to assign. All players are already members of a club.
+                                        </div>
+                                    ) : (
+                                        availablePlayers.map((player) => (
+                                            <SelectItem key={player.id} value={player.id}>
+                                                {player.name}
+                                            </SelectItem>
+                                        ))
+                                    )}
                                 </SelectContent>
                             </Select>
                             <InputError message={assignForm.errors.player_id} />
@@ -172,7 +236,7 @@ export default function ClubPlayers({ club, memberships, availablePlayers, filte
 
                         <div>
                             <Label>Start Date</Label>
-                            <Popover open={startDateOpen} onOpenChange={setStartDateOpen}>
+                            <Popover open={startDateOpen} onOpenChange={setStartDateOpen} modal={true}>
                                 <PopoverTrigger asChild>
                                     <Button
                                         type="button"
@@ -202,45 +266,43 @@ export default function ClubPlayers({ club, memberships, availablePlayers, filte
                         </div>
 
                         <div>
-                            <Label htmlFor="belt_rank">
+                            <Label htmlFor="belt_rank_id">
                                 Belt Rank <span className="text-xs font-light">(Optional)</span>
                             </Label>
                             <Select
-                                value={assignForm.data.belt_rank === '' ? '' : String(assignForm.data.belt_rank)}
-                                onValueChange={(value) =>
-                                    assignForm.setData('belt_rank', value === '' ? '' : (parseInt(value) as BeltRank))
-                                }
+                                value={assignForm.data.belt_rank_id}
+                                onValueChange={(value) => assignForm.setData('belt_rank_id', value)}
                             >
                                 <SelectTrigger className="mt-1 w-full">
                                     <SelectValue placeholder="Select belt rank" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {(Object.entries(BELT_RANK_LABELS) as [string, string][]).map(([value, label]) => (
-                                        <SelectItem key={value} value={value}>
-                                            {label}
+                                    {beltRanks.map((rank) => (
+                                        <SelectItem key={rank.id} value={rank.id}>
+                                            {rank.name}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
-                            <InputError message={assignForm.errors.belt_rank} />
+                            <InputError message={assignForm.errors.belt_rank_id} />
                         </div>
 
                         <div>
-                            <Label htmlFor="grade">
-                                Grade <span className="text-xs font-light">(Optional)</span>
+                            <Label htmlFor="grade_certificate">
+                                Grade Certificate <span className="text-xs font-light">(Optional)</span>
                             </Label>
                             <Input
-                                id="grade"
-                                value={assignForm.data.grade}
-                                onChange={(e) => assignForm.setData('grade', e.target.value)}
+                                id="grade_certificate"
+                                value={assignForm.data.grade_certificate}
+                                onChange={(e) => assignForm.setData('grade_certificate', e.target.value)}
                                 placeholder="e.g. 1st dan"
                                 className="mt-1 block w-full"
                             />
-                            <InputError message={assignForm.errors.grade} />
+                            <InputError message={assignForm.errors.grade_certificate} />
                         </div>
 
                         <DialogFooter>
-                            <Button type="button" variant="outline" onClick={() => setAssignOpen(false)}>
+                            <Button type="button" variant="outline" onClick={closeAssignDialog}>
                                 Cancel
                             </Button>
                             <Button type="submit" disabled={assignForm.processing}>
@@ -251,7 +313,7 @@ export default function ClubPlayers({ club, memberships, availablePlayers, filte
                 </DialogContent>
             </Dialog>
 
-            <Dialog open={!!membershipToEnd} onOpenChange={(open) => !open && setMembershipToEnd(null)}>
+            <Dialog open={!!membershipToEnd} onOpenChange={(open) => !open && closeEndMembershipDialog()}>
                 <DialogContent onInteractOutside={(e) => e.preventDefault()}>
                     <DialogHeader>
                         <DialogTitle>End Membership</DialogTitle>
@@ -263,15 +325,15 @@ export default function ClubPlayers({ club, memberships, availablePlayers, filte
                     <form onSubmit={handleEndMembership} className="space-y-4">
                         <div>
                             <Label>End Date</Label>
-                            <Popover open={endDateOpen} onOpenChange={setEndDateOpen}>
+                            <Popover open={endDateOpen} onOpenChange={setEndDateOpen} modal={true}>
                                 <PopoverTrigger asChild>
                                     <Button
                                         type="button"
                                         variant="outline"
-                                        className={cn('mt-1 w-full justify-start text-left font-normal', !endDate && 'text-muted-foreground')}
+                                        className="mt-1 w-full justify-start text-left font-normal"
                                     >
                                         <CalendarIcon className="mr-2 h-4 w-4" />
-                                        {endDate ? format(endDate, 'PPP') : <span>Pick a date</span>}
+                                        {endDate ? format(endDate, 'PPP') : <span className="text-muted-foreground">Pick a date</span>}
                                     </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-auto p-0">
@@ -286,7 +348,11 @@ export default function ClubPlayers({ club, memberships, availablePlayers, filte
                                         }}
                                         disabled={(date) => {
                                             if (!membershipToEnd) return false;
-                                            return date < new Date(membershipToEnd.started_at) || date > new Date();
+                                            const startOfStartedAt = new Date(membershipToEnd.started_at);
+                                            startOfStartedAt.setHours(0, 0, 0, 0);
+                                            const endOfToday = new Date();
+                                            endOfToday.setHours(23, 59, 59, 999);
+                                            return date < startOfStartedAt || date > endOfToday;
                                         }}
                                         initialFocus
                                     />
@@ -296,7 +362,7 @@ export default function ClubPlayers({ club, memberships, availablePlayers, filte
                         </div>
 
                         <DialogFooter>
-                            <Button type="button" variant="outline" onClick={() => setMembershipToEnd(null)}>
+                            <Button type="button" variant="outline" onClick={closeEndMembershipDialog}>
                                 Cancel
                             </Button>
                             <Button type="submit" disabled={endForm.processing}>

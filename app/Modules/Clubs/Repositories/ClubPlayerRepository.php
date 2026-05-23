@@ -2,6 +2,7 @@
 
 namespace App\Modules\Clubs\Repositories;
 
+use App\Modules\Clubs\Filters\ClubPlayersFilter;
 use App\Modules\Clubs\Interfaces\ClubPlayerInterface;
 use App\Modules\Clubs\Models\ClubPlayer;
 use App\Modules\Players\Models\Player;
@@ -17,9 +18,9 @@ final class ClubPlayerRepository extends BaseRepository implements ClubPlayerInt
         parent::__construct($model);
     }
 
-    public function getFilter(Builder $builder): never
+    public function getFilter(Builder $builder): ClubPlayersFilter
     {
-        throw new \LogicException('ClubPlayerRepository does not use getFilter.');
+        return new ClubPlayersFilter($builder);
     }
 
     public function getClubPlayers(string $clubId, array $filters): LengthAwarePaginator
@@ -31,11 +32,13 @@ final class ClubPlayerRepository extends BaseRepository implements ClubPlayerInt
             ])
             ->where('club_id', $clubId);
 
-        if (($filters['status'] ?? 'all') === 'active') {
-            $query->whereNull('ended_at');
-        }
+        (new ClubPlayersFilter($query))->attachFilterQuery($filters);
 
-        return $query->orderBy('started_at', 'desc')->paginate($filters['per_page'] ?? 15);
+        $allowedSorts = ['started_at', 'ended_at'];
+        $sortBy = in_array($filters['sort_by'] ?? null, $allowedSorts, true) ? $filters['sort_by'] : 'started_at';
+        $sortOrder = in_array($filters['sort_order'] ?? null, ['asc', 'desc'], true) ? $filters['sort_order'] : 'desc';
+
+        return $query->orderBy($sortBy, $sortOrder)->paginate($filters['per_page'] ?? 15);
     }
 
     public function getAllClubPlayers(string $clubId): Collection
@@ -54,7 +57,6 @@ final class ClubPlayerRepository extends BaseRepository implements ClubPlayerInt
     public function getAvailablePlayers(string $clubId): Collection
     {
         $activeMemberIds = $this->model->newQuery()
-            ->where('club_id', $clubId)
             ->whereNull('ended_at')
             ->pluck('player_id');
 
@@ -68,13 +70,12 @@ final class ClubPlayerRepository extends BaseRepository implements ClubPlayerInt
     public function assignPlayer(string $clubId, array $validated): ClubPlayer
     {
         $alreadyActive = $this->model->newQuery()
-            ->where('club_id', $clubId)
             ->where('player_id', $validated['player_id'])
             ->whereNull('ended_at')
             ->exists();
 
         if ($alreadyActive) {
-            throw new \RuntimeException('Player already has an active membership at this club.');
+            throw new \RuntimeException('This player already has an active membership at another club.');
         }
 
         return $this->model->newQuery()->create([

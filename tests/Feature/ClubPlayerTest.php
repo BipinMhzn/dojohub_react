@@ -141,7 +141,7 @@ class ClubPlayerTest extends TestCase
         ]);
     }
 
-    public function test_cannot_assign_player_who_already_has_active_membership(): void
+    public function test_cannot_assign_player_who_already_has_active_membership_at_same_club(): void
     {
         $club = $this->club();
         $player = $this->player();
@@ -157,7 +157,29 @@ class ClubPlayerTest extends TestCase
                 'player_id' => $player->id,
                 'started_at' => now()->subWeek()->format('Y-m-d'),
             ])
-            ->assertStatus(500);
+            ->assertSessionHasErrors('player_id');
+    }
+
+    public function test_cannot_assign_player_who_already_has_active_membership_at_another_club(): void
+    {
+        $clubA = $this->club();
+        $clubB = $this->club();
+        $player = $this->player();
+
+        ClubPlayer::factory()->create([
+            'club_id' => $clubA->id,
+            'player_id' => $player->id,
+            'ended_at' => null,
+        ]);
+
+        $this->actingAs($this->user())
+            ->post("/manage/clubs/{$clubB->id}/players", [
+                'player_id' => $player->id,
+                'started_at' => now()->subWeek()->format('Y-m-d'),
+            ])
+            ->assertSessionHasErrors('player_id');
+
+        $this->assertDatabaseMissing('clubs_players', ['club_id' => $clubB->id, 'player_id' => $player->id]);
     }
 
     public function test_store_requires_player_id(): void
