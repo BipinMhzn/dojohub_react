@@ -4,14 +4,22 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Venue } from '@/pages/venues';
 import { formatUTCDate } from '@/utils/date';
-import { router } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { MoreHorizontal } from 'lucide-react';
 
 type VenueColumnsProps = { onDelete: (venue: Venue) => void };
 
 export const getVenueColumns = ({ onDelete }: VenueColumnsProps): ColumnDef<Venue>[] => [
-    { accessorKey: 'name', header: 'Name' },
+    {
+        accessorKey: 'name',
+        header: 'Name',
+        cell: ({ row }) => (
+            <Link href={`/manage/venues/${row.original.id}`} className="font-medium hover:underline">
+                {row.original.name}
+            </Link>
+        ),
+    },
     {
         id: 'address',
         header: 'Address',
@@ -50,7 +58,7 @@ export const getVenueColumns = ({ onDelete }: VenueColumnsProps): ColumnDef<Venu
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => router.visit(`/manage/venues/${venue.id}/edit`)}>Edit</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => router.visit(`/manage/venues/${venue.id}`)}>Edit</DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => onDelete(venue)}>Delete</DropdownMenuItem>
                     </DropdownMenuContent>

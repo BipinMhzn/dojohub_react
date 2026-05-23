@@ -3,6 +3,10 @@
 namespace Tests\Feature;
 
 use App\Modules\Countries\Models\Country;
+use App\Modules\Tournaments\Models\Tournament;
+use App\Modules\Tournaments\Models\TournamentBracket;
+use App\Modules\Tournaments\Models\TournamentCategory;
+use App\Modules\Tournaments\Models\TournamentMatch;
 use App\System\User\Models\User;
 use App\System\Venue\Models\Venue;
 use App\System\VenueMat\Models\VenueMat;
@@ -103,8 +107,9 @@ class VenueTest extends TestCase
         $response = $this->actingAs($this->user())
             ->post('/manage/venues', $this->validVenuePayload());
 
-        $response->assertRedirect('/manage/venues');
         $response->assertSessionHasNoErrors();
+        $response->assertRedirect();
+        $this->assertStringContainsString('/manage/venues/', $response->headers->get('Location'));
 
         $this->assertDatabaseHas('venues', ['name' => 'Kathmandu Sports Hall']);
         $this->assertDatabaseHas('addresses', ['address_line_1' => '123 Durbar Marg', 'city' => 'Kathmandu']);
@@ -157,23 +162,42 @@ class VenueTest extends TestCase
     }
 
     // ──────────────────────────────────────────────────────────────
-    // Edit page
+    // Show page
     // ──────────────────────────────────────────────────────────────
 
-    public function test_authenticated_user_can_view_edit_venue_page(): void
+    public function test_guests_are_redirected_from_venue_show_page(): void
+    {
+        $venue = Venue::factory()->create();
+        $this->get("/manage/venues/{$venue->id}")->assertRedirect('/login');
+    }
+
+    public function test_authenticated_user_can_view_venue_show_page(): void
+    {
+        $venue = Venue::factory()->create();
+
+        $this->actingAs($this->user())
+            ->get("/manage/venues/{$venue->id}")
+            ->assertOk();
+    }
+
+    public function test_show_page_returns_404_for_nonexistent_venue(): void
+    {
+        $this->actingAs($this->user())
+            ->get('/manage/venues/'.Str::ulid())
+            ->assertNotFound();
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // Edit page (redirects to show)
+    // ──────────────────────────────────────────────────────────────
+
+    public function test_authenticated_user_visiting_edit_is_redirected_to_show(): void
     {
         $venue = Venue::factory()->create();
 
         $this->actingAs($this->user())
             ->get("/manage/venues/{$venue->id}/edit")
-            ->assertOk();
-    }
-
-    public function test_edit_page_returns_404_for_nonexistent_venue(): void
-    {
-        $this->actingAs($this->user())
-            ->get('/manage/venues/'.Str::ulid().'/edit')
-            ->assertNotFound();
+            ->assertRedirect("/manage/venues/{$venue->id}");
     }
 
     // ──────────────────────────────────────────────────────────────
@@ -187,7 +211,7 @@ class VenueTest extends TestCase
         $response = $this->actingAs($this->user())
             ->put("/manage/venues/{$venue->id}", $this->validVenuePayload(['name' => 'Updated Hall', 'city' => 'Lalitpur']));
 
-        $response->assertRedirect('/manage/venues');
+        $response->assertRedirect("/manage/venues/{$venue->id}");
         $response->assertSessionHasNoErrors();
 
         $this->assertDatabaseHas('venues', ['id' => $venue->id, 'name' => 'Updated Hall']);
@@ -237,6 +261,25 @@ class VenueTest extends TestCase
         $this->assertSoftDeleted('addresses', ['id' => $addressId]);
     }
 
+    public function test_cannot_delete_venue_assigned_to_a_tournament(): void
+    {
+        $venue = Venue::factory()->create();
+
+        Tournament::create([
+            'name' => 'Spring Open',
+            'level' => 1,
+            'status' => 0,
+            'venue_id' => $venue->id,
+            'start_at' => now(),
+        ]);
+
+        $response = $this->actingAs($this->user())->delete("/manage/venues/{$venue->id}");
+
+        $response->assertRedirect();
+        $response->assertSessionHas('error');
+        $this->assertDatabaseHas('venues', ['id' => $venue->id, 'deleted_at' => null]);
+    }
+
     public function test_deleting_a_venue_does_not_soft_delete_other_venues(): void
     {
         $venueA = Venue::factory()->create();
@@ -259,6 +302,21 @@ class VenueTest extends TestCase
     // VenueMat CRUD
     // ──────────────────────────────────────────────────────────────
 
+    public function test_authenticated_user_can_view_venue_mats_page(): void
+    {
+        $venue = Venue::factory()->create();
+
+        $this->actingAs($this->user())
+            ->get("/manage/venues/{$venue->id}/mats")
+            ->assertOk();
+    }
+
+    public function test_guests_are_redirected_from_venue_mats_page(): void
+    {
+        $venue = Venue::factory()->create();
+        $this->get("/manage/venues/{$venue->id}/mats")->assertRedirect('/login');
+    }
+
     public function test_authenticated_user_can_add_a_mat_to_a_venue(): void
     {
         $venue = Venue::factory()->create();
@@ -266,9 +324,32 @@ class VenueTest extends TestCase
         $response = $this->actingAs($this->user())
             ->post("/manage/venues/{$venue->id}/mats", ['mat_number' => 1, 'display_name' => 'Tatami A']);
 
-        $response->assertRedirect("/manage/venues/{$venue->id}/edit");
+        $response->assertRedirect("/manage/venues/{$venue->id}/mats");
         $response->assertSessionHasNoErrors();
         $this->assertDatabaseHas('venue_mats', ['venue_id' => $venue->id, 'mat_number' => 1, 'display_name' => 'Tatami A']);
+    }
+
+    public function test_mat_number_must_be_unique_within_a_venue(): void
+    {
+        $venue = Venue::factory()->create();
+        VenueMat::factory()->create(['venue_id' => $venue->id, 'mat_number' => 1]);
+
+        $this->actingAs($this->user())
+            ->post("/manage/venues/{$venue->id}/mats", ['mat_number' => 1])
+            ->assertSessionHasErrors('mat_number');
+    }
+
+    public function test_duplicate_mat_number_is_allowed_in_different_venues(): void
+    {
+        $venueA = Venue::factory()->create();
+        $venueB = Venue::factory()->create();
+        VenueMat::factory()->create(['venue_id' => $venueA->id, 'mat_number' => 1]);
+
+        $response = $this->actingAs($this->user())
+            ->post("/manage/venues/{$venueB->id}/mats", ['mat_number' => 1]);
+
+        $response->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('venue_mats', ['venue_id' => $venueB->id, 'mat_number' => 1]);
     }
 
     public function test_authenticated_user_can_update_a_mat(): void
@@ -278,7 +359,7 @@ class VenueTest extends TestCase
 
         $this->actingAs($this->user())
             ->put("/manage/venues/{$venue->id}/mats/{$mat->id}", ['mat_number' => 1, 'display_name' => 'Center Mat'])
-            ->assertRedirect("/manage/venues/{$venue->id}/edit");
+            ->assertRedirect("/manage/venues/{$venue->id}/mats");
 
         $this->assertDatabaseHas('venue_mats', ['id' => $mat->id, 'display_name' => 'Center Mat']);
     }
@@ -290,9 +371,59 @@ class VenueTest extends TestCase
 
         $this->actingAs($this->user())
             ->delete("/manage/venues/{$venue->id}/mats/{$mat->id}")
-            ->assertRedirect("/manage/venues/{$venue->id}/edit");
+            ->assertRedirect("/manage/venues/{$venue->id}/mats");
 
         $this->assertSoftDeleted('venue_mats', ['id' => $mat->id]);
+    }
+
+    public function test_cannot_delete_mat_assigned_to_a_tournament_match(): void
+    {
+        $venue = Venue::factory()->create();
+        $mat = VenueMat::factory()->create(['venue_id' => $venue->id, 'mat_number' => 1]);
+
+        $tournament = Tournament::create([
+            'name' => 'Spring Open',
+            'level' => 1,
+            'status' => 0,
+            'venue_id' => $venue->id,
+            'start_at' => now(),
+        ]);
+
+        $category = TournamentCategory::create([
+            'tournament_id' => $tournament->id,
+            'gender' => 0,
+            'age_category' => 1,
+            'min_age' => 15,
+            'max_age' => 18,
+            'weight_category' => 1,
+            'min_weight' => 60,
+            'max_weight' => 66,
+            'status' => 0,
+        ]);
+
+        $bracket = TournamentBracket::create([
+            'tournament_category_id' => $category->id,
+            'type' => 0,
+            'seeding_method' => 0,
+            'status' => 0,
+        ]);
+
+        TournamentMatch::create([
+            'bracket_id' => $bracket->id,
+            'mat_id' => $mat->id,
+            'bracket_section' => 0,
+            'round_number' => 1,
+            'round_name' => 'Round of 16',
+            'match_number' => 1,
+            'status' => 0,
+        ]);
+
+        $response = $this->actingAs($this->user())
+            ->delete("/manage/venues/{$venue->id}/mats/{$mat->id}");
+
+        $response->assertRedirect();
+        $response->assertSessionHas('error');
+        $this->assertDatabaseHas('venue_mats', ['id' => $mat->id, 'deleted_at' => null]);
     }
 
     public function test_mat_store_requires_mat_number(): void

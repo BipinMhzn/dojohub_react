@@ -17,7 +17,7 @@ class TournamentMatch extends AppBaseModel
         'round_number',
         'round_name',
         'match_number',
-        'mat_number',
+        'mat_id',
         'scheduled_at',
         'completed_at',
         'status',

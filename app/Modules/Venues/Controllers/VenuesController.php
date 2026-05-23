@@ -3,6 +3,7 @@
 namespace App\Modules\Venues\Controllers;
 
 use App\Modules\Countries\Models\Country;
+use App\Modules\Venues\Exceptions\VenueInUseException;
 use App\Modules\Venues\Interfaces\VenueInterface;
 use App\Modules\Venues\Requests\VenueCreateRequest;
 use App\Modules\Venues\Requests\VenueUpdateRequest;
@@ -32,30 +33,39 @@ final class VenuesController extends BaseWebController
 
     public function store(VenueCreateRequest $request): RedirectResponse
     {
-        $this->repository->createVenue($request->validated());
+        $venue = $this->repository->createVenue($request->validated());
 
-        return to_route('venues.index')->with('success', 'Venue created successfully.');
+        return to_route('venues.show', $venue->id)->with('success', 'Venue created successfully.');
     }
 
-    public function edit(string $venue): Response
+    public function show(string $venue): Response
     {
-        return $this->render('venues/edit', [
+        return $this->render('venues/show', [
             'venue' => $this->repository->getById($venue),
             'countries' => Country::orderBy('name')->get(['code', 'name']),
         ]);
+    }
+
+    public function edit(string $venue): RedirectResponse
+    {
+        return to_route('venues.show', $venue);
     }
 
     public function update(VenueUpdateRequest $request, string $venue): RedirectResponse
     {
         $this->repository->updateVenue($request->validated(), $venue);
 
-        return to_route('venues.index')->with('success', 'Venue updated successfully.');
+        return to_route('venues.show', $venue)->with('success', 'Venue updated successfully.');
     }
 
     public function destroy(string $venue): RedirectResponse
     {
-        $this->repository->deleteVenue($venue);
+        try {
+            $this->repository->deleteVenue($venue);
 
-        return to_route('venues.index')->with('success', 'Venue deleted successfully.');
+            return to_route('venues.index')->with('success', 'Venue deleted successfully.');
+        } catch (VenueInUseException $e) {
+            return back()->with('error', $e->getMessage());
+        }
     }
 }

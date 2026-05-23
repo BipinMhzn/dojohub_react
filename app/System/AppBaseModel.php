@@ -29,11 +29,11 @@ abstract class AppBaseModel extends BaseModel implements Auditable
     ];
 
     // Exclude EditorLogs columns — redundant with audits.user_id / audits.event
-    protected $auditExclude = [
-        'created_by',
-        'updated_by',
-        'deleted_by',
-    ];
+    //    protected $auditExclude = [
+    //        'created_by',
+    //        'updated_by',
+    //        'deleted_by',
+    //    ];
 
     public function editorProvider(): ?Authenticatable
     {
