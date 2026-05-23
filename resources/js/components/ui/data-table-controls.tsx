@@ -12,7 +12,7 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import SortAscendingIcon from '@/components/svg/sort-ascending';
 import SortDescendingIcon from '@/components/svg/sort-descending';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Filter } from 'lucide-react';
 
 type Options = Record<string, string>;
 
@@ -54,7 +54,7 @@ export function DataTableControls({
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="ml-auto">
+                            <Button variant="outline" className="ml-auto cursor-pointer">
                                 {sortOptions[sortBy] ?? 'Sort By'}
                                 <ChevronDown className="ml-2 h-4 w-4" />
                             </Button>
@@ -82,7 +82,11 @@ export function DataTableControls({
             >
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <ToggleGroupItem value="asc" aria-label="Ascending order">
+                        <ToggleGroupItem
+                            value="asc"
+                            aria-label="Ascending order"
+                            className="cursor-pointer aria-checked:bg-accent aria-checked:text-accent-foreground"
+                        >
                             <SortAscendingIcon />
                         </ToggleGroupItem>
                     </TooltipTrigger>
@@ -90,7 +94,11 @@ export function DataTableControls({
                 </Tooltip>
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <ToggleGroupItem value="desc" aria-label="Descending order">
+                        <ToggleGroupItem
+                            value="desc"
+                            aria-label="Descending order"
+                            className="cursor-pointer aria-checked:bg-accent aria-checked:text-accent-foreground"
+                        >
                             <SortDescendingIcon />
                         </ToggleGroupItem>
                     </TooltipTrigger>
@@ -101,18 +109,30 @@ export function DataTableControls({
             {statusOptions && statusValue !== undefined && onStatusChange && (
                 <>
                     <div className="bg-border h-6 w-px" />
-                    <ToggleGroup
-                        type="single"
-                        variant="outline"
-                        value={statusValue}
-                        onValueChange={onStatusChange}
-                    >
-                        {Object.entries(statusOptions).map(([value, label]) => (
-                            <ToggleGroupItem key={value} value={value} className="text-xs">
-                                {label}
-                            </ToggleGroupItem>
-                        ))}
-                    </ToggleGroup>
+                    <DropdownMenu>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" className="cursor-pointer">
+                                        <Filter className="mr-2 h-4 w-4" />
+                                        {statusOptions[statusValue] ?? 'Status'}
+                                        <ChevronDown className="ml-2 h-4 w-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                            </TooltipTrigger>
+                            <TooltipContent>Filter by status</TooltipContent>
+                        </Tooltip>
+                        <DropdownMenuContent align="end">
+                            {Object.entries(statusOptions).map(([value, label], idx) => (
+                                <div key={value}>
+                                    <DropdownMenuItem onClick={() => onStatusChange(value)}>
+                                        {label}
+                                    </DropdownMenuItem>
+                                    {idx < Object.entries(statusOptions).length - 1 && <DropdownMenuSeparator />}
+                                </div>
+                            ))}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </>
             )}
         </div>
