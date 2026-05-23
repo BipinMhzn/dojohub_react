@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Gender, TournamentCategory } from '@/pages/tournaments';
-import { Link } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
 
 const ageCategoryLabel: Record<number, string> = {
     0: 'Preparation', 1: 'Super Mini', 2: 'Mini', 3: 'Pupils', 4: 'Juveniles',
@@ -50,17 +50,7 @@ export const getCategoryColumns = ({ tournamentId, onDelete }: CategoryColumnsPr
     {
         accessorKey: 'name',
         header: 'Category',
-        cell: ({ row }) => {
-            const category = row.original;
-            return (
-                <Link
-                    href={`/manage/tournaments/${tournamentId}/categories/${category.id}/edit`}
-                    className="font-medium text-foreground hover:underline"
-                >
-                    {getCategoryDisplayName(category)}
-                </Link>
-            );
-        },
+        cell: ({ row }) => <span className="font-medium text-foreground">{getCategoryDisplayName(row.original)}</span>,
     },
     {
         accessorKey: 'age_range',
@@ -91,30 +81,21 @@ export const getCategoryColumns = ({ tournamentId, onDelete }: CategoryColumnsPr
         cell: ({ row }) => {
             const category = row.original;
             return (
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuItem asChild>
-                            <Link href={`/manage/tournaments/${tournamentId}/categories/${category.id}/edit`}>Overview</Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                            <Link href={`/manage/tournaments/${tournamentId}/categories/${category.id}/registrations`}>Registrations</Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                            <Link href={`/manage/tournaments/${tournamentId}/categories/${category.id}/matches`}>Matches</Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                            <Link href={`/manage/tournaments/${tournamentId}/categories/${category.id}/results`}>Results</Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => onDelete(category)}>Delete</DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                <div onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 cursor-pointer p-0">
+                                <span className="sr-only">Open menu</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => router.visit(`/manage/tournaments/${tournamentId}/categories/${category.id}/edit`)}>Edit</DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => onDelete(category)}>Delete</DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
             );
         },
     },

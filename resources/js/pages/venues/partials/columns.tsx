@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Venue } from '@/pages/venues';
 import { formatUTCDate } from '@/utils/date';
-import { Link, router } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { MoreHorizontal } from 'lucide-react';
 
@@ -14,11 +14,7 @@ export const getVenueColumns = ({ onDelete }: VenueColumnsProps): ColumnDef<Venu
     {
         accessorKey: 'name',
         header: 'Name',
-        cell: ({ row }) => (
-            <Link href={`/manage/venues/${row.original.id}`} className="font-medium hover:underline">
-                {row.original.name}
-            </Link>
-        ),
+        cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
     },
     {
         id: 'address',
@@ -50,19 +46,21 @@ export const getVenueColumns = ({ onDelete }: VenueColumnsProps): ColumnDef<Venu
         cell: ({ row }) => {
             const venue = row.original;
             return (
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => router.visit(`/manage/venues/${venue.id}`)}>Edit</DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => onDelete(venue)}>Delete</DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                <div onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 cursor-pointer p-0">
+                                <span className="sr-only">Open menu</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => router.visit(`/manage/venues/${venue.id}/edit`)}>Edit</DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => onDelete(venue)}>Delete</DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
             );
         },
     },

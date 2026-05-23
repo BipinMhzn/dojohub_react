@@ -149,7 +149,7 @@ export default function Clubs({ clubs, filters }: ClubsProps) {
                         sortOptions={sortOptions}
                     />
 
-                    <DataTable columns={columns} data={data} />
+                    <DataTable columns={columns} data={data} onRowClick={(club) => router.visit(`/manage/clubs/${club.id}`)} />
 
                     <DataTablePagination
                         links={links as PaginationLink[]}

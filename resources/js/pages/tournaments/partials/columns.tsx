@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Tournament, TournamentLevel } from '@/pages/tournaments';
 import { StatusBadge } from '@/pages/tournaments/partials/status-badge';
 import { formatUTCDate } from '@/utils/date';
-import { Link, router } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
 
 type TournamentColumnsProps = {
     onDelete: (tournament: Tournament) => void;
@@ -22,7 +22,7 @@ export const getTournamentColumns = ({ onDelete }: TournamentColumnsProps): Colu
         cell: ({ row }) => {
             const tournament = row.original;
             return (
-                <Link href={`/manage/tournaments/${tournament.id}`} className="flex items-center gap-3">
+                <div className="flex items-center gap-3">
                     <Avatar className="h-8 w-8">
                         <AvatarImage src={tournament.logo_url ?? undefined} alt={tournament.name} />
                         <AvatarFallback>
@@ -34,8 +34,8 @@ export const getTournamentColumns = ({ onDelete }: TournamentColumnsProps): Colu
                                 .slice(0, 2)}
                         </AvatarFallback>
                     </Avatar>
-                    <span>{tournament.name}</span>
-                </Link>
+                    <span className="font-medium">{tournament.name}</span>
+                </div>
             );
         },
     },
@@ -85,20 +85,21 @@ export const getTournamentColumns = ({ onDelete }: TournamentColumnsProps): Colu
             const tournament = row.original;
 
             return (
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => router.visit(`/manage/tournaments/${tournament.id}`)}>Overview</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => router.visit(`/manage/tournaments/${tournament.id}/categories`)}>Categories</DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => onDelete(tournament)}>Delete</DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                <div onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 cursor-pointer p-0">
+                                <span className="sr-only">Open menu</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => router.visit(`/manage/tournaments/${tournament.id}`)}>Edit</DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => onDelete(tournament)}>Delete</DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
             );
         },
     },

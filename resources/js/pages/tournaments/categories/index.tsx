@@ -52,7 +52,11 @@ export default function TournamentCategories({ tournament, categories }: Props) 
                 </div>
 
                 <div className="mt-4">
-                    <DataTable columns={columns} data={categories} />
+                    <DataTable
+                        columns={columns}
+                        data={categories}
+                        onRowClick={(category) => router.visit(`/manage/tournaments/${tournament.id}/categories/${category.id}/edit`)}
+                    />
                 </div>
             </TournamentLayout>
 

@@ -324,7 +324,7 @@ export default function Tournaments({ tournaments, filters }: TournamentsProps) 
                         sortOptions={sortOptions}
                     />
 
-                    <DataTable columns={columns} data={data} />
+                    <DataTable columns={columns} data={data} onRowClick={(tournament) => router.visit(`/manage/tournaments/${tournament.id}`)} />
 
                     <DataTablePagination
                         links={links as PaginationLink[]}

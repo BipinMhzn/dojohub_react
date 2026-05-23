@@ -92,7 +92,7 @@ export default function Venues({ venues, filters }: VenuesProps) {
                 </div>
                 <div className="mx-auto">
                     <DataTableControls search={search} onSearchChange={(k) => { setSearch(k); setPageNumber(1); }} sortBy={sortBy} sortOrder={sortOrder} onSortByChange={(k) => { setSortBy(k); setPageNumber(1); }} onSortOrderChange={setSortOrder} sortOptions={sortOptions} />
-                    <DataTable columns={columns} data={data} />
+                    <DataTable columns={columns} data={data} onRowClick={(venue) => router.visit(`/manage/venues/${venue.id}`)} />
                     <DataTablePagination links={links as PaginationLink[]} perPage={perPage} onPageChange={(page) => setPageNumber(page)} onPerPageCountUpdated={(pp) => { setPerPage(pp); setPageNumber(1); }} />
                 </div>
             </div>
