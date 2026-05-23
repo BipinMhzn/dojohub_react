@@ -25,4 +25,14 @@ final class TournamentRepository extends BaseRepository implements TournamentInt
     {
         return new TournamentsFilter($builder);
     }
+
+    public function onBeforeResult(Builder $builder): void
+    {
+        $builder->with('ruleSet');
+    }
+
+    public function getById(string $id, array $attributes = []): Tournament
+    {
+        return $this->model->newQuery()->with('ruleSet')->findOrFail($id);
+    }
 }

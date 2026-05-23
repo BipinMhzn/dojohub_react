@@ -10,21 +10,32 @@ import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import TournamentLayout from '@/layouts/tournament/layout';
 import { cn } from '@/lib/utils';
-import { Tournament, TournamentLevel } from '@/pages/tournaments';
+import { Tournament, TournamentLevel, TournamentRuleSet } from '@/pages/tournaments';
 import { Venue } from '@/pages/venues';
 import type { BreadcrumbItem } from '@/types';
 import { convertLocalDateToUTCString } from '@/utils/date';
 import { Head, useForm } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 
 interface Props {
     tournament: Tournament;
     venues: Venue[];
+    ruleSets: TournamentRuleSet[];
 }
 
-export default function TournamentShow({ tournament, venues }: Props) {
+const DEPRECATED_TZ_ALIASES: Record<string, string> = {
+    'Asia/Katmandu': 'Asia/Kathmandu',
+};
+const normalizeTimezone = (tz: string): string => DEPRECATED_TZ_ALIASES[tz] ?? tz;
+
+const timezones =
+    typeof Intl !== 'undefined' && Intl.supportedValuesOf
+        ? [...new Set(Intl.supportedValuesOf('timeZone').map(normalizeTimezone))].sort()
+        : [];
+
+export default function TournamentShow({ tournament, venues, ruleSets }: Props) {
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Tournaments', href: '/manage/tournaments' },
         { title: tournament.name, href: `/manage/tournaments/${tournament.id}` },
@@ -33,6 +44,8 @@ export default function TournamentShow({ tournament, venues }: Props) {
     const [startDate, setStartDate] = useState<Date>(new Date(tournament.start_at));
     const [endDate, setEndDate] = useState<Date | undefined>(tournament.end_at ? new Date(tournament.end_at) : undefined);
 
+    const detectedTimezone = useMemo(() => normalizeTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone), []);
+
     const { data, setData, post, processing, errors } = useForm({
         name: tournament.name,
         description: tournament.description ?? '',
@@ -40,6 +53,8 @@ export default function TournamentShow({ tournament, venues }: Props) {
         start_at: tournament.start_at,
         end_at: tournament.end_at ?? '',
         venue_id: tournament.venue_id,
+        rule_set_id: tournament.rule_set_id ?? '',
+        timezone: tournament.timezone ?? detectedTimezone,
         logo: null as File | null,
     });
 
@@ -161,6 +176,50 @@ export default function TournamentShow({ tournament, venues }: Props) {
                                             </SelectContent>
                                         </Select>
                                         <InputError message={errors.venue_id} />
+                                    </div>
+                                </div>
+
+                                {/* Rule Set and Timezone Row */}
+                                <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+                                    <div className="w-full md:w-1/2">
+                                        <Label htmlFor="rule_set_id">
+                                            Rule Set <span className="text-xs font-light">(Optional)</span>
+                                        </Label>
+                                        <Select value={data.rule_set_id} onValueChange={(value) => setData('rule_set_id', value)}>
+                                            <SelectTrigger className="mt-1 w-full" id="rule_set_id">
+                                                <SelectValue placeholder="Select a rule set" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {ruleSets.length > 0 ? (
+                                                    ruleSets.map((ruleSet) => (
+                                                        <SelectItem key={ruleSet.id} value={ruleSet.id}>
+                                                            {ruleSet.name}
+                                                        </SelectItem>
+                                                    ))
+                                                ) : (
+                                                    <div className="text-muted-foreground p-2 text-center text-sm">No rule sets found.</div>
+                                                )}
+                                            </SelectContent>
+                                        </Select>
+                                        <InputError message={errors.rule_set_id} />
+                                    </div>
+                                    <div className="w-full md:w-1/2">
+                                        <Label htmlFor="timezone">
+                                            Timezone <span className="text-xs font-light">(Optional)</span>
+                                        </Label>
+                                        <Select value={data.timezone} onValueChange={(value) => setData('timezone', value)}>
+                                            <SelectTrigger className="mt-1 w-full" id="timezone">
+                                                <SelectValue placeholder="Select a timezone" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {timezones.map((tz) => (
+                                                    <SelectItem key={tz} value={tz}>
+                                                        {tz.replace(/_/g, ' ')}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <InputError message={errors.timezone} />
                                     </div>
                                 </div>
                             </div>

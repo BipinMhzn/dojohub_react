@@ -30,6 +30,8 @@ class TournamentCreateRequest extends BaseWebRequest
             'start_at' => ['required', 'date'],
             'end_at' => ['nullable', 'date'],
             'venue_id' => ['required', 'string', Rule::exists('venues', 'id')->whereNull('deleted_at')],
+            'rule_set_id' => ['nullable', 'string', Rule::exists('tournament_rule_sets', 'id')->whereNull('deleted_at')],
+            'timezone' => ['nullable', 'string', 'max:64', 'timezone'],
         ];
     }
 }

@@ -15,8 +15,8 @@ import { convertLocalDateToUTCString } from '@/utils/date';
 import { Head, useForm } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
-import React, { useState } from 'react';
-import { TournamentLevel } from './index';
+import React, { useMemo, useState } from 'react';
+import { TournamentLevel, TournamentRuleSet } from './index';
 
 const breadcrumbs = [
     {
@@ -31,11 +31,26 @@ const breadcrumbs = [
 
 interface Props {
     venues: Venue[];
+    ruleSets: TournamentRuleSet[];
 }
 
-export default function CreateTournament({ venues }: Props) {
+// Some browsers/OSes return deprecated IANA timezone aliases. Map them to their
+// canonical equivalents so both the display label and the submitted value are correct.
+const DEPRECATED_TZ_ALIASES: Record<string, string> = {
+    'Asia/Katmandu': 'Asia/Kathmandu',
+};
+const normalizeTimezone = (tz: string): string => DEPRECATED_TZ_ALIASES[tz] ?? tz;
+
+const timezones =
+    typeof Intl !== 'undefined' && Intl.supportedValuesOf
+        ? [...new Set(Intl.supportedValuesOf('timeZone').map(normalizeTimezone))].sort()
+        : [];
+
+export default function CreateTournament({ venues, ruleSets }: Props) {
     const [startDate, setStartDate] = useState<Date>();
     const [endDate, setEndDate] = useState<Date>();
+
+    const detectedTimezone = useMemo(() => normalizeTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone), []);
 
     const { data, setData, post, processing, errors } = useForm({
         name: '',
@@ -44,6 +59,8 @@ export default function CreateTournament({ venues }: Props) {
         start_at: '',
         end_at: '',
         venue_id: '',
+        rule_set_id: '',
+        timezone: detectedTimezone,
         logo: null as File | null,
     });
 
@@ -164,6 +181,50 @@ export default function CreateTournament({ venues }: Props) {
                                         </SelectContent>
                                     </Select>
                                     <InputError message={errors.venue_id} />
+                                </div>
+                            </div>
+
+                            {/* Rule Set and Timezone Row */}
+                            <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+                                <div className="w-full md:w-1/2">
+                                    <Label htmlFor="rule_set_id">
+                                        Rule Set <span className="text-xs font-light">(Optional)</span>
+                                    </Label>
+                                    <Select value={data.rule_set_id} onValueChange={(value) => setData('rule_set_id', value)}>
+                                        <SelectTrigger className="mt-1 w-full" id="rule_set_id">
+                                            <SelectValue placeholder="Select a rule set" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {ruleSets.length > 0 ? (
+                                                ruleSets.map((ruleSet) => (
+                                                    <SelectItem key={ruleSet.id} value={ruleSet.id}>
+                                                        {ruleSet.name}
+                                                    </SelectItem>
+                                                ))
+                                            ) : (
+                                                <div className="text-muted-foreground p-2 text-center text-sm">No rule sets found.</div>
+                                            )}
+                                        </SelectContent>
+                                    </Select>
+                                    <InputError message={errors.rule_set_id} />
+                                </div>
+                                <div className="w-full md:w-1/2">
+                                    <Label htmlFor="timezone">
+                                        Timezone <span className="text-xs font-light">(Optional)</span>
+                                    </Label>
+                                    <Select value={data.timezone} onValueChange={(value) => setData('timezone', value)}>
+                                        <SelectTrigger className="mt-1 w-full" id="timezone">
+                                            <SelectValue placeholder="Select a timezone" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {timezones.map((tz) => (
+                                                <SelectItem key={tz} value={tz}>
+                                                    {tz.replace(/_/g, ' ')}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <InputError message={errors.timezone} />
                                 </div>
                             </div>
                         </div>

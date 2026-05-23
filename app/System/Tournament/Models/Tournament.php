@@ -5,6 +5,7 @@ namespace App\System\Tournament\Models;
 use App\System\AppBaseModel;
 use App\System\Tournament\Foundation\Enums\TournamentLevelEnum;
 use App\System\Tournament\Foundation\Enums\TournamentStatusEnum;
+use App\System\TournamentRuleSet\Models\TournamentRuleSet;
 use App\System\Venue\Models\Venue;
 use Database\Factories\TournamentFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -21,6 +22,8 @@ class Tournament extends AppBaseModel
         'end_at',
         'status',
         'venue_id',
+        'rule_set_id',
+        'timezone',
     ];
 
     protected array $sortableColumns = [
@@ -47,6 +50,11 @@ class Tournament extends AppBaseModel
     public function venue(): BelongsTo
     {
         return $this->belongsTo(Venue::class, 'venue_id', 'id');
+    }
+
+    public function ruleSet(): BelongsTo
+    {
+        return $this->belongsTo(TournamentRuleSet::class, 'rule_set_id', 'id');
     }
 
     public function categories(): HasMany

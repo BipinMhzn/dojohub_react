@@ -18,8 +18,8 @@
 5. [Module: Clubs ✅](#module-clubs-)
 6. [Module: Players ✅](#module-players-)
 7. [Module: Referees (New) ✅](#module-referees-new)
-8. [Module: Coaches (New)](#module-coaches-new)
-9. [Module: Tournaments](#module-tournaments)
+8. [Module: Coaches (New) ✅](#module-coaches-new-)
+9. [Module: Tournaments ✅](#module-tournaments-)
 10. [Module: Tournament Categories](#module-tournament-categories)
 11. [Module: Tournament Registrations](#module-tournament-registrations)
 12. [Module: Tournament Brackets & Pools](#module-tournament-brackets--pools)
@@ -352,7 +352,7 @@ Generate with `php artisan base-system:generate Referee --web`, then fill in:
 
 ---
 
-## Module: Coaches (New)
+## Module: Coaches (New) ✅
 
 **Depends on**: Clubs module (coach has optional `club_id` FK).
 
@@ -380,7 +380,7 @@ Same structure as Referees module:
 
 ---
 
-## Module: Tournaments
+## Module: Tournaments ✅
 
 **Existing module. Depends on**: Global Phase 2 (tournament_rule_sets seeded).
 

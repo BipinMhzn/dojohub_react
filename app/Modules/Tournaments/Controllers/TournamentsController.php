@@ -3,6 +3,7 @@
 namespace App\Modules\Tournaments\Controllers;
 
 use App\Modules\Tournaments\Interfaces\TournamentInterface;
+use App\Modules\Tournaments\Models\TournamentRuleSet;
 use App\Modules\Tournaments\Models\Venue;
 use App\Modules\Tournaments\Requests\TournamentCreateRequest;
 use App\Modules\Tournaments\Requests\TournamentUpdateRequest;
@@ -39,6 +40,7 @@ final class TournamentsController extends BaseWebController
         return $this->render('tournaments/show', [
             'tournament' => $this->repository->getById($tournament),
             'venues' => Venue::all(['id', 'name']),
+            'ruleSets' => TournamentRuleSet::all(['id', 'name']),
         ]);
     }
 
@@ -46,6 +48,7 @@ final class TournamentsController extends BaseWebController
     {
         return $this->render('tournaments/create', [
             'venues' => Venue::all(['id', 'name']),
+            'ruleSets' => TournamentRuleSet::all(['id', 'name']),
         ]);
     }
 

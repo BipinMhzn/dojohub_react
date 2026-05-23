@@ -122,6 +122,11 @@ export enum CompetitorResult {
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
+export type TournamentRuleSet = {
+    id: string;
+    name: string;
+};
+
 export type Tournament = {
     id: string;
     name: string;
@@ -132,6 +137,9 @@ export type Tournament = {
     end_at: string | null;
     status: TournamentStatus;
     venue_id: string;
+    rule_set_id: string | null;
+    timezone: string | null;
+    rule_set?: TournamentRuleSet | null;
     created_at: string;
     updated_at: string;
 };
