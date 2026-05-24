@@ -55,6 +55,8 @@ Used in `tournaments.level`.
 
 ### `TournamentStatusEnum`
 
+Computed by `TournamentStatusResolver`. Do not set directly (except via the `cancelTournament` action).
+
 | Value | Case        |
 |-------|-------------|
 | 0     | Scheduled   |
@@ -62,18 +64,22 @@ Used in `tournaments.level`.
 | 2     | Completed   |
 | 3     | Cancelled   |
 
-Used in `tournaments.status`.
+Used in `tournaments.status`. Once Cancelled, no further actions may be taken on the tournament or its categories.
 
 ### `CategoryStatusEnum`
 
-| Value | Case      | Meaning |
-|-------|-----------|---------|
-| 0     | Pending   | Created; registrations open |
-| 1     | Seeding   | Registrations closed; bracket being generated |
-| 2     | Active    | Matches in progress |
-| 3     | Completed | All matches done, results recorded |
+| Value | Case               | Meaning |
+|-------|--------------------|---------|
+| 0     | Draft              | Created; not yet accepting registrations |
+| 1     | RegistrationOpen   | Registrations being accepted |
+| 2     | RegistrationClosed | Registration closed; weigh-in / seeding may begin |
+| 3     | WeighIn            | Official weigh-in phase active |
+| 4     | BracketGenerated   | Bracket created; matches scheduled; ready to start |
+| 5     | InProgress         | Matches being contested |
+| 6     | Completed          | All matches done, results finalised (terminal) |
+| 7     | Cancelled          | Category cancelled (terminal) |
 
-Used in `tournament_categories.status`.
+Used in `tournament_categories.status`. Status is never set directly — always transition through `CategoryStatusTransitionService`.
 
 ### `RegistrationStatusEnum`
 
@@ -150,12 +156,12 @@ Used in `tournament_brackets.status`.
 
 ### `BracketSectionEnum`
 
-| Value | Case      | Meaning |
-|-------|-----------|---------|
-| 0     | Main      | Standard knockout matches |
-| 1     | Repechage | Second-chance bracket |
-| 2     | Bronze    | Bronze medal fight |
-| 3     | Final     | Gold medal match |
+| Value | Case       | Meaning |
+|-------|------------|---------|
+| 0     | Main       | Standard knockout matches |
+| 1     | Repechage  | Second-chance bracket |
+| 2     | Bronze     | Bronze medal fight |
+| 3     | GoldFinal  | Gold medal match |
 
 Used in `tournament_matches.bracket_section`.
 
@@ -200,9 +206,87 @@ Used in `tournament_match_competitors.position`.
 
 Used in `tournament_match_competitors.result`.
 
-### `TournamentTypeEnum` (deprecated)
+### `MatchOutcomeEnum`
 
-Retained for backwards compatibility; no longer used on the `tournaments` table. New code uses `BracketTypeEnum` on `tournament_brackets.type` instead.
+How the match was decided. Set when the match status → Completed.
+
+| Value | Case          |
+|-------|---------------|
+| 0     | Ippon         |
+| 1     | WazaAri       |
+| 2     | Decision      |
+| 3     | HansokuMake   |
+| 4     | Walkover      |
+| 5     | Bye           |
+| 6     | GoldenScore   |
+
+Used in `tournament_matches.match_outcome`.
+
+### `MatchEventTypeEnum`
+
+| Value | Case              |
+|-------|-------------------|
+| 0     | Ippon             |
+| 1     | WazaAri           |
+| 2     | Shido             |
+| 3     | HansokuMake       |
+| 4     | HansokuMakeLight  |
+| 5     | Kinsa             |
+| 6     | Note              |
+
+Used in `tournament_match_events.event_type`.
+
+---
+
+## Referee
+
+### `RefereeRoleEnum` — `app/System/Referee/Foundation/Enums/`
+
+| Value | Case   |
+|-------|--------|
+| 0     | Center |
+| 1     | Side   |
+| 2     | Video  |
+
+Used in `tournament_match_referees.role`.
+
+### `RefereeCertificationLevelEnum` — `app/System/Referee/Foundation/Enums/`
+
+| Value | Case          |
+|-------|---------------|
+| 0     | Club          |
+| 1     | National      |
+| 2     | Continental   |
+| 3     | International |
+
+Used in `referees.certification_level`.
+
+---
+
+## Financial
+
+### `PaymentMethodEnum` — `app/System/Tournament/Foundation/Enums/`
+
+| Value | Case   |
+|-------|--------|
+| 0     | Cash   |
+| 1     | Bank   |
+| 2     | Online |
+
+Used in `tournament_registration_payments.method`.
+
+---
+
+## Belt Rank
+
+### `BeltRankKindEnum` — `app/System/BeltRank/Foundation/Enums/`
+
+| Value | Case |
+|-------|------|
+| 0     | Kyu  |
+| 1     | Dan  |
+
+Used in `belt_ranks.kind`.
 
 ---
 

@@ -24,10 +24,18 @@ It covers all tables, column definitions, relationships, enumeration values, and
    - [tournaments](#7-tournaments)
    - [tournament_categories](#8-tournament_categories)
    - [tournament_registrations](#9-tournament_registrations)
-   - [tournament_brackets](#10-tournament_brackets)
-   - [tournament_matches](#11-tournament_matches)
-   - [tournament_match_competitors](#12-tournament_match_competitors)
-   - [tournament_results](#13-tournament_results)
+   - [tournament_registration_fees](#10-tournament_registration_fees)
+   - [tournament_registration_payments](#11-tournament_registration_payments)
+   - [tournament_weigh_ins](#12-tournament_weigh_ins)
+   - [tournament_registration_coaches](#13-tournament_registration_coaches)
+   - [tournament_brackets](#14-tournament_brackets)
+   - [tournament_pools](#15-tournament_pools)
+   - [tournament_pool_competitors](#16-tournament_pool_competitors)
+   - [tournament_matches](#17-tournament_matches)
+   - [tournament_match_competitors](#18-tournament_match_competitors)
+   - [tournament_match_referees](#19-tournament_match_referees)
+   - [tournament_match_events](#20-tournament_match_events)
+   - [tournament_results](#21-tournament_results)
 4. [Enumeration Values](#enumeration-values)
    - [Gender](#gender)
    - [Tournament Level](#tournament-level)
@@ -231,18 +239,26 @@ Tracks a player's club membership history. A player may belong to multiple clubs
 
 The top-level event container. Represents a named competition event (e.g., "Kathmandu Open Judo Championship 2026"). Does **not** store category-specific data — those belong in `tournament_categories`.
 
-| Column      | Type      | Notes                                        |
-|-------------|-----------|----------------------------------------------|
-| id          | ulid (PK) |                                              |
-| name        | string    | e.g. "Kathmandu Open Judo Championship 2026" |
-| description | text      | Nullable                                     |
-| logo_url    | string    | Nullable                                     |
-| level       | tinyint   | See [Tournament Level](#tournament-level)    |
-| start_at    | datetime  |                                              |
-| end_at      | datetime  | Nullable                                     |
-| status      | tinyint   | See [Tournament Status](#tournament-status)  |
-| venue_id    | ulid (FK) | → venues.id (restrict)                       |
-| *audit*     |           | EditorTrait                                  |
+> `status` is computed by `TournamentStatusResolver` from category states. Do not mutate it directly outside of the resolver or an explicit cancel action.
+
+| Column      | Type        | Notes                                                      |
+|-------------|-------------|------------------------------------------------------------|
+| id          | ulid (PK)   |                                                            |
+| name        | string      | e.g. "Kathmandu Open Judo Championship 2026"               |
+| description | text        | Nullable                                                   |
+| logo_url    | string      | Nullable                                                   |
+| level       | tinyint     | See [Tournament Level](#tournament-level)                  |
+| start_at    | datetime    |                                                            |
+| end_at      | datetime    | Nullable                                                   |
+| status      | tinyint     | See [Tournament Status](#tournament-status) — computed     |
+| venue_id    | ulid (FK)   | → venues.id RESTRICT                                       |
+| rule_set_id | ulid (FK)   | → tournament_rule_sets.id RESTRICT. Nullable               |
+| timezone    | string(64)  | IANA timezone e.g. "Asia/Kathmandu". Nullable              |
+| *audit*     |             | EditorTrait                                                |
+
+**Indexes**: `venue_id`, `status`, `start_at`
+
+**CHECK constraint**: `end_at IS NULL OR start_at <= end_at`
 
 
 ---
@@ -253,20 +269,26 @@ Represents a single competitive division within a tournament (e.g., "Male Cadets
 
 A player may register into **multiple categories** within the same tournament.
 
-| Column          | Type      | Notes                                                        |
-|-----------------|-----------|--------------------------------------------------------------|
-| id              | ulid (PK) |                                                              |
-| tournament_id   | ulid (FK) | → tournaments.id (cascade delete)                            |
-| name            | string    | auto-generated at application level if null                  |
-| gender          | tinyint   | See [Gender](#gender)                                        |
-| age_category    | tinyint   | See [Age Category](#age-category)                            |
-| min_age         | tinyint   | Minimum age inclusive (years) — set automatically from enum  |
-| max_age         | tinyint   | Maximum age inclusive (years) — set automatically from enum  |
-| weight_category | tinyint   | See [Weight Category](#weight-category)                      |
-| min_weight      | int       | Minimum weight in kg inclusive — set automatically from enum |
-| max_weight      | int       | Maximum weight in kg inclusive — set automatically from enum |
-| status          | tinyint   | See [Category Status](#category-status)                      |
-| *audit*         |           | EditorTrait                                                  |
+| Column                 | Type             | Notes                                                            |
+|------------------------|------------------|------------------------------------------------------------------|
+| id                     | ulid (PK)        |                                                                  |
+| tournament_id          | ulid (FK)        | → tournaments.id RESTRICT                                        |
+| name                   | string           | Nullable — auto-generated from enum labels if null               |
+| gender                 | tinyint          | See [Gender](#gender)                                            |
+| age_category           | tinyint          | See [Age Category](#age-category)                                |
+| min_age                | tinyint          | Minimum age inclusive (years) — set automatically from enum      |
+| max_age                | tinyint          | Maximum age inclusive (years) — set automatically from enum      |
+| weight_category        | tinyint          | See [Weight Category](#weight-category)                          |
+| min_weight             | decimal(5,2)     | Minimum weight in kg — set automatically from enum, adjustable   |
+| max_weight             | decimal(5,2)     | Maximum weight in kg — set automatically from enum, adjustable   |
+| status                 | tinyint          | See [Category Status](#category-status)                          |
+| registration_open_at   | datetime         | Nullable — when registration opens (null = manual open only)     |
+| registration_close_at  | datetime         | Nullable — when registration closes (null = manual close only)   |
+| start_at               | datetime         | Nullable — when this category's matches begin                    |
+| end_at                 | datetime         | Nullable — when this category finishes                           |
+| weigh_in_start_at      | datetime         | Nullable — start of the official weigh-in window                 |
+| weigh_in_end_at        | datetime         | Nullable — end of the official weigh-in window                   |
+| *audit*                |                  | EditorTrait                                                      |
 
 **Auto-generated name logic** — when `name` is null, the display name is composed from enum labels:
 ```
@@ -275,11 +297,20 @@ A player may register into **multiple categories** within the same tournament.
 → "Female Seniors +78kg"
 ```
 
-**min_age / max_age and min_weight / max_weight**: These are populated automatically by the application when the manager selects the `age_category` and `weight_category` enums. They serve as the actual range values used for registration filtering. Managers may adjust them manually for non-standard events.
+**min_age / max_age and min_weight / max_weight**: Populated automatically when the manager selects the enum values. Used for registration eligibility filtering. Managers may adjust them for non-standard events.
 
-**Indexes**: `(tournament_id)`
+**Scheduling columns**: `registration_open_at` / `registration_close_at` drive the automatic status transitions (when a scheduler job is running). The `weigh_in_*` window documents the official weigh-in period. All are nullable — omitting them means status transitions are manual only.
 
-**Unique constraint**: `(tournament_id, gender, age_category, weight_category)` named `tc_division_unique` — prevents duplicate divisions within the same tournament.
+**Indexes**: `tournament_id`, `status`, `registration_close_at`, `start_at`, `weigh_in_start_at`
+
+**Unique constraint**: `(tournament_id, gender, age_category, weight_category, deleted_at)` named `tc_division_unique` — prevents duplicate divisions, soft-delete safe.
+
+**CHECK constraints**:
+- `chk_tc_age`: `min_age <= max_age`
+- `chk_tc_weight`: `min_weight <= max_weight`
+- `chk_tc_registration_window`: `registration_open_at IS NULL OR registration_close_at IS NULL OR registration_open_at <= registration_close_at`
+- `chk_tc_schedule`: `start_at IS NULL OR end_at IS NULL OR start_at <= end_at`
+- `chk_tc_weigh_in_window`: `weigh_in_start_at IS NULL OR weigh_in_end_at IS NULL OR weigh_in_start_at <= weigh_in_end_at`
 
 > **Note**: `bracket_type` lives in `tournament_brackets`, not here. A category may have multiple bracket structures (e.g., pool stage + knockout final), so the format is defined at the bracket level.
 
@@ -298,7 +329,6 @@ A player may have multiple registration records — one per category they enter 
 | club_id                | ulid (FK)       | → clubs.id (restrict)                                  |
 | player_id              | ulid (FK)       | → players.id (restrict)                                |
 | player_age             | tinyint unsigned| Age at time of registration (max 255, sufficient)      |
-| player_weight          | decimal(5,2)    | Weight in kg at time of registration                   |
 | status                 | tinyint         | See [Registration Status](#registration-status)        |
 | *audit*                |                 | EditorTrait                                            |
 
@@ -310,120 +340,250 @@ A player may have multiple registration records — one per category they enter 
 
 ---
 
-### 10. `tournament_brackets`
+### 10. `tournament_registration_fees`
+
+Registration fee for a specific category. One fee record per category.
+
+| Column                 | Type           | Notes |
+|------------------------|----------------|-------|
+| id                     | ulid (PK)      | |
+| tournament_category_id | ulid (FK)      | → tournament_categories.id RESTRICT |
+| amount                 | decimal(10,2)  | Fee amount unsigned |
+| currency               | char(3)        | ISO 4217 e.g. NPR, USD |
+| *audit*                |                | EditorTrait |
+
+---
+
+### 11. `tournament_registration_payments`
+
+Individual payment records for a registration. A registration may have multiple partial payments.
+
+| Column          | Type           | Notes |
+|-----------------|----------------|-------|
+| id              | ulid (PK)      | |
+| registration_id | ulid (FK)      | → tournament_registrations.id RESTRICT |
+| amount_paid     | decimal(10,2)  | |
+| currency        | char(3)        | ISO 4217 |
+| paid_at         | datetime       | Nullable |
+| method          | tinyint        | See [Payment Method](#payment-method) |
+| reference       | string         | Nullable — receipt number, bank ref, etc. |
+| *audit*         |                | EditorTrait |
+
+**Index**: `registration_id`
+
+---
+
+### 12. `tournament_weigh_ins`
+
+Records each official weigh-in attempt for a registration. The most recent record by `weighed_at` is the official weight.
+
+| Column          | Type           | Notes |
+|-----------------|----------------|-------|
+| id              | ulid (PK)      | |
+| registration_id | ulid (FK)      | → tournament_registrations.id RESTRICT |
+| weight          | decimal(5,2)   | Recorded weight in kg |
+| made_weight     | boolean        | Computed at record time: weight within category min/max bounds |
+| weighed_at      | datetime       | When the weigh-in was recorded |
+| weighed_by      | bigint (FK)    | → users.id RESTRICT. Nullable — official who recorded it |
+| notes           | string         | Nullable |
+| *audit*         |                | EditorTrait |
+
+**Index**: `(registration_id, weighed_at)`
+
+---
+
+### 13. `tournament_registration_coaches`
+
+Associates a coach with a registration (the coach accompanying that player in a category).
+
+| Column          | Type      | Notes |
+|-----------------|-----------|-------|
+| id              | ulid (PK) | |
+| registration_id | ulid (FK) | → tournament_registrations.id RESTRICT |
+| coach_id        | ulid (FK) | → coaches.id RESTRICT |
+| *audit*         |           | EditorTrait |
+
+**Unique constraint**: `(registration_id, coach_id, deleted_at)` named `trc_registration_coach_unique` — soft-delete safe.
+
+---
+
+### 14. `tournament_brackets`
 
 Represents the competition structure for a single category. One category normally has one bracket. Multiple brackets per category are supported for formats like "Pools + Finals" or "Main + Repechage".
 
 | Column                 | Type      | Notes                                                                          |
 |------------------------|-----------|--------------------------------------------------------------------------------|
 | id                     | ulid (PK) |                                                                                |
-| tournament_category_id | ulid (FK) | → tournament_categories.id (cascade delete)                                    |
+| tournament_category_id | ulid (FK) | → tournament_categories.id RESTRICT                                            |
 | type                   | tinyint   | See [Bracket Type](#bracket-type)                                              |
 | seeding_method         | tinyint   | See [Seeding Method](#seeding-method)                                          |
-| competitor_count       | tinyint   | Nullable — set when bracket is generated. Number of athletes seeded in         |
-| round_count            | tinyint   | Nullable — set when bracket is generated. Total rounds in this bracket         |
+| competitor_count       | tinyint   | Nullable — set when bracket is generated                                       |
+| round_count            | tinyint   | Nullable — set when bracket is generated                                       |
 | status                 | tinyint   | See [Bracket Status](#bracket-status)                                          |
 | generated_at           | datetime  | Nullable — timestamp when the bracket structure was generated                  |
 | *audit*                |           | EditorTrait                                                                    |
 
-**Indexes**: `(tournament_category_id)`
-
-> `competitor_count` and `round_count` are null before generation and populated by the BracketService when matches are created.
+**Index**: `tournament_category_id`
 
 ---
 
-### 11. `tournament_matches`
+### 15. `tournament_pools`
 
-Represents one fight within a bracket. Matches are linked to a bracket (not directly to a category). The bracket's structure and athlete seeding link back to the category via `tournament_brackets`.
+A named pool group within a Pool+Final bracket (e.g., "Pool A", "Pool B").
 
-Player participants are **not** stored directly on this table. They are stored in `tournament_match_competitors`.
+| Column     | Type       | Notes |
+|------------|------------|-------|
+| id         | ulid (PK)  | |
+| bracket_id | ulid (FK)  | → tournament_brackets.id RESTRICT |
+| name       | string(50) | e.g. "Pool A", "Pool B" |
+| *audit*    |            | EditorTrait |
 
-| Column               | Type      | Notes                                                              |
-|----------------------|-----------|--------------------------------------------------------------------|
-| id                   | ulid (PK) |                                                                    |
-| bracket_id           | ulid (FK) | → tournament_brackets.id (cascade delete)                          |
-| bracket_section      | tinyint   | See [Bracket Section](#bracket-section)                            |
-| round_number         | tinyint   | Numeric round within this section (1 = first round)               |
-| round_name           | string(50)| Display label: "Round of 16", "Quarterfinal", "Semifinal", "Final" |
-| match_number         | tinyint   | Position within the round (1-based)                               |
-| mat_number           | tinyint   | Nullable — tatami mat assignment for scheduling                    |
-| scheduled_at         | datetime  | Nullable                                                           |
-| completed_at         | datetime  | Nullable                                                           |
-| status               | tinyint   | See [Match Status](#match-status)                                  |
-| winner_id            | ulid (FK) | → players.id (set null). Null until match is completed             |
-| winner_next_match_id | ulid (FK) | → tournament_matches.id (set null). Where the winner advances      |
-| winner_next_position | tinyint   | Nullable — 1 or 2, which slot the winner fills in the next match   |
-| loser_next_match_id  | ulid (FK) | → tournament_matches.id (set null). For repechage / double elim    |
-| loser_next_position  | tinyint   | Nullable — 1 or 2, which slot the loser fills in the next match    |
-| notes                | text      | Nullable — referee notes, DQ reason, golden score outcome, etc.    |
-| *audit*              |           | EditorTrait                                                        |
+---
 
-**Indexes**: `(bracket_id, bracket_section, round_number, match_number)`
+### 16. `tournament_pool_competitors`
+
+Assigns a registration to a pool and optionally stores their finishing position within the pool.
+
+| Column             | Type      | Notes |
+|--------------------|-----------|-------|
+| id                 | ulid (PK) | |
+| pool_id            | ulid (FK) | → tournament_pools.id RESTRICT |
+| registration_id    | ulid (FK) | → tournament_registrations.id RESTRICT |
+| finishing_position | tinyint   | Nullable — set after pool stage completes |
+| *audit*            |           | EditorTrait |
+
+**Unique constraint**: `(pool_id, registration_id, deleted_at)` named `tpc_pool_registration_unique` — soft-delete safe.
+
+---
+
+### 17. `tournament_matches`
+
+Represents one fight within a bracket. Player participants are stored in `tournament_match_competitors`, not directly here.
+
+| Column                    | Type       | Notes |
+|---------------------------|------------|-------|
+| id                        | ulid (PK)  | |
+| bracket_id                | ulid (FK)  | → tournament_brackets.id RESTRICT |
+| pool_id                   | ulid (FK)  | → tournament_pools.id RESTRICT. Nullable — set only for pool-stage matches |
+| mat_id                    | ulid (FK)  | → venue_mats.id RESTRICT. Nullable — assigned tatami mat |
+| bracket_section           | tinyint    | See [Bracket Section](#bracket-section) |
+| round_number              | tinyint    | Numeric round within this section (1 = first round) |
+| round_name                | string(50) | Display label: "Round of 16", "Quarterfinal", "Semifinal", "Final" |
+| match_number              | tinyint    | Position within the round (1-based) |
+| status                    | tinyint    | See [Match Status](#match-status) |
+| match_outcome             | tinyint    | Nullable — See [Match Outcome](#match-outcome). Set when completed |
+| is_golden_score           | boolean    | Default false — whether result was decided in golden score |
+| golden_score_duration_seconds | integer | Nullable — duration of golden score period in seconds |
+| winning_competitor_id     | ulid (FK)  | → tournament_match_competitors.id RESTRICT. Null until completed |
+| winner_next_match_id      | ulid (FK)  | → tournament_matches.id RESTRICT (self-ref). Where winner advances |
+| winner_next_position      | tinyint    | Nullable — 0=White or 1=Blue slot in the next match |
+| loser_next_match_id       | ulid (FK)  | → tournament_matches.id RESTRICT (self-ref). For repechage |
+| loser_next_position       | tinyint    | Nullable — 0=White or 1=Blue slot in the repechage match |
+| scheduled_at              | datetime   | Nullable |
+| completed_at              | datetime   | Nullable |
+| notes                     | text       | Nullable — referee notes, DQ reason, etc. |
+| *audit*                   |            | EditorTrait |
+
+**Indexes**: `(bracket_id, bracket_section, round_number, match_number)` named `tm_bracket_position_index`, `status`, `scheduled_at`, `mat_id`
+
+**CHECK constraints**:
+- `chk_tm_winner_pos`: `winner_next_position IS NULL OR winner_next_position IN (0,1)`
+- `chk_tm_loser_pos`: `loser_next_position IS NULL OR loser_next_position IN (0,1)`
 
 **Design notes**:
-- Athlete participants are stored in `tournament_match_competitors`, not here. This table only holds the structural position of a match in the bracket tree.
-- `winner_id` is a denormalised shortcut to `players.id` for fast lookup. The full competitor record (score, penalties, result) is in `tournament_match_competitors`.
-- `round_name` is stored (not computed) for display flexibility — a manager can override the label (e.g., "Pool A Round 1").
+- `winning_competitor_id` → `tournament_match_competitors` (not `players.id`). No denormalised player shortcut.
+- `round_name` is stored (not computed) for display flexibility — a manager can override it.
+- Self-referential FKs (`winner_next_match_id`, `loser_next_match_id`) are added in a separate migration pass because the table must exist before it can self-reference.
 
 ---
 
-### 12. `tournament_match_competitors`
+### 18. `tournament_match_competitors`
 
-Stores each athlete's per-match record — their position (Blue/White), scoring, and result. Every match has exactly two rows in this table.
+Stores each athlete's per-match record — position (White/Blue), scoring, and result.
 
-| Column          | Type      | Notes                                                           |
-|-----------------|-----------|-----------------------------------------------------------------|
-| id              | ulid (PK) |                                                                 |
-| match_id        | ulid (FK) | → tournament_matches.id (cascade delete)                        |
-| registration_id | ulid (FK) | → tournament_registrations.id (restrict)                        |
-| position        | tinyint   | See [Competitor Position](#competitor-position)                 |
-| seed            | tinyint   | Nullable — seeding rank within the bracket (max 64 in practice) |
-| score           | tinyint   | Nullable — Waza-ari count (0, 1, or 2)                          |
-| penalties       | tinyint   | Nullable — Shido count (0, 1, 2, or 3)                          |
-| result          | tinyint   | Default 0. See [Competitor Result](#competitor-result)          |
-| *audit*         |           | EditorTrait                                                     |
+| Column          | Type      | Notes                                                                         |
+|-----------------|-----------|-------------------------------------------------------------------------------|
+| id              | ulid (PK) |                                                                               |
+| match_id        | ulid (FK) | → tournament_matches.id RESTRICT                                              |
+| registration_id | ulid (FK) | → tournament_registrations.id RESTRICT                                        |
+| position        | tinyint   | See [Competitor Position](#competitor-position)                               |
+| seed            | tinyint   | Nullable — seeding rank within the bracket                                    |
+| score           | tinyint   | Nullable — Waza-ari count. Validated against `rule_set.max_waza_ari`          |
+| penalties       | tinyint   | Nullable — Shido count. Validated against `rule_set.max_shido`                |
+| result          | tinyint   | Default 0. See [Competitor Result](#competitor-result)                        |
+| *audit*         |           | EditorTrait                                                                   |
 
-**Constraints**:
-- Unique index on `(match_id, position)` — exactly one White and one Blue per match
-- Unique index on `(match_id, registration_id)` — a player appears at most once per match
+**Unique constraints** (soft-delete safe):
+- `(match_id, position, deleted_at)` named `tmc_match_position_unique`
+- `(match_id, registration_id, deleted_at)` named `tmc_match_registration_unique`
 
 **Judo scoring rules enforced at application level**:
 
-| Condition                   | Action                                      |
-|-----------------------------|---------------------------------------------|
-| score reaches 2             | Automatic win by Ippon — set result = Win   |
-| penalties reaches 3         | Hansoku-make — set result = Disqualified    |
-| Opponent disqualified       | Set own result = Walkover Win               |
-| No opponent (bye match)     | Set result = Walkover Win, score/penalties null |
+| Condition | Action |
+|-----------|--------|
+| score reaches rule_set.max_waza_ari (default 2) | Automatic win by Ippon — set result = Win |
+| penalties reaches rule_set.max_shido (default 3) | Hansoku-make — set result = Disqualified |
+| Opponent disqualified | Set own result = Walkover Win |
+| No opponent (bye match) | Set result = Walkover Win, score/penalties null |
 
 ---
 
-### 13. `tournament_results`
+### 19. `tournament_match_referees`
 
-Stores the final finishing position of every competitor per category. Populated after a category's bracket is complete. Allows manual override by tournament managers.
+Assigns a referee to a match in a specific role (Center, Side, or Video).
 
-Using `registration_id` instead of separate `tournament_category_id + player_id` FKs — the registration already implies both the player and the category.
+| Column     | Type      | Notes |
+|------------|-----------|-------|
+| id         | ulid (PK) | |
+| match_id   | ulid (FK) | → tournament_matches.id RESTRICT |
+| referee_id | ulid (FK) | → referees.id RESTRICT |
+| role       | tinyint   | See [Referee Role](#referee-role) |
+| *audit*    |           | EditorTrait |
 
-| Column          | Type      | Notes                                                                    |
-|-----------------|-----------|--------------------------------------------------------------------------|
-| id              | ulid (PK) |                                                                          |
-| registration_id | ulid (FK) | → tournament_registrations.id (restrict)                                 |
-| position        | tinyint   | Final finishing position. See position conventions below                 |
-| *audit*         |           | EditorTrait                                                              |
+**Unique constraint**: `(match_id, role, deleted_at)` named `tmr_match_role_unique` — one referee per role per match, soft-delete safe.
 
-**Constraints**: Unique index on `(registration_id)` — one result record per competitor per category.
+---
+
+### 20. `tournament_match_events`
+
+Event log for a match. Each scoring event (Ippon, WazaAri, Shido, etc.) is appended here. Scores and penalties on `tournament_match_competitors` are derived from aggregating this log.
+
+| Column              | Type      | Notes |
+|---------------------|-----------|-------|
+| id                  | ulid (PK) | |
+| match_competitor_id | ulid (FK) | → tournament_match_competitors.id RESTRICT |
+| event_type          | tinyint   | See [Match Event Type](#match-event-type) |
+| elapsed_seconds     | int       | Seconds from match start when the event occurred |
+| occurred_at         | datetime  | Wall-clock timestamp of the event |
+| notes               | string    | Nullable |
+| *audit*             |           | EditorTrait |
+
+**Index**: `(match_competitor_id, elapsed_seconds)` named `tme_competitor_elapsed_index`
+
+---
+
+### 21. `tournament_results`
+
+Stores the final finishing position of every competitor per category. Populated automatically on category completion; managers may override manually.
+
+| Column          | Type      | Notes                                                       |
+|-----------------|-----------|-------------------------------------------------------------|
+| id              | ulid (PK) |                                                             |
+| registration_id | ulid (FK) | → tournament_registrations.id RESTRICT                      |
+| position        | tinyint   | Final finishing position — see position conventions below   |
+| *audit*         |           | EditorTrait                                                 |
+
+**Unique constraint**: `(registration_id)` — one result record per competitor per category.
 
 **Position conventions**:
 
-| Position | Meaning            | Expected rows per category |
-|----------|--------------------|----------------------------|
-| 1        | Gold medal         | 1                          |
-| 2        | Silver medal       | 1                          |
-| 3        | Bronze medal       | 2 (both semifinal losers)  |
-| 5        | 5th place          | 2 (repechage semifinal losers) |
-| 7        | 7th place          | 2 (repechage quarter-final losers, if tracked) |
-
-> Position is a plain `tinyint` integer — no separate enum needed. The application controls which positions are created based on the bracket type and depth.
+| Position | Meaning | Expected rows per category |
+|----------|---------|----------------------------|
+| 1 | Gold medal | 1 |
+| 2 | Silver medal | 1 |
+| 3 | Bronze medal | 2 (both semifinal losers) |
+| 5 | 5th place | 2 (repechage semifinal losers) |
+| 7 | 7th place | 2 (repechage quarter-final losers, if tracked) |
 
 ---
 
@@ -457,23 +617,31 @@ All enums are stored as `tinyint unsigned` unless noted otherwise.
 
 ### Tournament Status
 
-| Value | Label       |
-|-------|-------------|
-| 0     | Scheduled   |
-| 1     | In Progress |
-| 2     | Completed   |
-| 3     | Cancelled   |
+Computed by `TournamentStatusResolver` from category states. Do not set directly — use the `cancelTournament` action for Cancelled.
+
+| Value | Label      | Resolver Rule |
+|-------|------------|---------------|
+| 0     | Scheduled  | All non-cancelled categories are pre-bracket (Draft/RegistrationOpen/RegistrationClosed/WeighIn), or none exist |
+| 1     | InProgress | At least one category is BracketGenerated or InProgress |
+| 2     | Completed  | All non-cancelled categories are Completed |
+| 3     | Cancelled  | Manager-set via `cancelTournament` action; resolver never overrides this |
+
+Once Cancelled, no further mutations are allowed on the tournament or any of its nested records.
 
 ---
 
 ### Category Status
 
-| Value | Label     | Description                                           |
-|-------|-----------|-------------------------------------------------------|
-| 0     | Pending   | Category created, registrations open                  |
-| 1     | Seeding   | Registrations closed, bracket generation in progress  |
-| 2     | Active    | Matches in progress                                   |
-| 3     | Completed | All matches done, results recorded                    |
+| Value | Label               | Description |
+|-------|---------------------|-------------|
+| 0     | Draft               | Category created; not yet accepting registrations |
+| 1     | RegistrationOpen    | Registrations being accepted |
+| 2     | RegistrationClosed  | Registration closed; weigh-in / seeding may begin |
+| 3     | WeighIn             | Official weigh-in phase active |
+| 4     | BracketGenerated    | Bracket created; matches scheduled; ready to start |
+| 5     | InProgress          | Matches being contested |
+| 6     | Completed           | All matches done, results finalised (terminal) |
+| 7     | Cancelled           | Category cancelled (terminal) |
 
 ---
 
@@ -558,7 +726,7 @@ Which part of a bracket structure a match belongs to.
 | 0     | Main       | Standard knockout matches                                |
 | 1     | Repechage  | Second-chance bracket for athletes who lost to finalists |
 | 2     | Bronze     | Bronze medal fight (repechage final)                     |
-| 3     | Final      | Gold medal match                                         |
+| 3     | GoldFinal  | Gold medal match                                         |
 
 > Used in: `tournament_matches.bracket_section`
 
@@ -615,55 +783,125 @@ Position of the athlete within a match. Corresponds to judogi colour in Judo.
 | 0     | Pending       | Match not yet completed                           |
 | 1     | Win           | Athlete won the match                             |
 | 2     | Loss          | Athlete lost the match                            |
-| 3     | Walkover Win  | Opponent withdrew or did not appear — auto-win    |
+| 3     | WalkoverWin   | Opponent withdrew or did not appear — auto-win    |
 | 4     | Disqualified  | Hansoku-make — three Shido or grave violation     |
+
+---
+
+### Match Outcome
+
+How the match was decided. Set when the match completes.
+
+| Value | Label         | Description |
+|-------|---------------|-------------|
+| 0     | Ippon         | Full point — automatic win |
+| 1     | WazaAri       | Two waza-ari = ippon |
+| 2     | Decision      | Judged decision (flag vote) |
+| 3     | HansokuMake   | Disqualification |
+| 4     | Walkover      | Opponent withdrew or did not appear |
+| 5     | Bye           | No opponent (bracket padding) |
+| 6     | GoldenScore   | Decided in golden score overtime |
+
+> Used in: `tournament_matches.match_outcome`
+
+---
+
+### Match Event Type
+
+Scoring and penalty events recorded during a match.
+
+| Value | Label             | Description |
+|-------|-------------------|-------------|
+| 0     | Ippon             | Full point scored |
+| 1     | WazaAri           | Half point scored |
+| 2     | Shido             | Minor penalty |
+| 3     | HansokuMake       | Disqualification (grave violation or 3rd Shido) |
+| 4     | HansokuMakeLight  | Indirect hansoku-make (awarded to opponent as ippon) |
+| 5     | Kinsa             | Slight advantage (older scoring; kept for historical records) |
+| 6     | Note              | Referee note (no scoring effect) |
+
+> Used in: `tournament_match_events.event_type`
+
+---
+
+### Referee Role
+
+| Value | Label  | Description |
+|-------|--------|-------------|
+| 0     | Center | Main referee on the mat |
+| 1     | Side   | Corner judge |
+| 2     | Video  | Video review official |
+
+> Used in: `tournament_match_referees.role`
+
+---
+
+### Payment Method
+
+| Value | Label  |
+|-------|--------|
+| 0     | Cash   |
+| 1     | Bank   |
+| 2     | Online |
+
+> Used in: `tournament_registration_payments.method`
 
 ---
 
 ## Migrations
 
-All 13 domain migrations have been implemented and verified with `php artisan migrate:fresh`.
+All 27 domain migrations have been implemented and verified with `php artisan migrate:fresh`.
 
 | # | Migration File | Status |
 |---|----------------|--------|
 | 1 | `0001_01_01_000000_create_users_table.php` | ✓ |
-| 2 | `2025_01_27_000000_create_addresses_table.php` | ✓ |
-| 3 | `2025_01_28_164539_create_venues_table.php` | ✓ |
-| 4 | `2025_02_06_164624_create_players_table.php` | ✓ |
-| 5 | `2025_02_07_170029_create_clubs_table.php` | ✓ |
-| 6 | `2025_02_07_170318_create_clubs_players_table.php` | ✓ |
-| 7 | `2025_02_15_095943_create_tournaments_table.php` | ✓ |
-| 8 | `2025_02_16_000000_create_tournament_categories_table.php` | ✓ |
-| 9 | `2025_05_30_150439_create_tournament_registrations_table.php` | ✓ |
-| 10 | `2025_12_24_072100_create_tournament_brackets_table.php` | ✓ |
-| 11 | `2025_12_24_072131_create_tournament_matches_table.php` | ✓ |
-| 12 | `2025_12_24_072200_create_tournament_match_competitors_table.php` | ✓ |
-| 13 | `2025_12_24_072300_create_tournament_results_table.php` | ✓ |
-
-> The file `2025_12_24_072027_add_type_to_tournaments_table.php` was deleted — its intent was merged into `create_tournaments_table` directly.
+| 2 | `2026_01_01_000001_create_addresses_table.php` | ✓ |
+| 3 | `2026_01_01_000002_create_venues_table.php` | ✓ |
+| 4 | `2026_01_01_000003_create_tournament_rule_sets_table.php` | ✓ |
+| 5 | `2026_01_01_000004_create_countries_table.php` | ✓ |
+| 6 | `2026_01_01_000005_create_belt_ranks_table.php` | ✓ |
+| 7 | `2026_01_01_000006_create_venue_mats_table.php` | ✓ |
+| 8 | `2026_01_01_000007_create_clubs_table.php` | ✓ |
+| 9 | `2026_01_01_000008_create_players_table.php` | ✓ |
+| 10 | `2026_01_01_000009_create_clubs_players_table.php` | ✓ |
+| 11 | `2026_01_01_000010_create_referees_table.php` | ✓ |
+| 12 | `2026_01_01_000011_create_coaches_table.php` | ✓ |
+| 13 | `2026_01_01_000012_create_tournaments_table.php` | ✓ |
+| 14 | `2026_01_01_000013_create_tournament_categories_table.php` | ✓ |
+| 15 | `2026_01_01_000014_create_tournament_registrations_table.php` | ✓ |
+| 16 | `2026_01_01_000015_create_tournament_registration_fees_table.php` | ✓ |
+| 17 | `2026_01_01_000016_create_tournament_registration_payments_table.php` | ✓ |
+| 18 | `2026_01_01_000017_create_tournament_weigh_ins_table.php` | ✓ |
+| 19 | `2026_01_01_000018_create_tournament_registration_coaches_table.php` | ✓ |
+| 20 | `2026_01_01_000019_create_tournament_brackets_table.php` | ✓ |
+| 21 | `2026_01_01_000020_create_tournament_pools_table.php` | ✓ |
+| 22 | `2026_01_01_000021_create_tournament_pool_competitors_table.php` | ✓ |
+| 23 | `2026_01_01_000022_create_tournament_matches_table.php` | ✓ |
+| 24 | `2026_01_01_000023_create_tournament_match_competitors_table.php` | ✓ |
+| 25 | `2026_01_01_000024_create_tournament_match_referees_table.php` | ✓ |
+| 26 | `2026_01_01_000025_create_tournament_match_events_table.php` | ✓ |
+| 27 | `2026_01_01_000026_create_tournament_results_table.php` | ✓ |
+| +  | `2026_01_01_000027_add_tournament_matches_self_ref_fks.php` | ✓ — adds winning_competitor_id, winner_next_match_id, loser_next_match_id in a second pass |
+| +  | `remove_player_weight_from_tournament_registrations_table.php` | ⏳ pending — drops player_weight; official weight is in tournament_weigh_ins |
 
 ---
 
 ## Complete Schema Diagram
 
 ```
-users
-  id (bigint PK)
-  name, email, password
-  created_by → users.id (nullable)
-  updated_by → users.id (nullable)
-  deleted_by → users.id (nullable)
-  deleted_at, created_at, updated_at
-
-addresses
+tournament_rule_sets
   id (ulid PK)
-  address, city, state, country
+  name, max_waza_ari, max_shido, match_duration_seconds, golden_score_seconds
+
+venue_mats
+  id (ulid PK)
+  venue_id → venues.id (restrict)
+  mat_number (tinyint), display_name
 
 venues
   id (ulid PK)
   name
   address_id → addresses.id (restrict)
-  mat_count
 
 clubs
   id (ulid PK)
@@ -673,82 +911,149 @@ clubs
 
 players
   id (ulid PK)
-  name, gender, dob, weight
-  nationality, email
-  profile_photo_url, phone_number
+  name, gender, dob, weight (decimal)
+  nationality_code → countries.code
+  current_belt_rank_id → belt_ranks.id (nullable)
+  email, profile_photo_url, phone_number
 
 clubs_players
   id (ulid PK)
   club_id    → clubs.id (restrict)
   player_id  → players.id (restrict)
-  started_at, ended_at
+  belt_rank_id → belt_ranks.id (nullable)
+  grade_certificate, started_at, ended_at
   INDEX (club_id, player_id)
+
+referees
+  id (ulid PK)
+  user_id → users.id (nullable)
+  full_name, nationality_code, certification_level
+
+coaches
+  id (ulid PK)
+  user_id → users.id (nullable)
+  full_name
+  club_id → clubs.id (nullable, restrict)
 
 tournaments
   id (ulid PK)
-  venue_id   → venues.id
+  venue_id     → venues.id (restrict)
+  rule_set_id  → tournament_rule_sets.id (restrict, nullable)
   name, description, logo_url
-  level, status
+  level, status (computed by TournamentStatusResolver)
+  timezone (IANA string, nullable)
   start_at, end_at
+  CHECK (end_at IS NULL OR start_at <= end_at)
 
 tournament_categories
   id (ulid PK)
-  tournament_id → tournaments.id
-  name (nullable — auto-generated from enum labels)
-  gender (tinyint enum)
-  age_category (tinyint enum), min_age, max_age
-  weight_category (tinyint enum), min_weight, max_weight
-  status
-  UNIQUE (tournament_id, gender, age_category, weight_category)
+  tournament_id → tournaments.id (restrict)
+  name (nullable — auto-generated)
+  gender, age_category, min_age, max_age
+  weight_category, min_weight (decimal), max_weight (decimal)
+  status (0=Draft … 7=Cancelled)
+  registration_open_at, registration_close_at   ← scheduling (nullable)
+  weigh_in_start_at, weigh_in_end_at            ← weigh-in window (nullable)
+  start_at, end_at                              ← category schedule (nullable)
+  UNIQUE (tournament_id, gender, age_category, weight_category, deleted_at)
+  CHECK constraints: age, weight, registration window, weigh-in window, schedule
 
 tournament_registrations
   id (ulid PK)
   tournament_category_id → tournament_categories.id (restrict)
   club_id                → clubs.id (restrict)
   player_id              → players.id (restrict)
-  player_age (tinyint), player_weight  ← snapshot at registration time
+  player_age (tinyint)   ← snapshot at registration time; official weight is in tournament_weigh_ins
   status  (0=Registered / 1=Confirmed / 2=Withdrawn)
-  UNIQUE (tournament_category_id, player_id)
+  UNIQUE (tournament_category_id, player_id, deleted_at)
+
+tournament_registration_fees
+  id (ulid PK)
+  tournament_category_id → tournament_categories.id (restrict)
+  amount (decimal), currency (char 3)
+
+tournament_registration_payments
+  id (ulid PK)
+  registration_id → tournament_registrations.id (restrict)
+  amount_paid (decimal), currency, paid_at, method, reference
+
+tournament_weigh_ins
+  id (ulid PK)
+  registration_id → tournament_registrations.id (restrict)
+  weight (decimal), made_weight (bool), weighed_at, weighed_by → users.id
+  INDEX (registration_id, weighed_at)
+
+tournament_registration_coaches
+  id (ulid PK)
+  registration_id → tournament_registrations.id (restrict)
+  coach_id        → coaches.id (restrict)
+  UNIQUE (registration_id, coach_id, deleted_at)
 
 tournament_brackets
   id (ulid PK)
-  tournament_category_id → tournament_categories.id (cascade)
-  type            (0=Single Elim / 1=Double Elim / 2=Pool+Final / 3=Repechage)
-  seeding_method  (0=Random / 1=Manual / 2=By Rank)
-  competitor_count (tinyint, nullable — set on generation)
-  round_count      (tinyint, nullable — set on generation)
-  status, generated_at
+  tournament_category_id → tournament_categories.id (restrict)
+  type (0=SingleElim / 1=DoubleElim / 2=PoolFinal / 3=Repechage)
+  seeding_method (0=Random / 1=Manual / 2=ByRank)
+  competitor_count, round_count (nullable — set on generation)
+  status (0=Pending / 1=Active / 2=Completed), generated_at
+
+tournament_pools
+  id (ulid PK)
+  bracket_id → tournament_brackets.id (restrict)
+  name (string 50)
+
+tournament_pool_competitors
+  id (ulid PK)
+  pool_id         → tournament_pools.id (restrict)
+  registration_id → tournament_registrations.id (restrict)
+  finishing_position (nullable)
+  UNIQUE (pool_id, registration_id, deleted_at)
 
 tournament_matches
   id (ulid PK)
-  bracket_id            → tournament_brackets.id (cascade)
-  bracket_section       (0=Main / 1=Repechage / 2=Bronze / 3=Final)
-  round_number (tinyint), round_name, match_number (tinyint)
-  mat_number (tinyint, nullable)
-  scheduled_at, completed_at, status
-  winner_id             → players.id (set null, nullable)
-  winner_next_match_id  → tournament_matches.id (set null, self-ref)
-  winner_next_position  (1 or 2)
-  loser_next_match_id   → tournament_matches.id (set null, self-ref)
-  loser_next_position   (1 or 2)
-  notes
+  bracket_id             → tournament_brackets.id (restrict)
+  pool_id                → tournament_pools.id (restrict, nullable)
+  mat_id                 → venue_mats.id (restrict, nullable)
+  bracket_section        (0=Main / 1=Repechage / 2=Bronze / 3=GoldFinal)
+  round_number, round_name, match_number
+  status (0=Pending / 1=Active / 2=Completed)
+  match_outcome          (nullable — set on completion)
+  is_golden_score (bool), golden_score_duration_seconds (nullable)
+  winning_competitor_id  → tournament_match_competitors.id (restrict, nullable)
+  winner_next_match_id   → tournament_matches.id (restrict, self-ref, nullable)
+  winner_next_position   (0=White / 1=Blue, nullable)
+  loser_next_match_id    → tournament_matches.id (restrict, self-ref, nullable)
+  loser_next_position    (0=White / 1=Blue, nullable)
+  scheduled_at, completed_at, notes
   INDEX (bracket_id, bracket_section, round_number, match_number)
+  CHECK: winner_next_position IN (0,1), loser_next_position IN (0,1)
 
 tournament_match_competitors
   id (ulid PK)
-  match_id        → tournament_matches.id (cascade)
+  match_id        → tournament_matches.id (restrict)
   registration_id → tournament_registrations.id (restrict)
   position        (0=White / 1=Blue)
-  seed            (tinyint, nullable)
-  score           (tinyint, nullable — Waza-ari count)
-  penalties       (tinyint, nullable — Shido count)
-  result          (default 0: Pending / 1=Win / 2=Loss / 3=Walkover / 4=Disqualified)
-  UNIQUE (match_id, position)
-  UNIQUE (match_id, registration_id)
+  seed (nullable), score (nullable), penalties (nullable)
+  result (0=Pending / 1=Win / 2=Loss / 3=WalkoverWin / 4=Disqualified)
+  UNIQUE (match_id, position, deleted_at)
+  UNIQUE (match_id, registration_id, deleted_at)
+
+tournament_match_referees
+  id (ulid PK)
+  match_id   → tournament_matches.id (restrict)
+  referee_id → referees.id (restrict)
+  role (0=Center / 1=Side / 2=Video)
+  UNIQUE (match_id, role, deleted_at)
+
+tournament_match_events
+  id (ulid PK)
+  match_competitor_id → tournament_match_competitors.id (restrict)
+  event_type (0=Ippon … 6=Note), elapsed_seconds, occurred_at, notes
+  INDEX (match_competitor_id, elapsed_seconds)
 
 tournament_results
   id (ulid PK)
   registration_id → tournament_registrations.id (restrict)
-  position        (tinyint: 1=Gold, 2=Silver, 3=Bronze, 5=5th, 7=7th ...)
+  position (1=Gold, 2=Silver, 3=Bronze, 5=5th, 7=7th …)
   UNIQUE (registration_id)
 ```

@@ -113,19 +113,21 @@ All enums are in `app/System/Tournament/Foundation/Enums/`.
 |------|--------|
 | `TournamentLevelEnum` | Local=1, Regional=2, National=3, International=4 |
 | `TournamentStatusEnum` | Scheduled=0, InProgress=1, Completed=2, Cancelled=3 |
-| `CategoryStatusEnum` | Pending=0, Seeding=1, Active=2, Completed=3 |
+| `CategoryStatusEnum` | Draft=0, RegistrationOpen=1, RegistrationClosed=2, WeighIn=3, BracketGenerated=4, InProgress=5, Completed=6, Cancelled=7 |
 | `RegistrationStatusEnum` | Registered=0, Confirmed=1, Withdrawn=2 |
 | `AgeCategoryEnum` | Preparation=0 … Veterans=9 |
 | `WeightCategoryEnum` | Female48=0 … Female78Plus=13 |
 | `BracketTypeEnum` | SingleElimination=0, DoubleElimination=1, PoolFinal=2, Repechage=3 |
 | `BracketStatusEnum` | Pending=0, Active=1, Completed=2 |
-| `BracketSectionEnum` | Main=0, Repechage=1, Bronze=2, Final=3 |
+| `BracketSectionEnum` | Main=0, Repechage=1, Bronze=2, GoldFinal=3 |
 | `SeedingMethodEnum` | Random=0, Manual=1, ByRank=2 |
 | `MatchStatusEnum` | Pending=0, Active=1, Completed=2 |
+| `MatchOutcomeEnum` | Ippon=0, WazaAri=1, Decision=2, HansokuMake=3, Walkover=4, Bye=5, GoldenScore=6 |
 | `CompetitorPositionEnum` | White=0, Blue=1 |
 | `CompetitorResultEnum` | Pending=0, Win=1, Loss=2, WalkoverWin=3, Disqualified=4 |
-
-> `TournamentTypeEnum` is kept for backward compatibility but is no longer used on the Tournament model. Use `BracketTypeEnum` for `tournament_brackets.type`.
+| `RefereeRoleEnum` | Center=0, Side=1, Video=2 |
+| `MatchEventTypeEnum` | Ippon=0, WazaAri=1, Shido=2, HansokuMake=3, HansokuMakeLight=4, Kinsa=5, Note=6 |
+| `PaymentMethodEnum` | Cash=0, Bank=1, Online=2 |
 
 ---
 
@@ -142,10 +144,12 @@ All enums are in `app/System/Tournament/Foundation/Enums/`.
 | level | tinyint | `TournamentLevelEnum` |
 | start_at | datetime | |
 | end_at | datetime | nullable |
-| status | tinyint | `TournamentStatusEnum` |
-| venue_id | ulid FK | → venues.id |
+| status | tinyint | `TournamentStatusEnum` — computed by `TournamentStatusResolver` |
+| venue_id | ulid FK | → venues.id RESTRICT |
+| rule_set_id | ulid FK | → tournament_rule_sets.id RESTRICT, nullable |
+| timezone | string(64) | IANA timezone, nullable |
 
-**Relationships**: `venue()`, `categories()`
+**Relationships**: `venue()`, `ruleSet()`, `categories()`
 
 ---
 
@@ -154,18 +158,24 @@ All enums are in `app/System/Tournament/Foundation/Enums/`.
 | Column | Type | Notes |
 |--------|------|-------|
 | id | ulid PK | |
-| tournament_id | ulid FK | → tournaments.id (cascade) |
+| tournament_id | ulid FK | → tournaments.id RESTRICT |
 | name | string | nullable — auto-generated from enums if null |
 | gender | tinyint | `PlayerGenderEnum` |
 | age_category | tinyint | `AgeCategoryEnum` |
 | min_age / max_age | tinyint | Set from enum defaults, adjustable |
 | weight_category | tinyint | `WeightCategoryEnum` |
-| min_weight / max_weight | int | Set from enum defaults, adjustable |
-| status | tinyint | `CategoryStatusEnum` |
+| min_weight / max_weight | decimal(5,2) | Set from enum defaults, adjustable |
+| status | tinyint | `CategoryStatusEnum` (Draft=0 … Cancelled=7) |
+| registration_open_at | datetime | nullable |
+| registration_close_at | datetime | nullable |
+| weigh_in_start_at | datetime | nullable |
+| weigh_in_end_at | datetime | nullable |
+| start_at | datetime | nullable |
+| end_at | datetime | nullable |
 
-**Relationships**: `tournament()`, `registrations()`, `brackets()`
+**Relationships**: `tournament()`, `registrations()`, `brackets()`, `fee()`, `weigh_ins()`
 
-**Unique constraint**: `(tournament_id, gender, age_category, weight_category)` — one division per tournament.
+**Unique constraint**: `(tournament_id, gender, age_category, weight_category, deleted_at)` — soft-delete safe.
 
 ---
 
@@ -178,7 +188,6 @@ All enums are in `app/System/Tournament/Foundation/Enums/`.
 | club_id | ulid FK | → clubs.id (restrict) |
 | player_id | ulid FK | → players.id (restrict) |
 | player_age | tinyint | Snapshot at registration time |
-| player_weight | decimal(5,2) | Snapshot at registration time |
 | status | tinyint | `RegistrationStatusEnum` |
 
 **Unique constraint**: `(tournament_category_id, player_id)` — one entry per player per category.
@@ -209,26 +218,29 @@ All enums are in `app/System/Tournament/Foundation/Enums/`.
 | Column | Type | Notes |
 |--------|------|-------|
 | id | ulid PK | |
-| bracket_id | ulid FK | → tournament_brackets.id (cascade) |
-| bracket_section | tinyint | `BracketSectionEnum` |
+| bracket_id | ulid FK | → tournament_brackets.id RESTRICT |
+| pool_id | ulid FK | → tournament_pools.id RESTRICT, nullable |
+| mat_id | ulid FK | → venue_mats.id RESTRICT, nullable |
+| bracket_section | tinyint | `BracketSectionEnum` (GoldFinal=3, not Final) |
 | round_number | tinyint | |
 | round_name | string(50) | Display label |
 | match_number | tinyint | Position within round (1-based) |
-| mat_number | tinyint | nullable — tatami assignment |
+| status | tinyint | `MatchStatusEnum` |
+| match_outcome | tinyint | `MatchOutcomeEnum`, nullable — set on completion |
+| is_golden_score | boolean | Default false |
+| golden_score_duration_seconds | int | nullable |
+| winning_competitor_id | ulid FK | → tournament_match_competitors.id RESTRICT, nullable |
+| winner_next_match_id | ulid FK | → tournament_matches.id RESTRICT (self-ref), nullable |
+| winner_next_position | tinyint | 0=White / 1=Blue, nullable |
+| loser_next_match_id | ulid FK | → tournament_matches.id RESTRICT (self-ref), nullable |
+| loser_next_position | tinyint | 0=White / 1=Blue, nullable |
 | scheduled_at | datetime | nullable |
 | completed_at | datetime | nullable |
-| status | tinyint | `MatchStatusEnum` |
-| winner_id | ulid FK | → players.id (set null) |
-| winner_next_match_id | ulid FK | → tournament_matches.id (self-ref, set null) |
-| winner_next_position | tinyint | 1 or 2 — slot in next match |
-| loser_next_match_id | ulid FK | → tournament_matches.id (self-ref, set null) |
-| loser_next_position | tinyint | 1 or 2 |
 | notes | text | nullable |
 
-**Relationships**: `bracket()`, `competitors()`, `winner()`, `winnerNextMatch()`, `loserNextMatch()`
+**Relationships**: `bracket()`, `pool()`, `mat()`, `competitors()`, `winningCompetitor()`, `winnerNextMatch()`, `loserNextMatch()`, `referees()`, `events()`
 
-> Players are NOT stored directly on this table. They are in `TournamentMatchCompetitor` via `registration_id`.
-> `winner_id` is a denormalised shortcut to `players.id` for fast lookup.
+> `winning_competitor_id` → `TournamentMatchCompetitor` (not players.id). No denormalised player shortcut.
 
 ---
 
@@ -345,7 +357,7 @@ Manages bracket generation and match results per category.
 ### `recordMatchResult()`
 1. Finds White and Blue competitors for the match
 2. Sets `result = Win/Loss` on each competitor
-3. Updates match: `winner_id`, `status = Completed`, `completed_at`, `notes`
+3. Updates match: `winning_competitor_id`, `status = Completed`, `completed_at`, `match_outcome`, `notes`
 4. Creates a new `TournamentMatchCompetitor` in the winner's next match
 5. If `loser_next_match_id` exists, creates a competitor row in the repechage match
 
@@ -425,7 +437,7 @@ MatchCompetitor, BracketMatch, BracketRound, BracketStructure
 1. From category card, click dropdown → "Registrations"
 2. Player list filtered by: age range (calculated from DOB), weight range, gender matching the category
 3. Already-registered players are excluded from the dropdown
-4. On store: `player_age` and `player_weight` are snapshotted from the player record
+4. On store: `player_age` is snapshotted from the player record. Official weight is recorded separately via weigh-in.
 
 ### 4. Generate Bracket
 1. From category card, click dropdown → "Matches"
