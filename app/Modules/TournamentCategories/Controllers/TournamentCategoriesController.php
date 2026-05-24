@@ -1,23 +1,23 @@
 <?php
 
-namespace App\Modules\Tournaments\Controllers;
+namespace App\Modules\TournamentCategories\Controllers;
 
-use App\Modules\Tournaments\Interfaces\CategoryInterface;
+use App\Modules\TournamentCategories\Interfaces\TournamentCategoryInterface;
+use App\Modules\TournamentCategories\Requests\TournamentCategoryCreateRequest;
+use App\Modules\TournamentCategories\Requests\TournamentCategoryUpdateRequest;
 use App\Modules\Tournaments\Interfaces\TournamentInterface;
-use App\Modules\Tournaments\Requests\CategoryCreateRequest;
-use App\Modules\Tournaments\Requests\CategoryUpdateRequest;
 use BaseSystem\Controllers\BaseWebController;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Response;
 
 /**
- * Class CategoriesController
+ * Class TournamentCategoriesController
  */
-final class CategoriesController extends BaseWebController
+final class TournamentCategoriesController extends BaseWebController
 {
     public function __construct(
         private readonly TournamentInterface $tournamentRepository,
-        private readonly CategoryInterface $categoryRepository,
+        private readonly TournamentCategoryInterface $categoryRepository,
     ) {}
 
     public function index(string $tournamentId): Response
@@ -35,7 +35,7 @@ final class CategoriesController extends BaseWebController
         ]);
     }
 
-    public function store(CategoryCreateRequest $request, string $tournamentId): RedirectResponse
+    public function store(TournamentCategoryCreateRequest $request, string $tournamentId): RedirectResponse
     {
         $this->categoryRepository->createCategory($tournamentId, $request->validated());
 
@@ -51,7 +51,7 @@ final class CategoriesController extends BaseWebController
         ]);
     }
 
-    public function update(CategoryUpdateRequest $request, string $tournamentId, string $categoryId): RedirectResponse
+    public function update(TournamentCategoryUpdateRequest $request, string $tournamentId, string $categoryId): RedirectResponse
     {
         $this->categoryRepository->updateCategory($categoryId, $request->validated());
 

@@ -2,8 +2,8 @@
 
 namespace App\Modules\Tournaments\Interfaces;
 
+use App\Modules\TournamentCategories\Models\TournamentCategory;
 use App\Modules\Tournaments\Models\TournamentBracket;
-use App\Modules\Tournaments\Models\TournamentCategory;
 use Illuminate\Support\Collection;
 
 /**

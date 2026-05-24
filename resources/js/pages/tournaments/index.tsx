@@ -156,6 +156,12 @@ export type TournamentCategory = {
     min_weight: number;
     max_weight: number;
     status: CategoryStatus;
+    registration_open_at: string | null;
+    registration_close_at: string | null;
+    start_at: string | null;
+    end_at: string | null;
+    weigh_in_start_at: string | null;
+    weigh_in_end_at: string | null;
     registrations_count?: number;
     created_at: string;
     updated_at: string;

@@ -2,7 +2,7 @@
 
 namespace App\Modules\Tournaments\Controllers;
 
-use App\Modules\Tournaments\Interfaces\CategoryInterface;
+use App\Modules\TournamentCategories\Interfaces\TournamentCategoryInterface;
 use App\Modules\Tournaments\Interfaces\TournamentInterface;
 use App\Modules\Tournaments\Models\TournamentResult;
 use BaseSystem\Controllers\BaseWebController;
@@ -15,7 +15,7 @@ final class ResultsController extends BaseWebController
 {
     public function __construct(
         private readonly TournamentInterface $tournamentRepository,
-        private readonly CategoryInterface $categoryRepository,
+        private readonly TournamentCategoryInterface $categoryRepository,
         private readonly TournamentResult $resultModel,
     ) {}
 

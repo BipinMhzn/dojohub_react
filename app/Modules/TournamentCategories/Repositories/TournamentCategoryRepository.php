@@ -1,18 +1,18 @@
 <?php
 
-namespace App\Modules\Tournaments\Repositories;
+namespace App\Modules\TournamentCategories\Repositories;
 
-use App\Modules\Tournaments\Interfaces\CategoryInterface;
-use App\Modules\Tournaments\Models\TournamentCategory;
+use App\Modules\TournamentCategories\Interfaces\TournamentCategoryInterface;
+use App\Modules\TournamentCategories\Models\TournamentCategory;
 use App\System\Tournament\Foundation\Enums\CategoryStatusEnum;
 use BaseSystem\Repositories\BaseRepository;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
 /**
- * Class CategoryRepository
+ * Class TournamentCategoryRepository
  */
-final class CategoryRepository extends BaseRepository implements CategoryInterface
+final class TournamentCategoryRepository extends BaseRepository implements TournamentCategoryInterface
 {
     public function __construct(TournamentCategory $model)
     {

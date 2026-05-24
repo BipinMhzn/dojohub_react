@@ -1,6 +1,5 @@
 <?php
 
-use App\Modules\Tournaments\Controllers\CategoriesController;
 use App\Modules\Tournaments\Controllers\MatchesController;
 use App\Modules\Tournaments\Controllers\RegistrationsController;
 use App\Modules\Tournaments\Controllers\ResultsController;
@@ -17,15 +16,8 @@ Route::group([
     Route::get('tournaments/{tournament}', [TournamentsController::class, 'show'])->name('tournaments.show');
     Route::post('tournaments/{tournament}', [TournamentsController::class, 'update'])->name('tournaments.update');
 
-    // Tournament Categories
+    // Nested under a category (categories CRUD lives in TournamentCategories module)
     Route::group(['prefix' => 'tournaments/{tournament}/categories'], function () {
-        Route::get('/', [CategoriesController::class, 'index'])->name('tournaments.categories.index');
-        Route::get('/create', [CategoriesController::class, 'create'])->name('tournaments.categories.create');
-        Route::post('/', [CategoriesController::class, 'store'])->name('tournaments.categories.store');
-        Route::get('/{category}/edit', [CategoriesController::class, 'edit'])->name('tournaments.categories.edit');
-        Route::put('/{category}', [CategoriesController::class, 'update'])->name('tournaments.categories.update');
-        Route::delete('/{category}', [CategoriesController::class, 'destroy'])->name('tournaments.categories.destroy');
-
         // Registrations under a category
         Route::get('/{category}/registrations', [RegistrationsController::class, 'index'])->name('tournaments.categories.registrations.index');
         Route::post('/{category}/registrations', [RegistrationsController::class, 'store'])->name('tournaments.categories.registrations.store');

@@ -2,12 +2,12 @@
 
 namespace App\Modules\Tournaments\Repositories;
 
+use App\Modules\TournamentCategories\Models\TournamentCategory;
 use App\Modules\Tournaments\Exceptions\PlayerAlreadyRegisteredException;
 use App\Modules\Tournaments\Interfaces\RegistrationInterface;
 use App\Modules\Tournaments\Models\Club;
 use App\Modules\Tournaments\Models\Player;
 use App\Modules\Tournaments\Models\Tournament;
-use App\Modules\Tournaments\Models\TournamentCategory;
 use App\Modules\Tournaments\Models\TournamentRegistration;
 use BaseSystem\Repositories\BaseRepository;
 use Illuminate\Database\Eloquent\Builder;

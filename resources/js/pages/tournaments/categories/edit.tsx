@@ -1,6 +1,7 @@
 import HeadingSmall from '@/components/heading-small';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -48,6 +49,11 @@ const weightCategories = [
     { value: WeightCategory.Female78Plus, label: '+78 kg', min: 79, max: 999 },
 ];
 
+const toDateOnly = (dateStr: string | null): string => {
+    if (!dateStr) return '';
+    return dateStr.substring(0, 10);
+};
+
 export default function EditCategory({ tournament, category }: Props) {
     const categoryName = getCategoryDisplayName(category);
 
@@ -66,6 +72,12 @@ export default function EditCategory({ tournament, category }: Props) {
         weight_category: Number(category.weight_category).toString(),
         min_weight: category.min_weight.toString(),
         max_weight: category.max_weight.toString(),
+        registration_open_at: toDateOnly(category.registration_open_at),
+        registration_close_at: toDateOnly(category.registration_close_at),
+        start_at: toDateOnly(category.start_at),
+        end_at: toDateOnly(category.end_at),
+        weigh_in_start_at: toDateOnly(category.weigh_in_start_at),
+        weigh_in_end_at: toDateOnly(category.weigh_in_end_at),
     });
 
     const handleAgeCategoryChange = (value: string) => {
@@ -165,13 +177,58 @@ export default function EditCategory({ tournament, category }: Props) {
                             </div>
                             <div className="w-full sm:w-1/4">
                                 <Label htmlFor="min_weight">Min Weight (kg)</Label>
-                                <Input type="number" id="min_weight" value={data.min_weight} onChange={(e) => setData('min_weight', e.target.value)} className="mt-1" />
+                                <Input type="number" step="0.01" min="0" id="min_weight" value={data.min_weight} onChange={(e) => setData('min_weight', e.target.value)} className="mt-1" />
                                 <InputError message={errors.min_weight} />
                             </div>
                             <div className="w-full sm:w-1/4">
                                 <Label htmlFor="max_weight">Max Weight (kg)</Label>
-                                <Input type="number" id="max_weight" value={data.max_weight} onChange={(e) => setData('max_weight', e.target.value)} className="mt-1" />
+                                <Input type="number" step="0.01" min="0" id="max_weight" value={data.max_weight} onChange={(e) => setData('max_weight', e.target.value)} className="mt-1" />
                                 <InputError message={errors.max_weight} />
+                            </div>
+                        </div>
+
+                        <div className="border-t pt-6">
+                            <p className="mb-4 text-sm font-medium">Scheduling <span className="text-xs font-light text-muted-foreground">(Optional)</span></p>
+
+                            <div className="space-y-4">
+                                <div className="flex flex-col gap-4 sm:flex-row">
+                                    <div className="flex-1">
+                                        <Label htmlFor="registration_open_at">Registration Opens</Label>
+                                        <DatePicker id="registration_open_at" value={data.registration_open_at} onChange={(v) => setData('registration_open_at', v)} placeholder="Pick a date" className="mt-1" />
+                                        <InputError message={errors.registration_open_at} />
+                                    </div>
+                                    <div className="flex-1">
+                                        <Label htmlFor="registration_close_at">Registration Closes</Label>
+                                        <DatePicker id="registration_close_at" value={data.registration_close_at} onChange={(v) => setData('registration_close_at', v)} placeholder="Pick a date" className="mt-1" />
+                                        <InputError message={errors.registration_close_at} />
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-col gap-4 sm:flex-row">
+                                    <div className="flex-1">
+                                        <Label htmlFor="weigh_in_start_at">Weigh-in Start</Label>
+                                        <DatePicker id="weigh_in_start_at" value={data.weigh_in_start_at} onChange={(v) => setData('weigh_in_start_at', v)} placeholder="Pick a date" className="mt-1" />
+                                        <InputError message={errors.weigh_in_start_at} />
+                                    </div>
+                                    <div className="flex-1">
+                                        <Label htmlFor="weigh_in_end_at">Weigh-in End</Label>
+                                        <DatePicker id="weigh_in_end_at" value={data.weigh_in_end_at} onChange={(v) => setData('weigh_in_end_at', v)} placeholder="Pick a date" className="mt-1" />
+                                        <InputError message={errors.weigh_in_end_at} />
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-col gap-4 sm:flex-row">
+                                    <div className="flex-1">
+                                        <Label htmlFor="start_at">Start Date</Label>
+                                        <DatePicker id="start_at" value={data.start_at} onChange={(v) => setData('start_at', v)} placeholder="Pick a date" className="mt-1" />
+                                        <InputError message={errors.start_at} />
+                                    </div>
+                                    <div className="flex-1">
+                                        <Label htmlFor="end_at">End Date</Label>
+                                        <DatePicker id="end_at" value={data.end_at} onChange={(v) => setData('end_at', v)} placeholder="Pick a date" className="mt-1" />
+                                        <InputError message={errors.end_at} />
+                                    </div>
+                                </div>
                             </div>
                         </div>
 

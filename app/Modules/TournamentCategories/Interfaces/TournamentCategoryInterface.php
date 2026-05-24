@@ -1,15 +1,15 @@
 <?php
 
-namespace App\Modules\Tournaments\Interfaces;
+namespace App\Modules\TournamentCategories\Interfaces;
 
-use App\Modules\Tournaments\Models\TournamentCategory;
+use App\Modules\TournamentCategories\Models\TournamentCategory;
 use BaseSystem\Interfaces\BaseInterface;
 use Illuminate\Support\Collection;
 
 /**
- * Interface CategoryInterface
+ * Interface TournamentCategoryInterface
  */
-interface CategoryInterface extends BaseInterface
+interface TournamentCategoryInterface extends BaseInterface
 {
     public function getTournamentCategories(string $tournamentId): Collection;
 

@@ -2,9 +2,9 @@
 
 namespace App\Modules\Tournaments\Controllers;
 
+use App\Modules\TournamentCategories\Interfaces\TournamentCategoryInterface;
 use App\Modules\Tournaments\Interfaces\BracketInterface;
 use App\Modules\Tournaments\Interfaces\BracketServiceInterface;
-use App\Modules\Tournaments\Interfaces\CategoryInterface;
 use App\Modules\Tournaments\Interfaces\TournamentInterface;
 use App\Modules\Tournaments\Requests\BracketGenerateRequest;
 use App\Modules\Tournaments\Requests\MatchResultRequest;
@@ -20,7 +20,7 @@ final class MatchesController extends BaseWebController
 {
     public function __construct(
         private readonly TournamentInterface $tournamentRepository,
-        private readonly CategoryInterface $categoryRepository,
+        private readonly TournamentCategoryInterface $categoryRepository,
         private readonly BracketInterface $bracketRepository,
         private readonly BracketServiceInterface $bracketService,
     ) {}

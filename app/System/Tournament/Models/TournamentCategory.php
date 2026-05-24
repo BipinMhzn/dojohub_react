@@ -23,6 +23,12 @@ class TournamentCategory extends AppBaseModel
         'min_weight',
         'max_weight',
         'status',
+        'registration_open_at',
+        'registration_close_at',
+        'start_at',
+        'end_at',
+        'weigh_in_start_at',
+        'weigh_in_end_at',
     ];
 
     protected array $sortableColumns = [
@@ -38,6 +44,14 @@ class TournamentCategory extends AppBaseModel
             'age_category' => AgeCategoryEnum::class,
             'weight_category' => WeightCategoryEnum::class,
             'status' => CategoryStatusEnum::class,
+            'min_weight' => 'decimal:2',
+            'max_weight' => 'decimal:2',
+            'registration_open_at' => 'datetime',
+            'registration_close_at' => 'datetime',
+            'start_at' => 'datetime',
+            'end_at' => 'datetime',
+            'weigh_in_start_at' => 'datetime',
+            'weigh_in_end_at' => 'datetime',
         ];
     }
 

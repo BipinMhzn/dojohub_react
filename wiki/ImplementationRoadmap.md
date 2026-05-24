@@ -20,7 +20,7 @@
 7. [Module: Referees (New) ✅](#module-referees-new)
 8. [Module: Coaches (New) ✅](#module-coaches-new-)
 9. [Module: Tournaments ✅](#module-tournaments-)
-10. [Module: Tournament Categories](#module-tournament-categories)
+10. [Module: Tournament Categories ✅](#module-tournament-categories-)
 11. [Module: Tournament Registrations](#module-tournament-registrations)
 12. [Module: Tournament Brackets & Pools](#module-tournament-brackets--pools)
 13. [Module: Tournament Matches](#module-tournament-matches)
@@ -409,9 +409,9 @@ Update `wiki/TournamentsModule.md`.
 
 ---
 
-## Module: Tournament Categories
+## Module: Tournament Categories ✅
 
-**Existing sub-feature of Tournaments. Depends on**: Module: Tournaments Phase T1.
+**Now a standalone module: `app/Modules/TournamentCategories/`. Depends on**: Module: Tournaments Phase T1.
 
 ### Phase TC1 — System Model Update
 

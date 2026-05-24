@@ -3,9 +3,9 @@
 namespace Tests\Feature;
 
 use App\Modules\Countries\Models\Country;
+use App\Modules\TournamentCategories\Models\TournamentCategory;
 use App\Modules\Tournaments\Models\Tournament;
 use App\Modules\Tournaments\Models\TournamentBracket;
-use App\Modules\Tournaments\Models\TournamentCategory;
 use App\Modules\Tournaments\Models\TournamentMatch;
 use App\System\User\Models\User;
 use App\System\Venue\Models\Venue;

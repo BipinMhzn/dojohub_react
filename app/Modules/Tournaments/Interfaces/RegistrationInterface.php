@@ -2,9 +2,9 @@
 
 namespace App\Modules\Tournaments\Interfaces;
 
+use App\Modules\TournamentCategories\Models\TournamentCategory;
 use App\Modules\Tournaments\Models\Player;
 use App\Modules\Tournaments\Models\Tournament;
-use App\Modules\Tournaments\Models\TournamentCategory;
 use BaseSystem\Interfaces\BaseInterface;
 use Illuminate\Support\Collection;
 

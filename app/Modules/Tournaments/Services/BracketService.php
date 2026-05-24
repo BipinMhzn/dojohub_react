@@ -2,9 +2,9 @@
 
 namespace App\Modules\Tournaments\Services;
 
+use App\Modules\TournamentCategories\Models\TournamentCategory;
 use App\Modules\Tournaments\Interfaces\BracketServiceInterface;
 use App\Modules\Tournaments\Models\TournamentBracket;
-use App\Modules\Tournaments\Models\TournamentCategory;
 use App\Modules\Tournaments\Models\TournamentMatch;
 use App\Modules\Tournaments\Models\TournamentMatchCompetitor;
 use App\System\Tournament\Foundation\Enums\BracketSectionEnum;
