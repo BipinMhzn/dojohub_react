@@ -17,17 +17,110 @@ All authoritative docs live under [`wiki/`](wiki/README.md).
 | [wiki/README.md](wiki/README.md) | Wiki index |
 | [wiki/Architecture.md](wiki/Architecture.md) | System vs Module model split, Repository pattern, Interface bindings, BaseController/BaseRepository |
 | [wiki/Conventions.md](wiki/Conventions.md) | Routes, PUT vs POST, soft-delete + FK RESTRICT, file naming, Pint workflow |
-| [wiki/Frontend.md](wiki/Frontend.md) | Pages, Inertia, TypeScript, forms, dark mode, data tables |
+| [wiki/Frontend/Index.md](wiki/Frontend/Index.md) | Pages, Inertia, TypeScript, forms, dark mode, data tables (see Phase 4 docs below for detail) |
 | [wiki/Enums.md](wiki/Enums.md) | All backend enums (canonical integer values) |
 | [wiki/Database.md](wiki/Database.md) | Authoritative schema — every table, FK, index, migration |
-| [wiki/VenuesModule.md](wiki/VenuesModule.md) | Venues (required address) |
-| [wiki/ClubsModule.md](wiki/ClubsModule.md) | Clubs (nullable address, logo upload) |
-| [wiki/ClubPlayers.md](wiki/ClubPlayers.md) | Club membership history sub-feature |
-| [wiki/PlayersModule.md](wiki/PlayersModule.md) | Players (standard repository, profile photo) |
-| [wiki/TournamentsModule.md](wiki/TournamentsModule.md) | Tournament → Category → Bracket → Match → MatchCompetitor |
+| [wiki/System/Index.md](wiki/System/Index.md) | All System models, enums, and foundation traits |
+| [wiki/Modules/Venues/Index.md](wiki/Modules/Venues/Index.md) | Venues + Mats (required address, no file upload) |
+| [wiki/Modules/Clubs/Index.md](wiki/Modules/Clubs/Index.md) | Clubs + Players/Coaches memberships (logo upload) |
+| [wiki/Modules/Players/Index.md](wiki/Modules/Players/Index.md) | Players (profile photo, belt rank, nationality) |
+| [wiki/Modules/Coaches/Index.md](wiki/Modules/Coaches/Index.md) | Coaches (optional user link, club memberships) |
+| [wiki/Modules/Referees/Index.md](wiki/Modules/Referees/Index.md) | Referees (certification level, nationality) |
+| [wiki/Modules/Tournaments/Index.md](wiki/Modules/Tournaments/Index.md) | Tournament → Category → Registration → Bracket → Match |
+| [wiki/Modules/Users/Index.md](wiki/Modules/Users/Index.md) | Users (JSON API module, not Inertia) |
 | [base_system/README.md](base_system/README.md) | Local `base_system` package (BaseModel/Repository/Controller, code generator) |
 
+### Infrastructure & Standards (Phase 3 docs)
+
+| Document | What's in it |
+|----------|--------------|
+| **BaseSystem package** | |
+| [wiki/BaseSystem/Index.md](wiki/BaseSystem/Index.md) | Package overview — all classes, auto-discovery, module generation |
+| [wiki/BaseSystem/BaseSystemProvider.md](wiki/BaseSystem/BaseSystemProvider.md) | ServiceProvider — module route/provider auto-loading |
+| [wiki/BaseSystem/BaseRepository.md](wiki/BaseSystem/BaseRepository.md) | Repository base — CRUD, filter hook, pagination |
+| [wiki/BaseSystem/BaseModel.md](wiki/BaseSystem/BaseModel.md) | Model base — ULID PK, EditorLogs audit, SoftDeletes, HasFactory |
+| [wiki/BaseSystem/EditorLogs.md](wiki/BaseSystem/EditorLogs.md) | EditorLogs trait — created_by/updated_by/deleted_by auto-fill |
+| [wiki/BaseSystem/BaseFilter.md](wiki/BaseSystem/BaseFilter.md) | BaseFilter — query-string filter pattern, method-per-filter |
+| [wiki/BaseSystem/BaseInterface.md](wiki/BaseSystem/BaseInterface.md) | BaseInterface — repository contract, CRUD signatures |
+| [wiki/BaseSystem/BaseWebController.md](wiki/BaseSystem/BaseWebController.md) | BaseWebController — module controller base (Inertia responses) |
+| [wiki/BaseSystem/BaseController.md](wiki/BaseSystem/BaseController.md) | BaseController — JSON API controller base |
+| [wiki/BaseSystem/BaseWebRequest.md](wiki/BaseSystem/BaseWebRequest.md) | BaseWebRequest + BaseWebListRequest — form request base classes |
+| [wiki/BaseSystem/SystemResponseTrait.md](wiki/BaseSystem/SystemResponseTrait.md) | SystemResponseTrait — standard JSON response helpers |
+| [wiki/BaseSystem/SystemConstants.md](wiki/BaseSystem/SystemConstants.md) | SystemConstants — shared constant definitions |
+| [wiki/BaseSystem/ModuleGenerateCommand.md](wiki/BaseSystem/ModuleGenerateCommand.md) | `base-system:generate` Artisan command |
+| **Http layer** | |
+| [wiki/Http/Index.md](wiki/Http/Index.md) | Http layer overview — middleware stack, auth/settings controllers, requests |
+| [wiki/Http/Middleware/HandleInertiaRequests.md](wiki/Http/Middleware/HandleInertiaRequests.md) | Shared Inertia props (auth, flash, ziggy, sidebarOpen, quote) |
+| [wiki/Http/Middleware/HandleAppearance.md](wiki/Http/Middleware/HandleAppearance.md) | Appearance cookie → View::share (light/dark/system) |
+| [wiki/Http/Controllers/Auth/Index.md](wiki/Http/Controllers/Auth/Index.md) | Auth controllers — login, logout, email verification, confirm-password |
+| [wiki/Http/Controllers/Settings/Index.md](wiki/Http/Controllers/Settings/Index.md) | Settings controllers — profile edit, password change |
+| **Other infrastructure** | |
+| [wiki/Providers/Index.md](wiki/Providers/Index.md) | All service providers — registration, bindings, boot logic |
+| [wiki/Routes/Index.md](wiki/Routes/Index.md) | Full route listing — web, auth, settings, module routes |
+| [wiki/Config/Index.md](wiki/Config/Index.md) | All config files and environment variables |
+| [wiki/Database/Migrations.md](wiki/Database/Migrations.md) | Migration conventions, ULID PK, FK RESTRICT, soft-delete pattern |
+| [wiki/Database/Factories.md](wiki/Database/Factories.md) | Model factory conventions, custom states |
+| [wiki/Database/Seeders.md](wiki/Database/Seeders.md) | Database seeders — default data, superuser, dev fixtures |
+| [wiki/Database/EditorTrait.md](wiki/Database/EditorTrait.md) | EditorLogs trait — created_by/updated_by/deleted_by audit columns |
+
 When a module wiki and `wiki/Database.md` conflict on schema, the database wiki wins. When `wiki/Architecture.md` and a module wiki disagree on a pattern, the **module wiki wins** — it tracks real code.
+
+### Frontend Documentation (Phase 4 docs)
+
+| Document | What's in it |
+|----------|--------------|
+| **Frontend core** | |
+| [wiki/Frontend/Index.md](wiki/Frontend/Index.md) | Stack overview, entry points, path aliases, dark mode, SSR |
+| [wiki/Frontend/Bootstrap.md](wiki/Frontend/Bootstrap.md) | `app.tsx` + `ssr.tsx` — CSR/SSR bootstrap, `initializeTheme`, Ziggy polyfill |
+| [wiki/Hooks/Index.md](wiki/Hooks/Index.md) | useAppearance, useFlashToast, useInitials, useIsMobile, useMobileNavigation |
+| [wiki/Types/Index.md](wiki/Types/Index.md) | SharedData, User, FlashMessages, PaginationLink, PageFilters, global.d.ts |
+| [wiki/Utils/Index.md](wiki/Utils/Index.md) | `formatUTCDate`, date converters, Nepal provinces/districts static data |
+| [wiki/Layouts/Index.md](wiki/Layouts/Index.md) | AppLayout, AuthLayout, sub-layouts (Tournament, Category, Venue, Club, Settings) |
+| **Pages** | |
+| [wiki/Pages/Venues/Index.md](wiki/Pages/Venues/Index.md) | Venue list, create, show, edit, mats tab |
+| [wiki/Pages/Clubs/Index.md](wiki/Pages/Clubs/Index.md) | Club list, show, create, players tab, coaches tab |
+| [wiki/Pages/Players/Index.md](wiki/Pages/Players/Index.md) | Player list, create, edit — profile photo, DOB picker, belt rank |
+| [wiki/Pages/Coaches/Index.md](wiki/Pages/Coaches/Index.md) | Coach list, create, edit — active club badges |
+| [wiki/Pages/Referees/Index.md](wiki/Pages/Referees/Index.md) | Referee list, create, edit — certification level |
+| [wiki/Pages/Tournaments/Index.md](wiki/Pages/Tournaments/Index.md) | All 11 tournament pages — enums, bracket generation, match result flow |
+| [wiki/Pages/Auth/Index.md](wiki/Pages/Auth/Index.md) | Login, email verification, confirm-password (register/reset disabled) |
+| [wiki/Pages/Settings/Index.md](wiki/Pages/Settings/Index.md) | Profile, password, appearance settings pages |
+| [wiki/Pages/Dashboard.md](wiki/Pages/Dashboard.md) | Dashboard placeholder page |
+| **Components** | |
+| [wiki/Components/Index.md](wiki/Components/Index.md) | All 57 components — overview table by category |
+| [wiki/Components/DataTable.md](wiki/Components/DataTable.md) | DataTableControls + DataTable + DataTablePagination — filter/sort/paginate pattern |
+| [wiki/Components/AppSidebar.md](wiki/Components/AppSidebar.md) | AppSidebar, NavMain, NavUser, AppSidebarHeader |
+| [wiki/Components/Brackets/Index.md](wiki/Components/Brackets/Index.md) | BracketContainer, SingleEliminationBracket, MatchCard, MatchDetailDialog |
+| [wiki/Components/InputError.md](wiki/Components/InputError.md) | InputError, Heading, HeadingSmall |
+
+### Operations Documentation (Phase 5 docs)
+
+| Document | What's in it |
+|----------|--------------|
+| [wiki/Operations/Deployment.md](wiki/Operations/Deployment.md) | Local setup, build steps, SSR server, env vars, post-deploy checklist |
+| [wiki/Operations/Troubleshooting.md](wiki/Operations/Troubleshooting.md) | Common backend + frontend issues with diagnosis and fixes |
+| [wiki/Operations/Performance.md](wiki/Operations/Performance.md) | Code splitting, partial reloads, debounce, eager loading, caching |
+
+---
+
+## Coding Guidelines
+
+When writing or reviewing code, follow the rules in [`.claude/guidelines/`](.claude/guidelines/):
+
+**Backend:**
+- [architecture.md](.claude/guidelines/architecture.md) — System/Module split, Repository, `onBeforeResult`, ULID, multi-table writes
+- [testing-patterns.md](.claude/guidelines/testing-patterns.md) — PHPUnit, factories, Feature/Unit, coverage expectations
+- [database-conventions.md](.claude/guidelines/database-conventions.md) — Migrations, ULID PK, `editorLogs()`, FK RESTRICT, enums
+- [error-handling.md](.claude/guidelines/error-handling.md) — Exception hierarchy, catch-in-controller, flash messages
+- [file-uploads.md](.claude/guidelines/file-uploads.md) — Logo/photo uploads, FileUpload trait, POST-for-update
+
+**Frontend:**
+- [frontend-architecture.md](.claude/guidelines/frontend-architecture.md) — `resources/js/` layout, where to put new code
+- [react-patterns.md](.claude/guidelines/react-patterns.md) — Components, Inertia `<Link>`/`router`, URL state pattern
+- [typescript-conventions.md](.claude/guidelines/typescript-conventions.md) — Strict mode, page props, entity types, `SharedData`
+- [forms-and-validation.md](.claude/guidelines/forms-and-validation.md) — `useForm`, `<InputError>`, file uploads, edit pre-population
+
+**Commands** (CLI reference): [`.claude/commands/`](.claude/commands/) — `dev-server`, `test`, `build`, `lint`, `database`, `generator`
 
 ---
 
@@ -78,7 +171,7 @@ app/Modules/{Plural}/
 └── ServiceProvider.php   # Binds Interface → Repository (auto-registered)
 ```
 
-Existing modules: **Clubs**, **Players**, **Tournaments**, **Users**, **Venues**.
+Existing modules: **BeltRanks**, **Clubs**, **Coaches**, **Countries**, **Players**, **Referees**, **TournamentCategories**, **TournamentRuleSets**, **Tournaments**, **Users**, **Venues**.
 
 ---
 
