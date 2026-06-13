@@ -10,6 +10,7 @@ use Database\Factories\TournamentFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 
 class TournamentRegistration extends AppBaseModel
 {
@@ -61,5 +62,30 @@ class TournamentRegistration extends AppBaseModel
     public function latestWeighIn(): HasOne
     {
         return $this->hasOne(TournamentWeighIn::class, 'registration_id', 'id')->latestOfMany('weighed_at');
+    }
+
+    public function coaches(): HasMany
+    {
+        return $this->hasMany(TournamentRegistrationCoach::class, 'registration_id', 'id');
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(TournamentRegistrationPayment::class, 'registration_id', 'id');
+    }
+
+    /**
+     * The fee that applies to this registration, resolved through its category.
+     */
+    public function fee(): HasOneThrough
+    {
+        return $this->hasOneThrough(
+            TournamentRegistrationFee::class,
+            TournamentCategory::class,
+            'id',
+            'tournament_category_id',
+            'tournament_category_id',
+            'id',
+        );
     }
 }

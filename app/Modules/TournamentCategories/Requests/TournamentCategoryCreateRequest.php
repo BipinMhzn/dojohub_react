@@ -39,6 +39,11 @@ class TournamentCategoryCreateRequest extends BaseWebRequest
                 ['nullable', 'date'],
                 $this->filled('weigh_in_start_at') ? ['after_or_equal:weigh_in_start_at'] : []
             ),
+            'fee_amount' => ['nullable', 'numeric', 'decimal:0,2', 'min:0', 'max:99999999.99'],
+            'fee_currency' => array_merge(
+                ['nullable', 'string', 'size:3'],
+                $this->filled('fee_amount') ? ['required'] : []
+            ),
         ];
     }
 }

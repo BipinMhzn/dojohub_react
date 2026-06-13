@@ -1,6 +1,8 @@
 <?php
 
 use App\Modules\Tournaments\Controllers\MatchesController;
+use App\Modules\Tournaments\Controllers\RegistrationCoachesController;
+use App\Modules\Tournaments\Controllers\RegistrationPaymentsController;
 use App\Modules\Tournaments\Controllers\RegistrationsController;
 use App\Modules\Tournaments\Controllers\ResultsController;
 use App\Modules\Tournaments\Controllers\TournamentsController;
@@ -25,6 +27,14 @@ Route::group([
         Route::post('/{category}/registrations', [RegistrationsController::class, 'store'])->name('tournaments.categories.registrations.store');
         Route::delete('/{category}/registrations/{registration}', [RegistrationsController::class, 'destroy'])->name('tournaments.categories.registrations.destroy');
         Route::post('/{category}/registrations/{registration}/withdraw', [RegistrationsController::class, 'withdraw'])->name('tournaments.categories.registrations.withdraw');
+
+        // Coaches assigned to a registration
+        Route::post('/{category}/registrations/{registration}/coaches', [RegistrationCoachesController::class, 'store'])->name('tournaments.categories.registrations.coaches.store');
+        Route::delete('/{category}/registrations/{registration}/coaches/{coach}', [RegistrationCoachesController::class, 'destroy'])->name('tournaments.categories.registrations.coaches.destroy');
+
+        // Payments recorded against a registration
+        Route::post('/{category}/registrations/{registration}/payments', [RegistrationPaymentsController::class, 'store'])->name('tournaments.categories.registrations.payments.store');
+        Route::delete('/{category}/registrations/{registration}/payments/{payment}', [RegistrationPaymentsController::class, 'destroy'])->name('tournaments.categories.registrations.payments.destroy');
 
         // Matches / Bracket under a category
         Route::get('/{category}/matches', [MatchesController::class, 'index'])->name('tournaments.categories.matches.index');

@@ -9,6 +9,7 @@ use App\System\Tournament\Foundation\Enums\CategoryStatusEnum;
 use App\System\Tournament\Foundation\Enums\WeightCategoryEnum;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class TournamentCategory extends AppBaseModel
 {
@@ -68,5 +69,10 @@ class TournamentCategory extends AppBaseModel
     public function brackets(): HasMany
     {
         return $this->hasMany(TournamentBracket::class, 'tournament_category_id', 'id');
+    }
+
+    public function fee(): HasOne
+    {
+        return $this->hasOne(TournamentRegistrationFee::class, 'tournament_category_id', 'id');
     }
 }

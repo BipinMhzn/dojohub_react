@@ -21,14 +21,14 @@
 8. [Module: Coaches (New) ✅](#module-coaches-new-)
 9. [Module: Tournaments ✅](#module-tournaments-)
 10. [Module: Tournament Categories ✅](#module-tournament-categories-)
-11. [Module: Tournament Registrations](#module-tournament-registrations)
+11. [Module: Tournament Registrations ✅](#module-tournament-registrations-)
 12. [Module: Tournament Brackets & Pools](#module-tournament-brackets--pools)
 13. [Module: Tournament Matches](#module-tournament-matches)
 14. [Module: Tournament Match Events (New)](#module-tournament-match-events-new)
 15. [Module: Tournament Match Referees (New)](#module-tournament-match-referees-new)
 16. [Module: Tournament Weigh-ins (New)](#module-tournament-weigh-ins-new)
-17. [Module: Tournament Registration Coaches (New)](#module-tournament-registration-coaches-new)
-18. [Module: Financial Tables (New)](#module-financial-tables-new)
+17. [Module: Tournament Registration Coaches (New) ✅](#module-tournament-registration-coaches-new-)
+18. [Module: Financial Tables (New) ✅](#module-financial-tables-new-)
 19. [Global Phase 4 — Factories, Seeders & Test Suite](#global-phase-4--factories-seeders--test-suite)
 
 ---
@@ -432,9 +432,18 @@ Update `app/System/Tournament/Models/TournamentCategory.php`:
 
 ---
 
-## Module: Tournament Registrations
+## Module: Tournament Registrations ✅
 
 **Existing sub-feature. Depends on**: Module: Tournament Categories.
+
+> **Status:** Complete. TR1 relationships (`weighIns`, `coaches`, `payments`, `fee` via `HasOneThrough`)
+> and the `status` cast are in place — `player_weight` was removed by the lifecycle plan, so that cast
+> is obsolete. TR2 withdraw is implemented (allowed in every non-terminal state, with a post-bracket
+> warning per lifecycle plan §5.5) and tested. The individual `confirm` action is **superseded** by the
+> lifecycle plan's bulk-confirm on `RegistrationOpen → RegistrationClosed`
+> (`CategoryStatusTransitionService`). **Deferred (cross-cutting):** route-level RBAC guards
+> (`tournament_manager`/`club_admin`) are not yet applied to any tournament route — tracked as a
+> separate RBAC pass, not a registration-specific gap.
 
 ### Phase TR1 — System Model Update
 
@@ -603,7 +612,7 @@ Update `wiki/TournamentsModule.md`.
 
 ---
 
-## Module: Tournament Registration Coaches (New)
+## Module: Tournament Registration Coaches (New) ✅
 
 **Depends on**: Module: Tournament Registrations, Module: Coaches.
 
@@ -624,7 +633,7 @@ Update `wiki/TournamentsModule.md`.
 
 ---
 
-## Module: Financial Tables (New)
+## Module: Financial Tables (New) ✅
 
 **Depends on**: Module: Tournament Categories, Module: Tournament Registrations.
 

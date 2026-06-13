@@ -21,7 +21,7 @@ type PaginationProps = {
 
 const DataTablePagination: React.FC<PaginationProps> = ({
                                                             links = [],
-                                                            perPage = 10,
+                                                            perPage = 50,
                                                             perPageSelect = [10, 50, 100, 200],
                                                             onPageChange,
                                                             onPerPageCountUpdated

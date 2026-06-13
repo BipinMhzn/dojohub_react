@@ -123,6 +123,18 @@ export enum CompetitorResult {
     Disqualified = 4,
 }
 
+export enum PaymentMethod {
+    Cash = 0,
+    Bank = 1,
+    Online = 2,
+}
+
+export const paymentMethodLabel: Record<number, string> = {
+    [PaymentMethod.Cash]: 'Cash',
+    [PaymentMethod.Bank]: 'Bank',
+    [PaymentMethod.Online]: 'Online',
+};
+
 // ── Types ──────────────────────────────────────────────────────────────────
 
 export type TournamentRuleSet = {
@@ -166,8 +178,16 @@ export type TournamentCategory = {
     weigh_in_start_at: string | null;
     weigh_in_end_at: string | null;
     registrations_count?: number;
+    fee?: TournamentRegistrationFee | null;
     created_at: string;
     updated_at: string;
+};
+
+export type TournamentRegistrationFee = {
+    id: string;
+    tournament_category_id: string;
+    amount: string;
+    currency: string;
 };
 
 export type TournamentWeighIn = {
@@ -177,6 +197,28 @@ export type TournamentWeighIn = {
     weighed_at: string;
     made_weight: boolean;
     notes: string | null;
+};
+
+export type CoachOption = {
+    id: string;
+    full_name: string;
+};
+
+export type TournamentRegistrationCoach = {
+    id: string;
+    registration_id: string;
+    coach_id: string;
+    coach?: CoachOption;
+};
+
+export type TournamentRegistrationPayment = {
+    id: string;
+    registration_id: string;
+    amount_paid: string;
+    currency: string;
+    paid_at: string | null;
+    method: PaymentMethod;
+    reference: string | null;
 };
 
 export type TournamentRegistration = {
@@ -197,6 +239,8 @@ export type TournamentRegistration = {
         name: string;
     };
     weigh_ins?: TournamentWeighIn[];
+    coaches?: TournamentRegistrationCoach[];
+    payments?: TournamentRegistrationPayment[];
 };
 
 export type MatchCompetitor = {
@@ -268,7 +312,7 @@ export default function Tournaments({ tournaments, filters }: TournamentsProps) 
     const [sortBy, setSortBy] = useState(filters.sort_by ?? 'name');
     const [sortOrder, setSortOrder] = useState(filters.sort_order ?? 'asc');
     const [pageNumber, setPageNumber] = useState(filters.page ? Number(filters.page) : 1);
-    const [perPage, setPerPage] = useState(filters.per_page ? Number(filters.per_page) : 10);
+    const [perPage, setPerPage] = useState(filters.per_page ? Number(filters.per_page) : 50);
     const [debouncedSearch, setDebouncedSearch] = useState(search);
 
     useEffect(() => {

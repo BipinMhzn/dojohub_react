@@ -72,12 +72,11 @@ export default function TournamentShow({ tournament, venues, ruleSets }: Props) 
             <Head title={tournament.name} />
 
             <TournamentLayout tournament={tournament} activeKey="overview">
-                <div className="max-w-3xl space-y-6">
+                <div className="max-w-2xl space-y-6">
                     <HeadingSmall title="Tournament details" description="Update tournament name, dates, level, venue, and description." />
 
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="flex flex-col gap-4 md:flex-row">
-                            <div className="flex-1 space-y-4">
+                        <div className="space-y-4">
                                 <div>
                                     <Label htmlFor="name">Name</Label>
                                     <input
@@ -226,9 +225,6 @@ export default function TournamentShow({ tournament, venues, ruleSets }: Props) 
                                         <InputError message={errors.timezone} />
                                     </div>
                                 </div>
-                            </div>
-
-                            <div className="flex-1 space-y-4">
                                 <div>
                                     <Label>Logo <span className="text-xs font-light">(Optional)</span></Label>
                                     <FileUploader
@@ -251,7 +247,6 @@ export default function TournamentShow({ tournament, venues, ruleSets }: Props) 
                                     />
                                     <InputError message={errors.description} />
                                 </div>
-                            </div>
                         </div>
 
                         <div className="flex gap-4 pt-4">

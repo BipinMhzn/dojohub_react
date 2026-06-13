@@ -31,6 +31,7 @@ final class RegistrationsController extends BaseWebController
             'category' => $category,
             'registrations' => $this->repository->getCategoryRegistrations($category),
             'players' => $canRegister ? $this->repository->getPlayerList($category) : [],
+            'coaches' => $this->repository->getCoachList(),
         ]);
     }
 

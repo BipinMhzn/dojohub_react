@@ -65,7 +65,7 @@ export default function Clubs({ clubs, filters }: ClubsProps) {
     const [sortBy, setSortBy] = useState(filters.sort_by ?? 'name');
     const [sortOrder, setSortOrder] = useState(filters.sort_order ?? 'asc');
     const [pageNumber, setPageNumber] = useState(filters.page ? Number(filters.page) : 1);
-    const [perPage, setPerPage] = useState(filters.per_page ? Number(filters.per_page) : 10);
+    const [perPage, setPerPage] = useState(filters.per_page ? Number(filters.per_page) : 50);
     const [debouncedSearch, setDebouncedSearch] = useState(search);
 
     useEffect(() => {

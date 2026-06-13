@@ -64,7 +64,7 @@ export default function ClubCoaches({ club, memberships, availableCoaches, filte
     const [sortBy, setSortBy] = useState(filters.sort_by ?? 'started_at');
     const [sortOrder, setSortOrder] = useState(filters.sort_order ?? 'desc');
     const [pageNumber, setPageNumber] = useState(filters.page ? Number(filters.page) : 1);
-    const [perPage, setPerPage] = useState(filters.per_page ? Number(filters.per_page) : 15);
+    const [perPage, setPerPage] = useState(filters.per_page ? Number(filters.per_page) : 50);
 
     useEffect(() => {
         const handler = setTimeout(() => setDebouncedSearch(search), 500);

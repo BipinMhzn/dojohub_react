@@ -2,7 +2,4 @@
 
 namespace App\Modules\Tournaments\Exceptions;
 
-class PlayerAlreadyRegisteredException extends \Exception
-{
-
-}
+class PlayerAlreadyRegisteredException extends \Exception {}

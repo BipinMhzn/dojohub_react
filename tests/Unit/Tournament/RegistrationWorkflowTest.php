@@ -156,6 +156,22 @@ class RegistrationWorkflowTest extends TestCase
         $this->assertSame(RegistrationStatusEnum::Withdrawn, $freshWithTrashed->status);
     }
 
+    public function test_withdraw_allowed_after_bracket_generation(): void
+    {
+        $tournament = Tournament::factory()->create();
+        $category = $this->makeCategory($tournament, CategoryStatusEnum::BracketGenerated);
+        $registration = $this->makeRegistration($category, RegistrationStatusEnum::Confirmed);
+
+        $category->load('tournament');
+        $this->repository()->withdrawRegistration($category, $registration->id);
+
+        $this->assertSoftDeleted('tournament_registrations', ['id' => $registration->id]);
+        $this->assertSame(
+            RegistrationStatusEnum::Withdrawn,
+            TournamentRegistration::withTrashed()->find($registration->id)->status,
+        );
+    }
+
     public function test_withdraw_blocked_when_tournament_cancelled(): void
     {
         $tournament = Tournament::factory()->create(['status' => TournamentStatusEnum::Cancelled]);
