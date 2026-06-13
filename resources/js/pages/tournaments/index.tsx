@@ -243,6 +243,31 @@ export type TournamentRegistration = {
     payments?: TournamentRegistrationPayment[];
 };
 
+export type TournamentPoolCompetitor = {
+    id: string;
+    pool_id: string;
+    registration_id: string;
+    finishing_position: number | null;
+    registration?: {
+        id: string;
+        player?: { id: string; name: string };
+        club?: { id: string; name: string };
+    };
+};
+
+export type TournamentPool = {
+    id: string;
+    bracket_id: string;
+    name: string;
+    competitors?: TournamentPoolCompetitor[];
+};
+
+export type ConfirmedRegistrationOption = {
+    id: string;
+    player_id: string;
+    player?: { id: string; name: string };
+};
+
 export type MatchCompetitor = {
     registration_id: string;
     player_id: string;

@@ -17,6 +17,18 @@ interface BracketServiceInterface
     public function generateBracket(TournamentCategory $category, TournamentBracket $bracket): Collection;
 
     /**
+     * Generate pools for a Pool + Final bracket and distribute competitors across them.
+     */
+    public function generatePools(TournamentCategory $category, TournamentBracket $bracket, int $poolCount): Collection;
+
+    /**
+     * A non-throwing checklist of what must be completed before a bracket/pools can be generated.
+     *
+     * @return array{ready: bool, requirements: list<array{label: string, met: bool, detail: string|null}>}
+     */
+    public function getGenerationReadiness(TournamentCategory $category): array;
+
+    /**
      * Seed players from category registrations
      */
     public function seedRegistrations(TournamentCategory $category): array;

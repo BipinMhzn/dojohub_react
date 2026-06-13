@@ -167,6 +167,56 @@ class BracketGenerationWorkflowTest extends TestCase
         $this->assertSame(BracketStatusEnum::Active, $bracket->fresh()->status);
     }
 
+    public function test_readiness_reports_unmet_requirements(): void
+    {
+        $tournament = Tournament::factory()->create();
+        $category = $this->makeCategory($tournament);
+        $category->update(['status' => CategoryStatusEnum::RegistrationOpen]); // not closed
+        $category->setRelation('tournament', $tournament);
+
+        $this->makeWeighedRegistration($category); // only 1, weighed
+
+        $readiness = $this->service()->getGenerationReadiness($category);
+
+        $this->assertFalse($readiness['ready']);
+        $byLabel = collect($readiness['requirements'])->keyBy('label');
+        $this->assertFalse($byLabel['Registration is closed']['met']);
+        $this->assertFalse($byLabel['At least 2 confirmed competitors']['met']);
+        $this->assertTrue($byLabel['Every competitor has a passing weigh-in']['met']);
+    }
+
+    public function test_readiness_is_ready_when_all_requirements_met(): void
+    {
+        $tournament = Tournament::factory()->create();
+        $category = $this->makeCategory($tournament); // RegistrationClosed
+        $category->setRelation('tournament', $tournament);
+
+        $this->makeWeighedRegistration($category);
+        $this->makeWeighedRegistration($category);
+
+        $readiness = $this->service()->getGenerationReadiness($category);
+
+        $this->assertTrue($readiness['ready']);
+        $this->assertTrue(collect($readiness['requirements'])->every(fn ($r): bool => $r['met']));
+    }
+
+    public function test_readiness_flags_incomplete_weigh_in(): void
+    {
+        $tournament = Tournament::factory()->create();
+        $category = $this->makeCategory($tournament);
+        $category->setRelation('tournament', $tournament);
+
+        $this->makeWeighedRegistration($category);
+        $this->makeRegistration($category); // confirmed but never weighed
+
+        $readiness = $this->service()->getGenerationReadiness($category);
+
+        $this->assertFalse($readiness['ready']);
+        $weighIn = collect($readiness['requirements'])->firstWhere('label', 'Every competitor has a passing weigh-in');
+        $this->assertFalse($weighIn['met']);
+        $this->assertSame('1 of 2 made weight', $weighIn['detail']);
+    }
+
     public function test_four_competitors_produce_two_first_round_matches_and_one_final(): void
     {
         $tournament = Tournament::factory()->create();

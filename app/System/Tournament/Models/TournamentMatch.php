@@ -12,6 +12,7 @@ class TournamentMatch extends AppBaseModel
 {
     protected $fillable = [
         'bracket_id',
+        'pool_id',
         'bracket_section',
         'round_number',
         'round_name',
@@ -52,6 +53,11 @@ class TournamentMatch extends AppBaseModel
     public function bracket(): BelongsTo
     {
         return $this->belongsTo(TournamentBracket::class, 'bracket_id', 'id');
+    }
+
+    public function pool(): BelongsTo
+    {
+        return $this->belongsTo(TournamentPool::class, 'pool_id', 'id');
     }
 
     public function winningCompetitor(): BelongsTo

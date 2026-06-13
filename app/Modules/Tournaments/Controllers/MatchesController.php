@@ -5,10 +5,12 @@ namespace App\Modules\Tournaments\Controllers;
 use App\Modules\TournamentCategories\Interfaces\TournamentCategoryInterface;
 use App\Modules\Tournaments\Interfaces\BracketInterface;
 use App\Modules\Tournaments\Interfaces\BracketServiceInterface;
+use App\Modules\Tournaments\Interfaces\PoolInterface;
 use App\Modules\Tournaments\Interfaces\TournamentInterface;
 use App\Modules\Tournaments\Requests\BracketGenerateRequest;
 use App\Modules\Tournaments\Requests\MatchResultRequest;
 use App\Modules\Tournaments\Requests\MatchScheduleRequest;
+use App\System\Tournament\Foundation\Enums\BracketTypeEnum;
 use BaseSystem\Controllers\BaseWebController;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Response;
@@ -23,6 +25,7 @@ final class MatchesController extends BaseWebController
         private readonly TournamentCategoryInterface $categoryRepository,
         private readonly BracketInterface $bracketRepository,
         private readonly BracketServiceInterface $bracketService,
+        private readonly PoolInterface $poolRepository,
     ) {}
 
     public function index(string $tournamentId, string $categoryId): Response
@@ -31,7 +34,9 @@ final class MatchesController extends BaseWebController
         $category = $this->categoryRepository->getCategoryById($categoryId);
         $bracket = $this->bracketRepository->getBracketByCategory($categoryId);
 
-        $bracketStructure = $bracket
+        $isPoolBracket = $bracket && $bracket->type === BracketTypeEnum::PoolFinal;
+
+        $bracketStructure = $bracket && ! $isPoolBracket
             ? $this->bracketService->getBracketStructure($bracket)
             : null;
 
@@ -40,19 +45,34 @@ final class MatchesController extends BaseWebController
             'category' => $category,
             'bracket' => $bracket,
             'bracketStructure' => $bracketStructure,
+            'pools' => $isPoolBracket ? $this->poolRepository->getPoolsForCategory($category) : [],
+            'confirmedRegistrations' => $isPoolBracket ? $this->poolRepository->getConfirmedRegistrations($category) : [],
+            'readiness' => $bracket ? null : $this->bracketService->getGenerationReadiness($category),
         ]);
     }
 
     public function generate(BracketGenerateRequest $request, string $tournamentId, string $categoryId): RedirectResponse
     {
         $category = $this->categoryRepository->getCategoryById($categoryId);
+        $inputs = $request->validated();
 
         if ($this->bracketRepository->getBracketByCategory($categoryId)) {
             return back()->with('error', 'Bracket already generated for this category.');
         }
 
         try {
-            $bracket = $this->bracketRepository->createBracket($categoryId, $request->validated());
+            $bracket = $this->bracketRepository->createBracket($categoryId, [
+                'type' => $inputs['type'],
+                'seeding_method' => $inputs['seeding_method'],
+            ]);
+
+            if ($bracket->type === BracketTypeEnum::PoolFinal) {
+                $this->bracketService->generatePools($category, $bracket, (int) $inputs['pool_count']);
+
+                return to_route('tournaments.categories.matches.index', [$tournamentId, $categoryId])
+                    ->with('success', 'Pools generated successfully.');
+            }
+
             $this->bracketService->generateBracket($category, $bracket);
 
             return to_route('tournaments.categories.matches.index', [$tournamentId, $categoryId])

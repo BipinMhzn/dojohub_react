@@ -22,7 +22,7 @@
 9. [Module: Tournaments ✅](#module-tournaments-)
 10. [Module: Tournament Categories ✅](#module-tournament-categories-)
 11. [Module: Tournament Registrations ✅](#module-tournament-registrations-)
-12. [Module: Tournament Brackets & Pools](#module-tournament-brackets--pools)
+12. [Module: Tournament Brackets & Pools ✅](#module-tournament-brackets--pools-)
 13. [Module: Tournament Matches](#module-tournament-matches)
 14. [Module: Tournament Match Events (New)](#module-tournament-match-events-new)
 15. [Module: Tournament Match Referees (New)](#module-tournament-match-referees-new)
@@ -464,9 +464,19 @@ Add `confirm` and `withdraw` actions to the registrations controller:
 
 ---
 
-## Module: Tournament Brackets & Pools
+## Module: Tournament Brackets & Pools ✅
 
 **Existing (brackets). New (pools). Depends on**: Module: Tournament Registrations.
+
+> **Status:** Complete. BR1 — `TournamentBracket` already had `seeding_method` + casts; added the
+> `pools()` relationship (and `pool_id`/`pool()` on `TournamentMatch`). BR2/BR3 — `TournamentPool` and
+> `TournamentPoolCompetitor` system + module models. BR4 — pool sub-resource (`PoolRepository`,
+> `PoolsController`, routes `tournaments.categories.pools.*`) and a pool management view on the matches
+> page. **Design choice (per product decision):** pools are **auto-distributed** — picking *Pool +
+> Final* + a pool count on Generate creates the bracket and snake-distributes confirmed competitors
+> (`BracketService::generatePools`); managers then add/remove individuals or redistribute. This replaces
+> the roadmap's manual pool `store`/`destroy`. **Deferred (per product decision):** round-robin match
+> generation inside pools (pool stage matches) — not yet built. Covered by `PoolWorkflowTest`.
 
 ### Phase BR1 — Bracket System Model Update
 

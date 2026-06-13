@@ -45,4 +45,9 @@ class TournamentBracket extends AppBaseModel
     {
         return $this->hasMany(TournamentMatch::class, 'bracket_id', 'id');
     }
+
+    public function pools(): HasMany
+    {
+        return $this->hasMany(TournamentPool::class, 'bracket_id', 'id');
+    }
 }

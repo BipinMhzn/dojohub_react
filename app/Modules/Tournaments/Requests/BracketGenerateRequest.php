@@ -17,6 +17,10 @@ class BracketGenerateRequest extends BaseWebRequest
         return [
             'type' => ['required', 'integer', new Enum(BracketTypeEnum::class)],
             'seeding_method' => ['required', 'integer', new Enum(SeedingMethodEnum::class)],
+            'pool_count' => array_merge(
+                ['integer', 'min:1', 'max:32'],
+                (int) $this->input('type') === BracketTypeEnum::PoolFinal->value ? ['required'] : ['nullable']
+            ),
         ];
     }
 }

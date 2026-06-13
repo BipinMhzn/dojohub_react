@@ -1,6 +1,7 @@
 <?php
 
 use App\Modules\Tournaments\Controllers\MatchesController;
+use App\Modules\Tournaments\Controllers\PoolsController;
 use App\Modules\Tournaments\Controllers\RegistrationCoachesController;
 use App\Modules\Tournaments\Controllers\RegistrationPaymentsController;
 use App\Modules\Tournaments\Controllers\RegistrationsController;
@@ -41,6 +42,11 @@ Route::group([
         Route::post('/{category}/matches/generate', [MatchesController::class, 'generate'])->name('tournaments.categories.matches.generate');
         Route::patch('/{category}/matches/{match}/result', [MatchesController::class, 'updateResult'])->name('tournaments.categories.matches.update-result');
         Route::patch('/{category}/matches/{match}/schedule', [MatchesController::class, 'updateSchedule'])->name('tournaments.categories.matches.update-schedule');
+
+        // Pools under a category (Pool + Final brackets)
+        Route::post('/{category}/pools/redistribute', [PoolsController::class, 'redistribute'])->name('tournaments.categories.pools.redistribute');
+        Route::post('/{category}/pools/{pool}/competitors', [PoolsController::class, 'storeCompetitor'])->name('tournaments.categories.pools.competitors.store');
+        Route::delete('/{category}/pools/{pool}/competitors/{poolCompetitor}', [PoolsController::class, 'destroyCompetitor'])->name('tournaments.categories.pools.competitors.destroy');
 
         // Weigh-ins under a category (recorded inline from the registrations page)
         Route::post('/{category}/weigh-ins', [WeighInsController::class, 'store'])->name('tournaments.categories.weigh-ins.store');

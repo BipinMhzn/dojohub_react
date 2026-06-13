@@ -18,6 +18,8 @@ use App\System\Tournament\Models\TournamentBracket;
 use App\System\Tournament\Models\TournamentCategory;
 use App\System\Tournament\Models\TournamentMatch;
 use App\System\Tournament\Models\TournamentMatchCompetitor;
+use App\System\Tournament\Models\TournamentPool;
+use App\System\Tournament\Models\TournamentPoolCompetitor;
 use Exception;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -35,6 +37,148 @@ class BracketService implements BracketServiceInterface
      * @throws Exception
      */
     public function generateBracket(TournamentCategory $category, TournamentBracket $bracket): Collection
+    {
+        $this->assertReadyForGeneration($category);
+
+        $seededRegistrations = $this->seedRegistrations($category);
+
+        return DB::transaction(function () use ($category, $bracket, $seededRegistrations): Collection {
+            $matches = match ($bracket->type) {
+                BracketTypeEnum::SingleElimination => $this->generateSingleElimination($bracket, $seededRegistrations),
+                BracketTypeEnum::DoubleElimination => $this->generateSingleElimination($bracket, $seededRegistrations),
+                default => throw new Exception('Bracket type not yet implemented'),
+            };
+
+            $bracket->update([
+                'competitor_count' => count($seededRegistrations),
+                'round_count' => (int) log($this->getNextPowerOfTwo(count($seededRegistrations)), 2),
+                'status' => BracketStatusEnum::Active,
+                'generated_at' => now(),
+            ]);
+
+            $this->transitionService->transitionTo($category, CategoryStatusEnum::BracketGenerated);
+
+            return $matches;
+        });
+    }
+
+    /**
+     * Generate pools for a Pool + Final bracket and snake-distribute confirmed competitors
+     * across them. Round-robin match generation is intentionally deferred.
+     *
+     * @throws Exception
+     */
+    public function generatePools(TournamentCategory $category, TournamentBracket $bracket, int $poolCount): Collection
+    {
+        $this->assertReadyForGeneration($category);
+
+        if ($bracket->type !== BracketTypeEnum::PoolFinal) {
+            throw new Exception('Pools can only be generated for a Pool + Final bracket.');
+        }
+
+        $seeded = array_values($this->seedRegistrations($category));
+        $count = count($seeded);
+
+        if ($poolCount < 1 || $poolCount > $count) {
+            throw new Exception('The number of pools must be between 1 and the number of competitors.');
+        }
+
+        return DB::transaction(function () use ($category, $bracket, $seeded, $count, $poolCount): Collection {
+            $this->clearPools($bracket);
+
+            $pools = collect();
+            for ($i = 0; $i < $poolCount; $i++) {
+                $pools->push(TournamentPool::create([
+                    'bracket_id' => $bracket->id,
+                    'name' => 'Pool '.chr(65 + $i),
+                ]));
+            }
+
+            // Snake seeding: 0,1,2 … then 2,1,0 each pass so pools stay balanced by strength.
+            foreach ($seeded as $index => $registration) {
+                $pass = intdiv($index, $poolCount);
+                $slot = $index % $poolCount;
+                $poolIndex = $pass % 2 === 0 ? $slot : $poolCount - 1 - $slot;
+
+                TournamentPoolCompetitor::create([
+                    'pool_id' => $pools[$poolIndex]->id,
+                    'registration_id' => $registration->id,
+                ]);
+            }
+
+            $bracket->update([
+                'competitor_count' => $count,
+                'round_count' => null,
+                'status' => BracketStatusEnum::Active,
+                'generated_at' => now(),
+            ]);
+
+            if ($category->status === CategoryStatusEnum::RegistrationClosed) {
+                $this->transitionService->transitionTo($category, CategoryStatusEnum::BracketGenerated);
+            }
+
+            return $pools;
+        });
+    }
+
+    /**
+     * Non-throwing companion to assertReadyForGeneration: a checklist of what a manager must
+     * complete before a bracket or pools can be generated, with each item's met/unmet state.
+     *
+     * @return array{ready: bool, requirements: list<array{label: string, met: bool, detail: string|null}>}
+     */
+    public function getGenerationReadiness(TournamentCategory $category): array
+    {
+        $confirmed = $category->registrations()
+            ->where('status', RegistrationStatusEnum::Confirmed)
+            ->with('latestWeighIn')
+            ->get();
+
+        $confirmedCount = $confirmed->count();
+        $passedWeighIn = $confirmed->filter(
+            fn ($registration): bool => $registration->latestWeighIn !== null && $registration->latestWeighIn->made_weight,
+        )->count();
+
+        $registrationClosed = in_array(
+            $category->status,
+            [CategoryStatusEnum::RegistrationClosed, CategoryStatusEnum::BracketGenerated],
+            true,
+        );
+        $hasEnoughCompetitors = $confirmedCount >= 2;
+        $weighInComplete = $confirmedCount > 0 && $passedWeighIn === $confirmedCount;
+
+        $requirements = [
+            [
+                'label' => 'Registration is closed',
+                'met' => $registrationClosed,
+                'detail' => $registrationClosed ? null : 'Close registration from the Registrations tab.',
+            ],
+            [
+                'label' => 'At least 2 confirmed competitors',
+                'met' => $hasEnoughCompetitors,
+                'detail' => "{$confirmedCount} confirmed",
+            ],
+            [
+                'label' => 'Every competitor has a passing weigh-in',
+                'met' => $weighInComplete,
+                'detail' => "{$passedWeighIn} of {$confirmedCount} made weight",
+            ],
+        ];
+
+        return [
+            'ready' => $registrationClosed && $hasEnoughCompetitors && $weighInComplete,
+            'requirements' => $requirements,
+        ];
+    }
+
+    /**
+     * Shared pre-conditions for any kind of bracket generation (elimination or pools):
+     * the tournament is live, registration is closed, and every confirmed competitor has a
+     * passing weigh-in.
+     *
+     * @throws Exception
+     */
+    private function assertReadyForGeneration(TournamentCategory $category): void
     {
         if ($category->tournament->status === TournamentStatusEnum::Cancelled) {
             throw new TournamentCancelledException;
@@ -60,27 +204,18 @@ class BracketService implements BracketServiceInterface
         if ($failedWeight > 0) {
             throw new Exception("Weigh-in is incomplete: {$failedWeight} competitor(s) have not made weight. Withdraw them or record a passing weigh-in before generating the bracket.");
         }
+    }
 
-        $seededRegistrations = $this->seedRegistrations($category);
+    private function clearPools(TournamentBracket $bracket): void
+    {
+        $poolIds = TournamentPool::query()->where('bracket_id', $bracket->id)->pluck('id');
 
-        return DB::transaction(function () use ($category, $bracket, $seededRegistrations): Collection {
-            $matches = match ($bracket->type) {
-                BracketTypeEnum::SingleElimination => $this->generateSingleElimination($bracket, $seededRegistrations),
-                BracketTypeEnum::DoubleElimination => $this->generateSingleElimination($bracket, $seededRegistrations),
-                default => throw new Exception('Bracket type not yet implemented'),
-            };
+        if ($poolIds->isEmpty()) {
+            return;
+        }
 
-            $bracket->update([
-                'competitor_count' => count($seededRegistrations),
-                'round_count' => (int) log($this->getNextPowerOfTwo(count($seededRegistrations)), 2),
-                'status' => BracketStatusEnum::Active,
-                'generated_at' => now(),
-            ]);
-
-            $this->transitionService->transitionTo($category, CategoryStatusEnum::BracketGenerated);
-
-            return $matches;
-        });
+        TournamentPoolCompetitor::query()->whereIn('pool_id', $poolIds)->delete();
+        TournamentPool::query()->whereIn('id', $poolIds)->delete();
     }
 
     /**
