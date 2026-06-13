@@ -13,10 +13,9 @@ return new class extends Migration
         Schema::create('tournament_registrations', function (Blueprint $table) {
             $table->ulid('id')->primary();
             $table->ulid('tournament_category_id');
-            $table->ulid('club_id');
+            $table->ulid('club_id')->nullable(); // null = independent competitor (no club affiliation)
             $table->ulid('player_id');
             $table->tinyInteger('player_age')->unsigned();
-            $table->decimal('player_weight', 5, 2);
             $table->tinyInteger('status')->unsigned()->default(0); // 0=Registered, 1=Confirmed, 2=Withdrawn
             $this->editorLogs($table);
 

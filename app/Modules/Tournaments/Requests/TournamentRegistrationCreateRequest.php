@@ -14,7 +14,7 @@ class TournamentRegistrationCreateRequest extends BaseWebRequest
     {
         return [
             'player_id' => ['required', 'string', Rule::exists('players', 'id')->whereNull('deleted_at')],
-            'club_id' => ['required', 'string', Rule::exists('clubs', 'id')->whereNull('deleted_at')],
+            'club_id' => ['nullable', 'string', Rule::exists('clubs', 'id')->whereNull('deleted_at')],
         ];
     }
 }

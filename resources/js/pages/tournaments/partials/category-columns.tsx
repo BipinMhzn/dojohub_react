@@ -6,7 +6,7 @@ import { MoreHorizontal } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Gender, TournamentCategory } from '@/pages/tournaments';
+import { CategoryStatus, Gender, TournamentCategory } from '@/pages/tournaments';
 import { router } from '@inertiajs/react';
 
 const ageCategoryLabel: Record<number, string> = {
@@ -21,14 +21,47 @@ const weightCategoryLabel: Record<number, string> = {
 };
 
 const categoryStatusLabel: Record<number, string> = {
-    0: 'Pending', 1: 'Seeding', 2: 'Active', 3: 'Completed',
+    0: 'Draft',
+    1: 'Registration Open',
+    2: 'Registration Closed',
+    3: 'Bracket Generated',
+    4: 'In Progress',
+    5: 'Completed',
+    6: 'Cancelled',
 };
 
 const categoryStatusVariant: Record<number, string> = {
-    0: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
-    1: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
-    2: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-    3: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300',
+    0: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300',
+    1: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+    2: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
+    3: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300',
+    4: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
+    5: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+    6: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+};
+
+// Manager-triggered transitions only (excludes system transitions BracketGenerated, InProgress, Completed)
+export const managerTransitions: Record<number, Array<{ target: CategoryStatus; label: string }>> = {
+    [CategoryStatus.Draft]: [
+        { target: CategoryStatus.RegistrationOpen, label: 'Open Registration' },
+        { target: CategoryStatus.Cancelled, label: 'Cancel' },
+    ],
+    [CategoryStatus.RegistrationOpen]: [
+        { target: CategoryStatus.RegistrationClosed, label: 'Close Registration' },
+        { target: CategoryStatus.Cancelled, label: 'Cancel' },
+    ],
+    [CategoryStatus.RegistrationClosed]: [
+        { target: CategoryStatus.RegistrationOpen, label: 'Re-open Registration' },
+        { target: CategoryStatus.Cancelled, label: 'Cancel' },
+    ],
+    [CategoryStatus.BracketGenerated]: [
+        { target: CategoryStatus.Cancelled, label: 'Cancel' },
+    ],
+    [CategoryStatus.InProgress]: [
+        { target: CategoryStatus.Cancelled, label: 'Cancel' },
+    ],
+    [CategoryStatus.Completed]: [],
+    [CategoryStatus.Cancelled]: [],
 };
 
 export function getCategoryDisplayName(category: TournamentCategory): string {
@@ -45,6 +78,10 @@ type CategoryColumnsProps = {
     tournamentId: string;
     onDelete: (category: TournamentCategory) => void;
 };
+
+export function transitionCategory(tournamentId: string, categoryId: string, target: CategoryStatus): void {
+    router.post(`/manage/tournaments/${tournamentId}/categories/${categoryId}/transition`, { target });
+}
 
 export const getCategoryColumns = ({ tournamentId, onDelete }: CategoryColumnsProps): ColumnDef<TournamentCategory>[] => [
     {
@@ -80,6 +117,10 @@ export const getCategoryColumns = ({ tournamentId, onDelete }: CategoryColumnsPr
         id: 'actions',
         cell: ({ row }) => {
             const category = row.original;
+            const statusNum = Number(category.status);
+            const transitions = managerTransitions[statusNum] ?? [];
+            const isTerminal = statusNum === CategoryStatus.Completed || statusNum === CategoryStatus.Cancelled;
+
             return (
                 <div onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
@@ -90,9 +131,27 @@ export const getCategoryColumns = ({ tournamentId, onDelete }: CategoryColumnsPr
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => router.visit(`/manage/tournaments/${tournamentId}/categories/${category.id}/edit`)}>Edit</DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => onDelete(category)}>Delete</DropdownMenuItem>
+                            {transitions.map(({ target, label }) => (
+                                <DropdownMenuItem
+                                    key={target}
+                                    onClick={() => transitionCategory(tournamentId, category.id, target)}
+                                    className={target === CategoryStatus.Cancelled ? 'text-destructive focus:text-destructive' : ''}
+                                >
+                                    {label}
+                                </DropdownMenuItem>
+                            ))}
+                            {!isTerminal && transitions.length > 0 && <DropdownMenuSeparator />}
+                            {!isTerminal && (
+                                <DropdownMenuItem onClick={() => router.visit(`/manage/tournaments/${tournamentId}/categories/${category.id}/edit`)}>
+                                    Edit
+                                </DropdownMenuItem>
+                            )}
+                            {!isTerminal && (
+                                <>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={() => onDelete(category)}>Delete</DropdownMenuItem>
+                                </>
+                            )}
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>

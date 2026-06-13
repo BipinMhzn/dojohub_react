@@ -32,6 +32,16 @@ final class TournamentCategoryRepository extends BaseRepository implements Tourn
             ->get();
     }
 
+    public function getCategoryOptions(string $tournamentId): Collection
+    {
+        return $this->model->newQuery()
+            ->where('tournament_id', $tournamentId)
+            ->orderBy('gender')
+            ->orderBy('age_category')
+            ->orderBy('weight_category')
+            ->get(['id', 'tournament_id', 'name', 'gender', 'age_category', 'weight_category', 'status']);
+    }
+
     public function getCategoryById(string $categoryId): TournamentCategory
     {
         return $this->model->newQuery()
@@ -43,7 +53,7 @@ final class TournamentCategoryRepository extends BaseRepository implements Tourn
     public function createCategory(string $tournamentId, array $validated): TournamentCategory
     {
         $validated['tournament_id'] = $tournamentId;
-        $validated['status'] = CategoryStatusEnum::Pending;
+        $validated['status'] = CategoryStatusEnum::Draft;
 
         return $this->model->newQuery()->create($validated);
     }

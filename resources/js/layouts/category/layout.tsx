@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { Tournament, TournamentCategory } from '@/pages/tournaments';
-import { getCategoryDisplayName } from '@/pages/tournaments/partials/category-columns';
+import CategorySwitcher from '@/pages/tournaments/partials/category-switcher';
 import { Link } from '@inertiajs/react';
 import { type PropsWithChildren } from 'react';
 
@@ -14,7 +14,13 @@ interface CategoryLayoutProps {
 }
 
 const categoryStatusLabel: Record<number, string> = {
-    0: 'Pending', 1: 'Seeding', 2: 'Active', 3: 'Completed',
+    0: 'Draft',
+    1: 'Registration Open',
+    2: 'Registration Closed',
+    3: 'Bracket Generated',
+    4: 'In Progress',
+    5: 'Completed',
+    6: 'Cancelled',
 };
 
 export default function CategoryLayout({ tournament, category, activeKey, children }: PropsWithChildren<CategoryLayoutProps>) {
@@ -29,13 +35,11 @@ export default function CategoryLayout({ tournament, category, activeKey, childr
         { key: 'results', title: 'Results', href: `/manage/tournaments/${tournament.id}/categories/${category.id}/results` },
     ];
 
-    const displayName = getCategoryDisplayName(category);
-
     return (
         <div className="px-4 py-6">
             <div className="mb-6 flex flex-col gap-1">
                 <div className="flex flex-wrap items-center gap-3">
-                    <h1 className="text-2xl font-semibold">{displayName}</h1>
+                    <CategorySwitcher tournament={tournament} category={category} activeKey={activeKey} />
                     <Badge variant="outline">{categoryStatusLabel[Number(category.status)] ?? 'Unknown'}</Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">

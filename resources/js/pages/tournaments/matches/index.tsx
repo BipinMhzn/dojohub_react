@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
 import CategoryLayout from '@/layouts/category/layout';
-import { BracketMatch, BracketRound, BracketStructure, MatchStatus, Tournament, TournamentCategory } from '@/pages/tournaments';
+import { BracketMatch, BracketRound, BracketStructure, CompetitorResult, MatchStatus, Tournament, TournamentCategory } from '@/pages/tournaments';
 import { getCategoryDisplayName } from '@/pages/tournaments/partials/category-columns';
 import type { BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
@@ -114,13 +114,13 @@ export default function TournamentMatches({ tournament, category, bracket, brack
                                                     <div
                                                         key={idx}
                                                         className={`flex items-center justify-between rounded px-2 py-1 text-sm ${
-                                                            competitor && match.winner_id === competitor.player_id
+                                                            competitor && (competitor.result === CompetitorResult.Win || competitor.result === CompetitorResult.WalkoverWin)
                                                                 ? 'bg-primary/10 font-semibold'
                                                                 : ''
                                                         }`}
                                                     >
                                                         <div className="flex items-center gap-2">
-                                                            {competitor && match.winner_id === competitor.player_id && (
+                                                            {competitor && (competitor.result === CompetitorResult.Win || competitor.result === CompetitorResult.WalkoverWin) && (
                                                                 <Trophy className="h-3 w-3 text-yellow-500" />
                                                             )}
                                                             <span>{competitor ? competitor.name : <span className="text-muted-foreground italic">TBD</span>}</span>

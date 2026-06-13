@@ -4,11 +4,17 @@ namespace App\System\Tournament\Foundation\Enums;
 
 enum CategoryStatusEnum: int
 {
-    case Pending = 0;
+    case Draft = 0;
 
-    case Seeding = 1;
+    case RegistrationOpen = 1;
 
-    case Active = 2;
+    case RegistrationClosed = 2;
 
-    case Completed = 3;
+    case BracketGenerated = 3;
+
+    case InProgress = 4;
+
+    case Completed = 5;
+
+    case Cancelled = 6;
 }

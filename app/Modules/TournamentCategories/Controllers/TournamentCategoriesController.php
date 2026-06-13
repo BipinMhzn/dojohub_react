@@ -7,6 +7,7 @@ use App\Modules\TournamentCategories\Requests\TournamentCategoryCreateRequest;
 use App\Modules\TournamentCategories\Requests\TournamentCategoryUpdateRequest;
 use App\Modules\Tournaments\Interfaces\TournamentInterface;
 use BaseSystem\Controllers\BaseWebController;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Response;
 
@@ -26,6 +27,11 @@ final class TournamentCategoriesController extends BaseWebController
             'tournament' => $this->tournamentRepository->getById($tournamentId),
             'categories' => $this->categoryRepository->getTournamentCategories($tournamentId),
         ]);
+    }
+
+    public function options(string $tournamentId): JsonResponse
+    {
+        return response()->json($this->categoryRepository->getCategoryOptions($tournamentId));
     }
 
     public function create(string $tournamentId): Response

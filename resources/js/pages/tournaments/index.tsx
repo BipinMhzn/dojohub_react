@@ -34,10 +34,13 @@ export enum TournamentLevel {
 }
 
 export enum CategoryStatus {
-    Pending = 0,
-    Seeding = 1,
-    Active = 2,
-    Completed = 3,
+    Draft = 0,
+    RegistrationOpen = 1,
+    RegistrationClosed = 2,
+    BracketGenerated = 3,
+    InProgress = 4,
+    Completed = 5,
+    Cancelled = 6,
 }
 
 export enum RegistrationStatus {
@@ -167,23 +170,33 @@ export type TournamentCategory = {
     updated_at: string;
 };
 
+export type TournamentWeighIn = {
+    id: string;
+    registration_id: string;
+    weight: string;
+    weighed_at: string;
+    made_weight: boolean;
+    notes: string | null;
+};
+
 export type TournamentRegistration = {
     id: string;
     tournament_category_id: string;
     club_id: string;
     player_id: string;
     player_age: number;
-    player_weight: number;
     status: RegistrationStatus;
     player?: {
         id: string;
         name: string;
+        weight: number;
         profile_photo_url: string | null;
     };
     club?: {
         id: string;
         name: string;
     };
+    weigh_ins?: TournamentWeighIn[];
 };
 
 export type MatchCompetitor = {
@@ -202,7 +215,7 @@ export type BracketMatch = {
     match_number: number;
     white: MatchCompetitor | null;
     blue: MatchCompetitor | null;
-    winner_id: string | null;
+    winning_competitor_id: string | null;
     status: MatchStatus;
     scheduled_at: string | null;
     notes: string | null;

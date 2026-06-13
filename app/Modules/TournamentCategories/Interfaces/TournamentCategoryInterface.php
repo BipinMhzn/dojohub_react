@@ -13,6 +13,8 @@ interface TournamentCategoryInterface extends BaseInterface
 {
     public function getTournamentCategories(string $tournamentId): Collection;
 
+    public function getCategoryOptions(string $tournamentId): Collection;
+
     public function getCategoryById(string $categoryId): TournamentCategory;
 
     public function createCategory(string $tournamentId, array $validated): TournamentCategory;

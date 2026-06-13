@@ -2,9 +2,9 @@
 
 namespace App\Modules\Tournaments\Interfaces;
 
-use App\Modules\TournamentCategories\Models\TournamentCategory;
 use App\Modules\Tournaments\Models\Player;
 use App\Modules\Tournaments\Models\Tournament;
+use App\System\Tournament\Models\TournamentCategory;
 use BaseSystem\Interfaces\BaseInterface;
 use Illuminate\Support\Collection;
 
@@ -23,7 +23,9 @@ interface RegistrationInterface extends BaseInterface
 
     public function getClubList(): Collection;
 
-    public function getRegisteringPlayerById(TournamentCategory $category, string $playerId, ?string $registrationId = null): Player;
+    public function getRegisteringPlayerById(TournamentCategory $category, string $playerId, ?string $clubId = null, ?string $registrationId = null): Player;
 
     public function destroyTournamentRegistration(TournamentCategory $category, string $registrationId): true;
+
+    public function withdrawRegistration(TournamentCategory $category, string $registrationId): true;
 }

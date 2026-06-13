@@ -22,7 +22,7 @@ return new class extends Migration
             $table->tinyInteger('weight_category')->unsigned();
             $table->decimal('min_weight', 5, 2);
             $table->decimal('max_weight', 5, 2);
-            $table->tinyInteger('status')->unsigned()->default(0); // 0=Pending, 1=Seeding, 2=Active, 3=Completed
+            $table->tinyInteger('status')->unsigned()->default(0); // 0=Draft, 1=RegistrationOpen, 2=RegistrationClosed, 3=BracketGenerated, 4=InProgress, 5=Completed, 6=Cancelled
             $table->dateTime('registration_open_at')->nullable();
             $table->dateTime('registration_close_at')->nullable();
             $table->dateTime('start_at')->nullable();

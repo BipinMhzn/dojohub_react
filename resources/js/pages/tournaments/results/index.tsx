@@ -16,7 +16,6 @@ interface TournamentResultRow {
     registration: {
         id: string;
         player_age: number;
-        player_weight: number;
         player?: {
             id: string;
             name: string;

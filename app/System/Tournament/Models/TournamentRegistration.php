@@ -8,6 +8,8 @@ use App\System\Player\Models\Player;
 use App\System\Tournament\Foundation\Enums\RegistrationStatusEnum;
 use Database\Factories\TournamentFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class TournamentRegistration extends AppBaseModel
 {
@@ -16,7 +18,6 @@ class TournamentRegistration extends AppBaseModel
         'club_id',
         'player_id',
         'player_age',
-        'player_weight',
         'status',
     ];
 
@@ -50,5 +51,15 @@ class TournamentRegistration extends AppBaseModel
     public function player(): BelongsTo
     {
         return $this->belongsTo(Player::class, 'player_id', 'id');
+    }
+
+    public function weighIns(): HasMany
+    {
+        return $this->hasMany(TournamentWeighIn::class, 'registration_id', 'id');
+    }
+
+    public function latestWeighIn(): HasOne
+    {
+        return $this->hasOne(TournamentWeighIn::class, 'registration_id', 'id')->latestOfMany('weighed_at');
     }
 }

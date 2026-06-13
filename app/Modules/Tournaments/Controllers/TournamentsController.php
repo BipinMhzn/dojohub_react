@@ -2,6 +2,7 @@
 
 namespace App\Modules\Tournaments\Controllers;
 
+use App\Modules\Tournaments\Exceptions\TournamentCancelledException;
 use App\Modules\Tournaments\Interfaces\TournamentInterface;
 use App\Modules\Tournaments\Models\TournamentRuleSet;
 use App\Modules\Tournaments\Models\Venue;
@@ -89,5 +90,17 @@ final class TournamentsController extends BaseWebController
         $this->repository->destroy($tournament);
 
         return to_route('tournaments.index')->with('success', 'Tournament deleted successfully.');
+    }
+
+    public function cancel(string $tournamentId): RedirectResponse
+    {
+        try {
+            $this->repository->cancelTournament($tournamentId);
+
+            return to_route('tournaments.show', $tournamentId)
+                ->with('warning', 'This tournament has been cancelled. No further changes are possible.');
+        } catch (TournamentCancelledException $e) {
+            return back()->with('error', $e->getMessage());
+        }
     }
 }

@@ -3,7 +3,6 @@
 namespace App\System\Tournament\Models;
 
 use App\System\AppBaseModel;
-use App\System\Player\Models\Player;
 use App\System\Tournament\Foundation\Enums\BracketSectionEnum;
 use App\System\Tournament\Foundation\Enums\MatchStatusEnum;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -21,7 +20,10 @@ class TournamentMatch extends AppBaseModel
         'scheduled_at',
         'completed_at',
         'status',
-        'winner_id',
+        'match_outcome',
+        'is_golden_score',
+        'golden_score_duration_seconds',
+        'winning_competitor_id',
         'winner_next_match_id',
         'winner_next_position',
         'loser_next_match_id',
@@ -52,9 +54,9 @@ class TournamentMatch extends AppBaseModel
         return $this->belongsTo(TournamentBracket::class, 'bracket_id', 'id');
     }
 
-    public function winner(): BelongsTo
+    public function winningCompetitor(): BelongsTo
     {
-        return $this->belongsTo(Player::class, 'winner_id', 'id');
+        return $this->belongsTo(TournamentMatchCompetitor::class, 'winning_competitor_id', 'id');
     }
 
     public function winnerNextMatch(): BelongsTo

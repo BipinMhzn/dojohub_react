@@ -14,6 +14,10 @@ class DatabaseSeeder extends Seeder
             TournamentRuleSetSeeder::class,
             RoleSeeder::class,
             DefaultAdminSeeder::class,
+            VenueSeeder::class,
+            ClubSeeder::class,
+            PlayerSeeder::class,
+            TournamentSeeder::class,
         ]);
     }
 }

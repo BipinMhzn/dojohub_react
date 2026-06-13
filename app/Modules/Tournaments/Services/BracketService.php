@@ -2,18 +2,22 @@
 
 namespace App\Modules\Tournaments\Services;
 
-use App\Modules\TournamentCategories\Models\TournamentCategory;
+use App\Modules\Tournaments\Exceptions\TournamentCancelledException;
 use App\Modules\Tournaments\Interfaces\BracketServiceInterface;
-use App\Modules\Tournaments\Models\TournamentBracket;
-use App\Modules\Tournaments\Models\TournamentMatch;
-use App\Modules\Tournaments\Models\TournamentMatchCompetitor;
+use App\Modules\Tournaments\Interfaces\CategoryStatusTransitionServiceInterface;
 use App\System\Tournament\Foundation\Enums\BracketSectionEnum;
 use App\System\Tournament\Foundation\Enums\BracketStatusEnum;
 use App\System\Tournament\Foundation\Enums\BracketTypeEnum;
+use App\System\Tournament\Foundation\Enums\CategoryStatusEnum;
 use App\System\Tournament\Foundation\Enums\CompetitorPositionEnum;
 use App\System\Tournament\Foundation\Enums\CompetitorResultEnum;
 use App\System\Tournament\Foundation\Enums\MatchStatusEnum;
 use App\System\Tournament\Foundation\Enums\RegistrationStatusEnum;
+use App\System\Tournament\Foundation\Enums\TournamentStatusEnum;
+use App\System\Tournament\Models\TournamentBracket;
+use App\System\Tournament\Models\TournamentCategory;
+use App\System\Tournament\Models\TournamentMatch;
+use App\System\Tournament\Models\TournamentMatchCompetitor;
 use Exception;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -23,14 +27,43 @@ use Illuminate\Support\Facades\DB;
  */
 class BracketService implements BracketServiceInterface
 {
+    public function __construct(
+        private readonly CategoryStatusTransitionServiceInterface $transitionService,
+    ) {}
+
     /**
      * @throws Exception
      */
     public function generateBracket(TournamentCategory $category, TournamentBracket $bracket): Collection
     {
+        if ($category->tournament->status === TournamentStatusEnum::Cancelled) {
+            throw new TournamentCancelledException;
+        }
+
+        if (! in_array($category->status, [CategoryStatusEnum::RegistrationClosed, CategoryStatusEnum::BracketGenerated], true)) {
+            throw new Exception('Close registration before generating a bracket.');
+        }
+
+        $confirmedRegistrations = $category->registrations()
+            ->where('status', RegistrationStatusEnum::Confirmed)
+            ->with('latestWeighIn')
+            ->get();
+
+        $notWeighedIn = $confirmedRegistrations->whereNull('latestWeighIn')->count();
+
+        if ($notWeighedIn > 0) {
+            throw new Exception("Weigh-in is incomplete: {$notWeighedIn} competitor(s) still need to be weighed in before the bracket can be generated.");
+        }
+
+        $failedWeight = $confirmedRegistrations->filter(fn ($registration): bool => ! $registration->latestWeighIn->made_weight)->count();
+
+        if ($failedWeight > 0) {
+            throw new Exception("Weigh-in is incomplete: {$failedWeight} competitor(s) have not made weight. Withdraw them or record a passing weigh-in before generating the bracket.");
+        }
+
         $seededRegistrations = $this->seedRegistrations($category);
 
-        return DB::transaction(function () use ($bracket, $seededRegistrations) {
+        return DB::transaction(function () use ($category, $bracket, $seededRegistrations): Collection {
             $matches = match ($bracket->type) {
                 BracketTypeEnum::SingleElimination => $this->generateSingleElimination($bracket, $seededRegistrations),
                 BracketTypeEnum::DoubleElimination => $this->generateSingleElimination($bracket, $seededRegistrations),
@@ -44,6 +77,8 @@ class BracketService implements BracketServiceInterface
                 'generated_at' => now(),
             ]);
 
+            $this->transitionService->transitionTo($category, CategoryStatusEnum::BracketGenerated);
+
             return $matches;
         });
     }
@@ -54,14 +89,14 @@ class BracketService implements BracketServiceInterface
     public function seedRegistrations(TournamentCategory $category): array
     {
         $registrations = $category->registrations()
-            ->where('status', '!=', RegistrationStatusEnum::Withdrawn)
+            ->where('status', RegistrationStatusEnum::Confirmed)
             ->with('player')
             ->get();
 
         $count = $registrations->count();
 
         if ($count < 2) {
-            throw new Exception('At least 2 active registrations are required for bracket generation');
+            throw new Exception('At least 2 confirmed registrations are required for bracket generation.');
         }
 
         $topSeeds = $registrations->take(3)->values();
@@ -94,7 +129,7 @@ class BracketService implements BracketServiceInterface
             [$seed1, $seed2] = $pair;
 
             $reg1 = $seededRegistrations[$seed1] ?? null;
-            $reg2 = isset($seededRegistrations[$seed2]) ? $seededRegistrations[$seed2] : null;
+            $reg2 = $seededRegistrations[$seed2] ?? null;
 
             $match = TournamentMatch::create([
                 'bracket_id' => $bracket->id,
@@ -105,8 +140,10 @@ class BracketService implements BracketServiceInterface
                 'status' => MatchStatusEnum::Pending,
             ]);
 
+            $whiteCompetitor = null;
+
             if ($reg1) {
-                TournamentMatchCompetitor::create([
+                $whiteCompetitor = TournamentMatchCompetitor::create([
                     'match_id' => $match->id,
                     'registration_id' => $reg1->id,
                     'position' => CompetitorPositionEnum::White,
@@ -125,16 +162,14 @@ class BracketService implements BracketServiceInterface
                 ]);
             }
 
-            // Auto-complete bye: only White (reg1) exists, no opponent
-            if ($reg1 && ! $reg2) {
+            // Auto-complete bye: only White exists, no opponent
+            if ($reg1 && ! $reg2 && $whiteCompetitor) {
+                $whiteCompetitor->update(['result' => CompetitorResultEnum::WalkoverWin]);
                 $match->update([
-                    'winner_id' => $reg1->player_id,
+                    'winning_competitor_id' => $whiteCompetitor->id,
                     'status' => MatchStatusEnum::Completed,
                     'completed_at' => now(),
                 ]);
-                TournamentMatchCompetitor::where('match_id', $match->id)
-                    ->where('position', CompetitorPositionEnum::White)
-                    ->update(['result' => CompetitorResultEnum::WalkoverWin]);
             }
 
             $roundMatches[] = $match;
@@ -162,16 +197,16 @@ class BracketService implements BracketServiceInterface
 
                 $match1->update([
                     'winner_next_match_id' => $match->id,
-                    'winner_next_position' => 1,
+                    'winner_next_position' => CompetitorPositionEnum::White->value,
                 ]);
                 $match2->update([
                     'winner_next_match_id' => $match->id,
-                    'winner_next_position' => 2,
+                    'winner_next_position' => CompetitorPositionEnum::Blue->value,
                 ]);
 
                 // Advance bye winners automatically
-                $this->advanceByeWinner($match1, $match, 1);
-                $this->advanceByeWinner($match2, $match, 2);
+                $this->advanceByeWinner($match1, $match, CompetitorPositionEnum::White->value);
+                $this->advanceByeWinner($match2, $match, CompetitorPositionEnum::Blue->value);
 
                 $currentRoundMatches[] = $match;
                 $matches->push($match);
@@ -185,11 +220,10 @@ class BracketService implements BracketServiceInterface
 
     private function advanceByeWinner(TournamentMatch $byeMatch, TournamentMatch $nextMatch, int $position): void
     {
-        if ($byeMatch->status !== MatchStatusEnum::Completed || ! $byeMatch->winner_id) {
+        if ($byeMatch->status !== MatchStatusEnum::Completed || ! $byeMatch->winning_competitor_id) {
             return;
         }
 
-        // Find the registration for the winner
         $winnerCompetitor = TournamentMatchCompetitor::where('match_id', $byeMatch->id)
             ->where('result', CompetitorResultEnum::WalkoverWin)
             ->first();
@@ -198,7 +232,9 @@ class BracketService implements BracketServiceInterface
             return;
         }
 
-        $competitorPosition = $position === 1 ? CompetitorPositionEnum::White : CompetitorPositionEnum::Blue;
+        $competitorPosition = $position === CompetitorPositionEnum::White->value
+            ? CompetitorPositionEnum::White
+            : CompetitorPositionEnum::Blue;
 
         TournamentMatchCompetitor::create([
             'match_id' => $nextMatch->id,
@@ -221,8 +257,17 @@ class BracketService implements BracketServiceInterface
         ?int $bluePenalties,
         ?string $notes
     ): void {
-        DB::transaction(function () use ($matchId, $winnerPosition, $whiteScore, $whitePenalties, $blueScore, $bluePenalties, $notes) {
-            $match = TournamentMatch::with('competitors.registration')->findOrFail($matchId);
+        DB::transaction(function () use ($matchId, $winnerPosition, $whiteScore, $whitePenalties, $blueScore, $bluePenalties, $notes): void {
+            $match = TournamentMatch::with([
+                'competitors.registration',
+                'bracket.category.tournament',
+            ])->findOrFail($matchId);
+
+            $category = $match->bracket->category;
+
+            if ($category->tournament->status === TournamentStatusEnum::Cancelled) {
+                throw new TournamentCancelledException;
+            }
 
             $whiteCompetitor = $match->competitors->firstWhere('position', CompetitorPositionEnum::White);
             $blueCompetitor = $match->competitors->firstWhere('position', CompetitorPositionEnum::Blue);
@@ -251,7 +296,7 @@ class BracketService implements BracketServiceInterface
             ]);
 
             $match->update([
-                'winner_id' => $winnerCompetitor->registration->player_id,
+                'winning_competitor_id' => $winnerCompetitor->id,
                 'status' => MatchStatusEnum::Completed,
                 'completed_at' => now(),
                 'notes' => $notes,
@@ -261,7 +306,7 @@ class BracketService implements BracketServiceInterface
             if ($match->winner_next_match_id) {
                 $nextMatch = TournamentMatch::find($match->winner_next_match_id);
                 if ($nextMatch) {
-                    $nextPosition = $match->winner_next_position === 1
+                    $nextPosition = $match->winner_next_position === CompetitorPositionEnum::White->value
                         ? CompetitorPositionEnum::White
                         : CompetitorPositionEnum::Blue;
 
@@ -279,7 +324,7 @@ class BracketService implements BracketServiceInterface
             if ($match->loser_next_match_id) {
                 $loserNextMatch = TournamentMatch::find($match->loser_next_match_id);
                 if ($loserNextMatch) {
-                    $loserPosition = $match->loser_next_position === 1
+                    $loserPosition = $match->loser_next_position === CompetitorPositionEnum::White->value
                         ? CompetitorPositionEnum::White
                         : CompetitorPositionEnum::Blue;
 
@@ -290,6 +335,23 @@ class BracketService implements BracketServiceInterface
                         'seed' => $loserCompetitor->seed,
                         'result' => CompetitorResultEnum::Pending,
                     ]);
+                }
+            }
+
+            // Transition category → InProgress on first result
+            if ($category->status === CategoryStatusEnum::BracketGenerated) {
+                $this->transitionService->transitionTo($category, CategoryStatusEnum::InProgress);
+            }
+
+            // Check if all matches in all brackets are completed → transition to Completed
+            if ($category->status === CategoryStatusEnum::InProgress || $category->status === CategoryStatusEnum::BracketGenerated) {
+                $allDone = $category->brackets()->with('matches')->get()
+                    ->flatMap->matches
+                    ->every(fn ($m) => $m->status === MatchStatusEnum::Completed);
+
+                if ($allDone) {
+                    $freshCategory = $category->fresh();
+                    $this->transitionService->transitionTo($freshCategory, CategoryStatusEnum::Completed);
                 }
             }
         });
@@ -304,7 +366,7 @@ class BracketService implements BracketServiceInterface
     public function getBracketStructure(TournamentBracket $bracket): array
     {
         $matches = $bracket->matches()
-            ->with(['competitors.registration.player', 'competitors.registration.club', 'winner'])
+            ->with(['competitors.registration.player', 'competitors.registration.club', 'winningCompetitor'])
             ->orderBy('bracket_section')
             ->orderBy('round_number')
             ->orderBy('match_number')
@@ -354,7 +416,7 @@ class BracketService implements BracketServiceInterface
                     'result' => $blue->result->value,
                     'profile_photo_url' => $blue->registration->player->profile_photo_url,
                 ] : null,
-                'winner_id' => $match->winner_id,
+                'winning_competitor_id' => $match->winning_competitor_id,
                 'status' => $match->status->value,
                 'scheduled_at' => $match->scheduled_at?->toISOString(),
                 'notes' => $match->notes,

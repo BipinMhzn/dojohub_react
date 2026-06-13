@@ -2,6 +2,7 @@ import HeadingSmall from '@/components/heading-small';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { FileUploader } from '@/components/ui/file-uploader';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -10,13 +11,13 @@ import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import TournamentLayout from '@/layouts/tournament/layout';
 import { cn } from '@/lib/utils';
-import { Tournament, TournamentLevel, TournamentRuleSet } from '@/pages/tournaments';
+import { Tournament, TournamentLevel, TournamentRuleSet, TournamentStatus } from '@/pages/tournaments';
 import { Venue } from '@/pages/venues';
 import type { BreadcrumbItem } from '@/types';
 import { convertLocalDateToUTCString } from '@/utils/date';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, router, useForm } from '@inertiajs/react';
 import { format } from 'date-fns';
-import { CalendarIcon } from 'lucide-react';
+import { AlertTriangle, CalendarIcon } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 
 interface Props {
@@ -40,6 +41,9 @@ export default function TournamentShow({ tournament, venues, ruleSets }: Props) 
         { title: 'Tournaments', href: '/manage/tournaments' },
         { title: tournament.name, href: `/manage/tournaments/${tournament.id}` },
     ];
+
+    const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+    const isCancelled = tournament.status === TournamentStatus.Cancelled;
 
     const [startDate, setStartDate] = useState<Date>(new Date(tournament.start_at));
     const [endDate, setEndDate] = useState<Date | undefined>(tournament.end_at ? new Date(tournament.end_at) : undefined);
@@ -251,13 +255,42 @@ export default function TournamentShow({ tournament, venues, ruleSets }: Props) 
                         </div>
 
                         <div className="flex gap-4 pt-4">
-                            <Button type="submit" disabled={processing}>
+                            <Button type="submit" disabled={processing || isCancelled}>
                                 {processing ? 'Saving...' : 'Save Changes'}
                             </Button>
+                            {!isCancelled && (
+                                <Button type="button" variant="destructive" onClick={() => setCancelDialogOpen(true)}>
+                                    <AlertTriangle className="mr-2 h-4 w-4" />
+                                    Cancel Tournament
+                                </Button>
+                            )}
                         </div>
                     </form>
                 </div>
             </TournamentLayout>
+
+            <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Cancel Tournament</DialogTitle>
+                        <DialogDescription>
+                            This will cancel the tournament and all non-completed categories. This action cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setCancelDialogOpen(false)}>Keep Tournament</Button>
+                        <Button
+                            variant="destructive"
+                            onClick={() => {
+                                router.post(`/manage/tournaments/${tournament.id}/cancel`);
+                                setCancelDialogOpen(false);
+                            }}
+                        >
+                            Yes, Cancel Tournament
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 }
